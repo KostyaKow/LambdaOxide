@@ -1,4 +1,7 @@
 
+//#![feature(slice_patterns)]
+#![feature(str_char)]
+
 fn syntax_err(s: &str, location: u32) {
    println!("error at charachter {}: {}", location, s);
 }
@@ -8,25 +11,23 @@ fn internal_err(s: &str) {
 
 //replace with build-in
 //slice_str("hello", 1, 3) => "ell"
-fn slice_str(s: &str, start: u32, end: u32) -> String {
+fn slice_str(s: &str, start: usize, end: usize) -> String {
    let mut sub: String = String::new();
    let mut started: bool = false;
 
-   if start >=end { internal_err("slice_str: start>=end"); }
+   if start >= end { internal_err("slice_str: start>=end"); }
+   if end >= s.len() {  internal_err("slice_str: end >= string end"); }
 
-   for (fake_i, c) in s.chars().enumerate() {
-      let i = fake_i as u32;
-      if i > end { return sub; }
+   for (i, c) in s.chars().enumerate() {
+      if i >= end+1 { return sub; }
       if started { sub.push(c); continue; }
       if i >= start { started = true; sub.push(c); }
    }
-   internal_err("slice_str: end > string end");
    sub
 }
 
-
 enum Lexeme {
-   OpenParen, CloseParen, Str(String), Code(String), None
+   OpenParen, CloseParen, Str(String), Code(String)
 }
 
 fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
@@ -41,11 +42,11 @@ fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
          match start_quote {
             //if we have start
             Some(start) if !ignore_next_quote => {
-               ranges.push((start, i as u32));
+               ranges.push((start, i));
                start_quote = None;
             }
             None if !ignore_next_quote => {
-               start_quote = Some(i as u32);
+               start_quote = Some(i);
             }
             _ => {}
          }
@@ -54,34 +55,69 @@ fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
       else { ignore_next_quote = false; }
    }
 
-   if let Some(x) = start_quote { syntax_err("unterminated quote", x); }
+   if let Some(x) = start_quote { syntax_err("unterminated quote", x as u32); }
+
+   ranges
 }
 
 
-fn separate_strings(code : &str) -> Vec<Lexeme> {
+fn lex(code : &str) -> Vec<Lexeme> {
    let mut lexemes : Vec<Lexeme> = Vec::new();
-   lexemes.push(Lexeme::OpenParen);
-   lexemes.push(Lexeme::Str("tetst".to_string()));
-   lexemes.push(Lexeme::CloseParen);
-   lexemes.push(Lexeme::Code("hello".to_string()));
-   lexemes.push(Lexeme::None);
+
+   let mut code_collector = String::new();
+   let mut collect : bool;
+
+   let ranges = get_char_ranges(code);
+   let mut range_it = 0;
+
+   let mut i = 0;
+   let code_len = code.len();
+
+   while i < code_len {
+      collect = false;
+      let mut c = code.char_at(i);
+      if range_it < ranges.len() && (ranges[range_it].0 == i) {
+         collect = true;
+      } else if c == '(' || c == ')' { collect = true; }
+      if collect && !code_collector.is_empty() {
+         lexemes.push(Lexeme::Code(code_collector));
+         code_collector = String::new();
+      }
+
+      if range_it < ranges.len() {
+         let (start, end) = ranges[range_it];
+         if start == i {
+            range_it += 1;
+            i = end+1;
+            let l = Lexeme::Str(slice_str(code, start, end));
+            lexemes.push(l);
+         }
+      }
+      c = code.char_at(i);
+      match c {
+         '(' => lexemes.push(Lexeme::OpenParen),
+         ')' => lexemes.push(Lexeme::CloseParen),
+         ' ' => {},
+         _   => code_collector.push(c)
+      }
+
+      i += 1;
+   }
 
    lexemes
 }
 
-
 fn main() {
 
-   let code : &str = "(hello \"world\" \"another \\\"string\"";
-   let z = separate_strings(code);
+   let code : &str = "(hello (\"world\") \"another \\\"string\")";
+   let z = lex(code);
    for c in z {
       match c {
-         _ => {}
-         /*Lexeme::OpenParen => println!("open paren"),
+         /*_ => {} empty match */
+         Lexeme::OpenParen => println!("open paren"),
          Lexeme::CloseParen => println!("close paren"),
          Lexeme::Str(s) => println!("string {}", s),
          Lexeme::Code(s) => println!("code {}", s),
-         Lexeme::None => println!("None")*/
       }
    }
 
@@ -95,7 +131,7 @@ fn main() {
 }
 
 //TODO: unit test
-//   println!("{}", slice_str("hello", 1, 3));
+//println!("{}", slice_str("hello", 1, 3));
 //use std::env; use std::io; use std::io::prelude::*; use std::io::BufReader; use std::fs::File;
 /*fn lex(code : &str) -> Vec<String> {
    let mut lexemes = Vec::new();
