@@ -93,17 +93,17 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sex
    //kk println!("num child: {}", children.len());
    /*Sexps::Str(String::from("Test"));
    sexps = Sexps::SubSexps(Vec::new());*/
+   //kk for child in &children { println!("{} {}", child.0, child.1) }
 
    //kk let mut sexps = Sexps::SubSexps(Vec::new());
    let mut sexps : Vec<Box<Sexps>> = Vec::new();
 
    let children = get_child_sexps(lexemes, start, end);
-   //kk for child in &children { println!("{} {}", child.0, child.1) }
    let mut c_it = 0; //current child
    let mut child_sexps : Sexps;
 
    let mut i = start;
-   while i < end {
+   while i <= end {
       //print!("i: {}\t", i); //kk
       let child_start = c_it < children.len() && children[c_it].0 == i;
       let (c_start, c_end) = if child_start { children[c_it] } else { (0, 0) };
