@@ -58,18 +58,22 @@ enum Sexps {
    SubSexps(Vec<Box<Sexps>>)
 }
 
-fn parse_range(lexemes : &Vec<Lexeme>) -> Sexps { Sexps::Str(String::from("Hllo")) }
+fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sexps> {
+   Sexps::Str(String::from("Hllo"))
 
-fn parse(lexemes : &Vec<Lexeme>) -> Sexps {
+}
 
-   let mut sexps = Sexps::Str(String::from("Test"));
+fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
+
+   let mut sexps = Sexps::SubSexps(Vec::new());
+   /*Sexps::Str(String::from("Test"));
    sexps = Sexps::Num(32.4);
    sexps = Sexps::Sym(String::from("Hello"));
-   sexps = Sexps::SubSexps(Vec::new());
+   sexps = Sexps::SubSexps(Vec::new());*/
 
    let mut start_paren : Option<usize> = None;
    let mut end_paren : Option<usize> = None;
-   let mut nestedness : usize = 0;
+   let mut nestedness : i32 = 0;
 
    for (i, l) in lexemes.iter().enumerate() {
       match l {
@@ -85,14 +89,23 @@ fn parse(lexemes : &Vec<Lexeme>) -> Sexps {
          //Lexeme::Str(s) => {},
          //Lexeme::Sym(s) => {}
       }
+      if nestedness < 0 { syntax_err_lex("Extra close parenthesis", 0) }
    }
+   let mut start = 0;
+   let mut end = 0;
 
    if let Some(x) = start_paren { println!("start paren: {}", x) }
-   else { println!("No start paren"); }
+   else { syntax_err_lex("No start paren", 0) }
    if let Some(x) = end_paren { println!("got end paren: {}", x) }
-   else { println!("No end paren"); }
+   else { syntax_err_lex("No end paren", 0) }
 
-   Sexps::Num(34.2)
+   if let Some(start) = start_paren {
+      if let Some(end) = end_paren {
+         return parse_range(lexemes, start, end)
+      }
+      else { return None }
+   }
+   else { return None }
 }
 
 
@@ -103,20 +116,24 @@ fn main() {
 }
 
 fn parse_test() {
-   let code : &str = "(hello (+ world) \"string\")";
+   //let code : &str = "(hello (+ world) \"string\")";
+   let code : &str = "(6 + (+ test 5))";
    let lexemes = lex(code);
-   let tree = parse(&lexemes);
-   print_tree(&tree, 0);
+   let tree_maybe = parse(&lexemes);
+   if let Some(tree) = tree_maybe {
+      print_tree(&tree, 0);
+   }
+   else { syntax_err_lex("Parsing failed", 0); }
 }
 
 fn print_tree(t: &Sexps, deepness: u8) {
-   match t {
-      Sexps::Str(s) => { print_nest(s, deepness) },
-      Sexps::Sym(s) => { print_space(deepness); println("{}", s) },
-      Sexps::Num(n) => { print_space(deepness); println("{}", n) },
-      Sexps::SubSexps(sexps) => {
+   match *t {
+      Sexps::Str(ref s) => { print_nest(&s, deepness) },
+      Sexps::Sym(ref s) => { print_space(deepness); println!("{}", s) },
+      Sexps::Num(ref n) => { print_space(deepness); println!("{}", n) },
+      Sexps::SubSexps(ref sexps) => {
          print_nest("(", deepness);
-         for x in sexps { print_tree(t, deepness+4); }
+         for x in sexps { print_tree(x, deepness+4); }
          print_nest(")", deepness);
       }
    }
@@ -141,18 +158,21 @@ fn print_lexemes(lexemes: &Vec<Lexeme>) {
 
 
 //internal functions
-fn print_space(n: u8) {
-   let mut i = 0;
-   while (i < n) { print!(" "); i += 1; }
+fn syntax_err(s: &str, char_loc: u32) {
+   println!("error at charachter {}: {}", char_loc, s);
 }
-fn print_nest(s: &str, n: u8) {
-   print_space(n); println!("{}", s);
-}
-fn syntax_err(s: &str, location: u32) {
-   println!("error at charachter {}: {}", location, s);
+fn syntax_err_lex(s: &str, lex_num: u32) {
+   println!("error at lexeme {}: {}", lex_num, s);
 }
 fn internal_err(s: &str) {
    println!("internal error: {}", s);
+}
+fn print_space(n: u8) {
+   let mut i = 0;
+   while i < n { print!(" "); i += 1; }
+}
+fn print_nest(s: &str, n: u8) {
+   print_space(n); println!("{}", s);
 }
 fn char_at(code : &str, n : usize) -> Option<char> {
     for (i, c) in code.chars().enumerate() {
