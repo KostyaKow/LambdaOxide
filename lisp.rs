@@ -157,6 +157,7 @@ enum Sexps {
    SubSexps(Box<Vec<Sexps>>),
    Err(String)
 }
+enum Binding { Normal(Sexps), Special(Sexps) }
 
 #[derive(Debug)]
 enum List<T> {
@@ -165,7 +166,7 @@ enum List<T> {
 }
 
 struct SymTable {
-   bindings : HashMap<String, Sexps>,
+   bindings : HashMap<String, Binding>,
    children : Box<List<SymTable>>,
    parent : Option<Box<SymTable>>
 }
@@ -178,37 +179,33 @@ impl SymTable {
          children : Box::new(List::Nil)
       }
    }
-   fn apply(&mut self) {}
+   fn apply(&mut self, func : Sexps, args: List<Sexps>) {
+
+   }
+
    fn eval(&mut self, code : &str) {
       let lexemes = lex(code);
       let sexps_opt = parse(&lexemes);
 
       if let Some(ref sexps) = sexps_opt {
          if let Sexps::SubSexps(box ref s) = sexps {
-
+            match s {
+               [] => Err("Trying to evaluate empty list"),
+               [x] => self.apply(self.eval(x), []),
+               [x, xs..] => self.apply(self.eval(x), xs)
+            }
          }
-         match *sexps {
-            Sexps::SubSexps(box ref s) => {
-               match s {
-                  [] => Err("Trying to evaluate empty list"),
-                  [x] => self.apply(self.eval(x)),
-                  [x, xs..] => self.apply(self.eval(x), xs)
-               }
-            },
-            x => x
-            //x @ Sexps::Str(_) => x, x @ Sexps::Num(_) => x, x @ Sexps::Sym(_) => x,
-         }
-         //let ret = eval(sexps, &mut sym_table);
-         //print_tree(&ret, 0);
+         else { s }
       }
       else { Err("Couldn't parse code") }
-
-
    }
 }
 
 fn eval(sexps : &Sexps, sym_table : &mut SymTable) -> Sexps {
    Sexps::Num(0.3)
+         //let ret = eval(sexps, &mut sym_table);
+         //print_tree(&ret, 0);
+
 }
 
 fn main() {
