@@ -58,19 +58,80 @@ enum Sexps {
    SubSexps(Vec<Box<Sexps>>)
 }
 
-fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sexps> {
-   Sexps::Str(String::from("Hllo"))
+//inclusive let i = start; while (i <= end)
+fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Vec<(usize, usize)>
+{
+   let mut nestedness = 0;
+   let mut children : Vec<(usize, usize)> = Vec::new();
+   let mut child_start : Option<usize> = None;
 
+   let mut i = start;
+   while i <= end {
+      match &lexemes[i] {
+         &Lexeme::OpenParen => {
+            nestedness += 1;
+            if nestedness == 1 { child_start = Some(i); }
+         },
+         &Lexeme::CloseParen => {
+            nestedness -= 1;
+            if nestedness == 0 {
+               if let Some(start) = child_start {
+                  children.push((start, i)); child_start = None;
+               }
+            }
+         },
+         _ => {}
+      }
+      i += 1;
+   }
+   children
+}
+
+//range without include parenthesis
+fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sexps> {
+   //println!("\n===parse_range() start: {}, end: {}", start, end);
+   //kk println!("num child: {}", children.len());
+   /*Sexps::Str(String::from("Test"));
+   sexps = Sexps::SubSexps(Vec::new());*/
+
+   //kk let mut sexps = Sexps::SubSexps(Vec::new());
+   let mut sexps : Vec<Box<Sexps>> = Vec::new();
+
+   let children = get_child_sexps(lexemes, start, end);
+   //kk for child in &children { println!("{} {}", child.0, child.1) }
+   let mut c_it = 0; //current child
+   let mut child_sexps : Sexps;
+
+   let mut i = start;
+   while i < end {
+      //print!("i: {}\t", i); //kk
+      let child_start = c_it < children.len() && children[c_it].0 == i;
+      let (c_start, c_end) = if child_start { children[c_it] } else { (0, 0) };
+
+      if child_start {
+         let child = parse_range(lexemes, c_start+1, c_end-1);
+         if let Some(c) = child { sexps.push(Box::new(c)); }
+         else { println!("Couldn't parse child"); }
+         c_it += 1;
+         i = c_end + 1;
+         println!("new i: {}", i);
+         continue;
+      }
+
+      let ref l = lexemes[i];
+      match l {
+         &Lexeme::Str(ref s) => { sexps.push(Box::new(Sexps::Str(s.to_string()))) },
+         &Lexeme::Sym(ref s) => { sexps.push(Box::new(Sexps::Sym(s.to_string()))) },
+         _ => {}
+      }
+      i += 1;
+   }
+
+   println!("\n===end parse_range()");
+   Some(Sexps::SubSexps(sexps))
 }
 
 fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
-
-   let mut sexps = Sexps::SubSexps(Vec::new());
-   /*Sexps::Str(String::from("Test"));
-   sexps = Sexps::Num(32.4);
-   sexps = Sexps::Sym(String::from("Hello"));
-   sexps = Sexps::SubSexps(Vec::new());*/
-
    let mut start_paren : Option<usize> = None;
    let mut end_paren : Option<usize> = None;
    let mut nestedness : i32 = 0;
@@ -86,29 +147,22 @@ fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
             if nestedness == 0 { end_paren = Some(i); }
          },
          _ => {}
-         //Lexeme::Str(s) => {},
-         //Lexeme::Sym(s) => {}
       }
       if nestedness < 0 { syntax_err_lex("Extra close parenthesis", 0) }
    }
+
+   let mut good_range = true;
    let mut start = 0;
    let mut end = 0;
 
-   if let Some(x) = start_paren { println!("start paren: {}", x) }
-   else { syntax_err_lex("No start paren", 0) }
-   if let Some(x) = end_paren { println!("got end paren: {}", x) }
-   else { syntax_err_lex("No end paren", 0) }
+   if let Some(x) = start_paren { start = x; println!("start paren: {}", x) }
+   else { good_range = false; syntax_err_lex("No start paren", 0) }
+   if let Some(x) = end_paren { end = x; println!("got end paren: {}", x) }
+   else { good_range = false; syntax_err_lex("No end paren", 0) }
 
-   if let Some(start) = start_paren {
-      if let Some(end) = end_paren {
-         return parse_range(lexemes, start, end)
-      }
-      else { return None }
-   }
-   else { return None }
+   if good_range { return parse_range(lexemes, start+1, end-1) }
+   return None
 }
-
-
 
 fn main() {
    //lex_test();
@@ -117,7 +171,8 @@ fn main() {
 
 fn parse_test() {
    //let code : &str = "(hello (+ world) \"string\")";
-   let code : &str = "(6 + (+ test 5))";
+   let code : &str = "((6 +) (+ (test) 5))";
+   //let code : &str = "(hello (world) (yo test) 5)";
    let lexemes = lex(code);
    let tree_maybe = parse(&lexemes);
    if let Some(tree) = tree_maybe {
