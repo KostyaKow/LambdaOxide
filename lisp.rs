@@ -1,7 +1,10 @@
-//#![feature(slice_patterns)]
+#![feature(slice_patterns)]
+#![feature(box_syntax, box_patterns)]
 //replaced with custom char_at #![feature(str_char)]
 
+use std::collections::HashMap;
 use std::boxed::Box;
+
 fn lex(code : &str) -> Vec<Lexeme> {
    let mut lexemes : Vec<Lexeme> = Vec::new();
 
@@ -47,17 +50,6 @@ fn lex(code : &str) -> Vec<Lexeme> {
    lexemes
 }
 
-enum Lexeme {
-   OpenParen, CloseParen, Str(String), Sym(String)
-}
-
-enum Sexps {
-   Str(String),
-   Sym(String),
-   Num(f64),
-   SubSexps(Vec<Box<Sexps>>)
-}
-
 //inclusive let i = start; while (i <= end)
 fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Vec<(usize, usize)>
 {
@@ -89,46 +81,35 @@ fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Vec<(u
 
 //range without include parenthesis
 fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sexps> {
-   //println!("\n===parse_range() start: {}, end: {}", start, end);
-   //kk println!("num child: {}", children.len());
-   /*Sexps::Str(String::from("Test"));
-   sexps = Sexps::SubSexps(Vec::new());*/
-   //kk for child in &children { println!("{} {}", child.0, child.1) }
-
-   //kk let mut sexps = Sexps::SubSexps(Vec::new());
-   let mut sexps : Vec<Box<Sexps>> = Vec::new();
+   let mut sexps : Vec<Sexps> = Vec::new();
 
    let children = get_child_sexps(lexemes, start, end);
    let mut c_it = 0; //current child
-   let mut child_sexps : Sexps;
-
    let mut i = start;
    while i <= end {
-      //print!("i: {}\t", i); //kk
       let child_start = c_it < children.len() && children[c_it].0 == i;
       let (c_start, c_end) = if child_start { children[c_it] } else { (0, 0) };
 
       if child_start {
          let child = parse_range(lexemes, c_start+1, c_end-1);
-         if let Some(c) = child { sexps.push(Box::new(c)); }
-         else { println!("Couldn't parse child"); }
+         if let Some(c) = child { sexps.push(c); }
+         else { println!("Couldn't parse child"); return None; }
          c_it += 1;
          i = c_end + 1;
-         println!("new i: {}", i);
          continue;
       }
 
+      //Sexps::Str(String::from("Test"));
       let ref l = lexemes[i];
       match l {
-         &Lexeme::Str(ref s) => { sexps.push(Box::new(Sexps::Str(s.to_string()))) },
-         &Lexeme::Sym(ref s) => { sexps.push(Box::new(Sexps::Sym(s.to_string()))) },
-         _ => {}
+         &Lexeme::Str(ref s) => { sexps.push(Sexps::Str(s.to_string())) },
+         &Lexeme::Sym(ref s) => { sexps.push(Sexps::Sym(s.to_string())) },
+         _ => { syntax_err_lex("Parsing failed: bad lexeme", i as u32) }
       }
       i += 1;
    }
 
-   println!("\n===end parse_range()");
-   Some(Sexps::SubSexps(sexps))
+   Some(Sexps::SubSexps(Box::new(sexps)))
 }
 
 fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
@@ -164,15 +145,89 @@ fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
    return None
 }
 
-fn main() {
-   //lex_test();
-   parse_test();
+enum Lexeme {
+   OpenParen, CloseParen, Str(String), Sym(String)
 }
 
-fn parse_test() {
+#[allow(dead_code)]
+enum Sexps {
+   Str(String),
+   Num(f64),
+   Sym(String),
+   SubSexps(Box<Vec<Sexps>>),
+   Err(String)
+}
+
+struct SymTable {
+   bindings : HashMap<String, Sexps>,
+   parent : Option<Box<SymTable>>,
+}
+impl SymTable {
+   fn new() -> SymTable {
+      SymTable {
+         bindings : HashMap::new(),
+         parent   : None
+      }
+   }
+}
+
+
+
+struct RustyParen {
+   sym_table : SymTable,
+   fn eval(&self, str) {}
+}
+
+impl RustyParen {
+   fn apply(&self) {}
+   fn eval(&self) {}
+}
+
+fn eval(sexps : &Sexps, sym_table : &mut SymTable) -> Sexps {
+   match *sexps {
+      Sexps::SubSexps(box ref s) => {
+         match s {
+            [] => Err("Trying to evaluate empty list"),
+            [x] => apply(eval(x)),
+            [x, xs..] => apply(eval(x), xs)
+         }
+      },
+      x @ Sexps::Str(_) => x,
+      x @ Sexps::Num(_) => x,
+      x @ Sexps::Sym(_) => x,
+
+   }
+   Sexps::Num(0.3)
+}
+
+fn main() {
    //let code : &str = "(hello (+ world) \"string\")";
    let code : &str = "((6 +) (+ (test) 5))";
    //let code : &str = "(hello (world) (yo test) 5)";
+   //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
+
+   //lex_test();
+   //parse_test();
+   eval_test(code);
+}
+
+#[allow(dead_code)]
+fn eval_test(code : &str) {
+   let mut sym_table = SymTable::new();
+
+   let lexemes = lex(code);
+   let sexps_opt = parse(&lexemes);
+
+   if let Some(ref sexps) = sexps_opt {
+      let ret = eval(sexps, &mut sym_table);
+      print_tree(&ret, 0);
+   }
+   else { internal_err("Couldn't parse code"); }
+}
+
+#[allow(dead_code)]
+fn parse_test() {
+   let code : &str = "((6 +) (+ (test) 5))";
    let lexemes = lex(code);
    let tree_maybe = parse(&lexemes);
    if let Some(tree) = tree_maybe {
@@ -181,23 +236,24 @@ fn parse_test() {
    else { syntax_err_lex("Parsing failed", 0); }
 }
 
+#[allow(dead_code)]
+fn lex_test() {
+   let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
+   let lexemes = lex(code);
+   print_lexemes(&lexemes);
+}
+
 fn print_tree(t: &Sexps, deepness: u8) {
    match *t {
       Sexps::Str(ref s) => { print_nest(&s, deepness) },
       Sexps::Sym(ref s) => { print_space(deepness); println!("{}", s) },
       Sexps::Num(ref n) => { print_space(deepness); println!("{}", n) },
-      Sexps::SubSexps(ref sexps) => {
+      Sexps::SubSexps(box ref sexps) => { //box ref sexps
          print_nest("(", deepness);
-         for x in sexps { print_tree(x, deepness+4); }
+         for x in sexps { print_tree(&x, deepness+4); }
          print_nest(")", deepness);
       }
    }
-}
-
-fn lex_test() {
-   let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
-   let lexemes = lex(code);
-   print_lexemes(&lexemes);
 }
 fn print_lexemes(lexemes: &Vec<Lexeme>) {
    for l in lexemes.iter() {
