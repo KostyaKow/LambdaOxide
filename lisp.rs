@@ -158,45 +158,56 @@ enum Sexps {
    Err(String)
 }
 
+#[derive(Debug)]
+enum List<T> {
+   Cons(T, Box<List<T>>),
+   Nil,
+}
+
 struct SymTable {
    bindings : HashMap<String, Sexps>,
-   parent : Option<Box<SymTable>>,
+   children : Box<List<SymTable>>,
+   parent : Option<Box<SymTable>>
 }
+
 impl SymTable {
    fn new() -> SymTable {
-      SymTable {
+      Bindings {
          bindings : HashMap::new(),
-         parent   : None
+         parent   : None,
+         children : Box::new(List::Nil)
       }
    }
-}
+   fn apply(&mut self) {}
+   fn eval(&mut self, code : &str) {
+      let lexemes = lex(code);
+      let sexps_opt = parse(&lexemes);
+
+      if let Some(ref sexps) = sexps_opt {
+         if let Sexps::SubSexps(box ref s) = sexps {
+
+         }
+         match *sexps {
+            Sexps::SubSexps(box ref s) => {
+               match s {
+                  [] => Err("Trying to evaluate empty list"),
+                  [x] => self.apply(self.eval(x)),
+                  [x, xs..] => self.apply(self.eval(x), xs)
+               }
+            },
+            x => x
+            //x @ Sexps::Str(_) => x, x @ Sexps::Num(_) => x, x @ Sexps::Sym(_) => x,
+         }
+         //let ret = eval(sexps, &mut sym_table);
+         //print_tree(&ret, 0);
+      }
+      else { Err("Couldn't parse code") }
 
 
-
-struct RustyParen {
-   sym_table : SymTable,
-   fn eval(&self, str) {}
-}
-
-impl RustyParen {
-   fn apply(&self) {}
-   fn eval(&self) {}
+   }
 }
 
 fn eval(sexps : &Sexps, sym_table : &mut SymTable) -> Sexps {
-   match *sexps {
-      Sexps::SubSexps(box ref s) => {
-         match s {
-            [] => Err("Trying to evaluate empty list"),
-            [x] => apply(eval(x)),
-            [x, xs..] => apply(eval(x), xs)
-         }
-      },
-      x @ Sexps::Str(_) => x,
-      x @ Sexps::Num(_) => x,
-      x @ Sexps::Sym(_) => x,
-
-   }
    Sexps::Num(0.3)
 }
 
@@ -215,14 +226,6 @@ fn main() {
 fn eval_test(code : &str) {
    let mut sym_table = SymTable::new();
 
-   let lexemes = lex(code);
-   let sexps_opt = parse(&lexemes);
-
-   if let Some(ref sexps) = sexps_opt {
-      let ret = eval(sexps, &mut sym_table);
-      print_tree(&ret, 0);
-   }
-   else { internal_err("Couldn't parse code"); }
 }
 
 #[allow(dead_code)]
