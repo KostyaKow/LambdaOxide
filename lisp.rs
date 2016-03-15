@@ -1,12 +1,20 @@
-
 //#![feature(slice_patterns)]
-#![feature(str_char)]
+//replaced with custom char_at #![feature(str_char)]
+
+use std::boxed::Box;
 
 fn syntax_err(s: &str, location: u32) {
    println!("error at charachter {}: {}", location, s);
 }
 fn internal_err(s: &str) {
    println!("internal error: {}", s);
+}
+
+fn char_at(code : &str, n : usize) -> Option<char> {
+    for (i, c) in code.chars().enumerate() {
+        if i == n { return Some(c) }
+    }
+    return None
 }
 
 //replace with build-in
@@ -24,10 +32,6 @@ fn slice_str(s: &str, start: usize, end: usize) -> String {
       if i >= start { started = true; sub.push(c); }
    }
    sub
-}
-
-enum Lexeme {
-   OpenParen, CloseParen, Str(String), Code(String)
 }
 
 fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
@@ -60,56 +64,90 @@ fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
    ranges
 }
 
-
 fn lex(code : &str) -> Vec<Lexeme> {
    let mut lexemes : Vec<Lexeme> = Vec::new();
 
-   let mut code_collector = String::new();
-   let mut collect : bool;
+   let mut sym_collector = String::new();
+   let mut collect : bool; //collect symbols
 
+   //range of strings
    let ranges = get_char_ranges(code);
-   let mut range_it = 0;
+   let mut str_start : bool;
+   let mut r_it = 0; //current string range
 
    let mut i = 0;
    let code_len = code.len();
 
    while i < code_len {
-      collect = false;
-      let mut c = code.char_at(i);
-      if range_it < ranges.len() && (ranges[range_it].0 == i) {
-         collect = true;
-      } else if c == '(' || c == ')' { collect = true; }
-      if collect && !code_collector.is_empty() {
-         lexemes.push(Lexeme::Code(code_collector));
-         code_collector = String::new();
-      }
+      collect = has_range = false;
+      str_start = r_it < ranges.len() && ranges[r_it].0 == i;
 
-      if range_it < ranges.len() {
-         let (start, end) = ranges[range_it];
+      //collect if string or special character
+      if let Some(c) = char_at(code, i) {
+         collect = str_start || c == '(' || c == ')' || c == ' ';
+
+         if collect && !sym_collector.is_empty() {
+            lexemes.push(Lexeme::Sym(sym_collector));
+            sym_collector = String::new();
+         }
+      }
+      if r_it < ranges.len() {
+         let (start, end) = ranges[r_it];
          if start == i {
-            range_it += 1;
+            r_it += 1;
             i = end+1;
             let l = Lexeme::Str(slice_str(code, start, end));
             lexemes.push(l);
          }
       }
-      c = code.char_at(i);
-      match c {
-         '(' => lexemes.push(Lexeme::OpenParen),
-         ')' => lexemes.push(Lexeme::CloseParen),
-         ' ' => {},
-         _   => code_collector.push(c)
+      if let Some(c) = char_at(code, i) {
+         match c {
+            '(' => lexemes.push(Lexeme::OpenParen),
+            ')' => lexemes.push(Lexeme::CloseParen),
+            ' ' => {},
+            _   => sym_collector.push(c)
+         }
       }
-
       i += 1;
    }
 
    lexemes
 }
 
-fn main() {
+enum Lexeme {
+   OpenParen, CloseParen, Str(String), Sym(String)
+}
 
-   let code : &str = "(hello (\"world\") \"another \\\"string\")";
+enum Sexps<'a> {
+   Str(&'a String),
+   Num(f64),
+   Literal(String),
+   SubSexps(Vec<Box<Sexps<'a>>>)
+}
+
+fn parse(lexemes : &Vec<Lexeme>) -> Sexps {
+
+   /*let sexps = Sexps::SubSexps(
+   for l in lexemes {
+
+   }*/
+   Sexps::Num(34.2)
+}
+
+
+fn main() {
+   lex_test();
+}
+
+fn parse_test() {
+
+   let code : &str = "(hello (+ world) \"string\")";
+   let z = lex(code);
+   let x = parse(&z);
+}
+
+fn lex_test() {
+   let code : &str = "(hello (\"world\" + world) \"another \\\"string\")";
    let z = lex(code);
    for c in z {
       match c {
@@ -117,7 +155,7 @@ fn main() {
          Lexeme::OpenParen => println!("open paren"),
          Lexeme::CloseParen => println!("close paren"),
          Lexeme::Str(s) => println!("string {}", s),
-         Lexeme::Code(s) => println!("code {}", s),
+         Lexeme::Sym(s) => println!("code {}", s),
       }
    }
 
