@@ -158,18 +158,6 @@ enum Sexps {
    SubSexps(Box<Vec<Sexps>>),
    Err(String)
 }
-impl Copy for Sexps {}
-impl Clone for Sexps {
-   fn clone(&self) -> Sexps {
-      match *self {
-         Sexps::Str(x) => Sexps::Str(x),
-         Sexps::Num(x) => Sexps::Num(x),
-         Sexps::Sym(x) => Sexps::Sym(x),
-         Sexps::Err(x) => Sexps::Err(x),
-         Sexps::SubSexps(x) => Sexps::SubSexps(x)
-      }
-   }
-}
 
 enum Binding { Normal(Sexps), Special(Sexps) }
 
@@ -177,6 +165,23 @@ struct SymTable {
    bindings : HashMap<String, Binding>,
    children : Box<List<SymTable>>,
    parent : Option<Box<SymTable>>
+}
+
+fn my_copy(s : Sexps) -> Sexps {
+   match s {
+      Sexps::Str(s) => Sexps::Str(s),
+      Sexps::Num(s) => Sexps::Num(s),
+      Sexps::Sym(s) => Sexps::Sym(s),
+      Sexps::Err(s) => Sexps::Err(s),
+      Sexps::SubSexps(s) => Sexps::SubSexps(s)
+   }
+}
+fn hack(s : &[Sexps]) -> Vec<Sexps> {
+   let mut v : Vec<Sexps> = Vec::new();
+   for x in s {
+      v.push(my_copy(*x));
+   }
+   v
 }
 
 impl SymTable {
@@ -189,14 +194,15 @@ impl SymTable {
    }
    fn apply(&mut self, func : Sexps, args: List<Sexps>) -> Sexps {
 
+      Sexps::Num(5.4)
    }
 
-   fn eval(&mut self, sexps : &Sexps) -> Sexps {
+   fn eval(&mut self, sexps : Sexps) -> Sexps {
       if let Sexps::SubSexps(box v) = *sexps {
          match &v[..] {
             [] => Sexps::Err(String::from("Trying to evaluate empty list")),
-            [x] => self.apply(self.eval(&x), lst_new::<Sexps>()),
-            [x, xs..] => self.apply(self.eval(&x), vec_to_lst::<Sexps>(xs))
+            [ref x] => self.apply(self.eval(&x), lst_new::<Sexps>()),
+            [ref x, ref xs..] => self.apply(self.eval(&x), vec_to_lst::<Sexps>(&hack(&xs))),
          }
       }
       else { *sexps } //we're an atom
@@ -258,7 +264,8 @@ fn print_tree(t: &Sexps, deepness: u8) {
          print_nest("(", deepness);
          for x in sexps { print_tree(&x, deepness+4); }
          print_nest(")", deepness);
-      }
+      },
+      Sexps::Err(ref s) => { println!("{}", s) }
    }
 }
 fn print_lexemes(lexemes: &Vec<Lexeme>) {
@@ -377,9 +384,10 @@ enum List<T> {
 fn lst_cons<T>(item : T, lst : List<T>) -> List<T> { List::Cons(item, bb::<List<T>>(lst)) }
 fn lst_new<T>() -> List<T> { List::Nil }
 fn lst_new_0<T>() -> List<T> { List::Nil }
-fn lst_new_1<T>(item : T) -> List<T> { lst_cons::<T>(item, List::Nil); }
+fn lst_new_1<T>(item : T) -> List<T> { lst_cons::<T>(item, List::Nil) }
 
-fn vec_to_lst<T : Copy + Clone>(vec : &Vec<T>) -> List<T> {
+//T : Copy + Clone
+fn vec_to_lst<T>(vec : &Vec<T>) -> List<T> {
     let mut lst = List::Nil;
     let mut i = 0;
     while i < vec.len() {
