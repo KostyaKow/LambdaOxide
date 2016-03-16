@@ -159,12 +159,6 @@ enum Sexps {
 }
 enum Binding { Normal(Sexps), Special(Sexps) }
 
-#[derive(Debug)]
-enum List<T> {
-   Cons(T, Box<List<T>>),
-   Nil,
-}
-
 struct SymTable {
    bindings : HashMap<String, Binding>,
    children : Box<List<SymTable>>,
@@ -173,7 +167,7 @@ struct SymTable {
 
 impl SymTable {
    fn new() -> SymTable {
-      Bindings {
+      SymTable {
          bindings : HashMap::new(),
          parent   : None,
          children : Box::new(List::Nil)
@@ -357,4 +351,53 @@ use std::env; use std::io; use std::io::prelude::*; use std::io::BufReader; use 
       if !lex.is_empty() { lexemes.push(lex); }
    }
 */
+
+//cool lists
+//https://gist.github.com/lovasoa/5260e87e994009ca658a
+//http://rustbyexample.com/custom_types/enum/testcase_linked_list.html
+
+#[derive(Debug)]
+enum List<T> {
+   Cons(T, Box<List<T>>),
+   Nil,
+}
+
+fn lst_cons<T>(item : T, lst : List<T>) -> List<T> { List::Cons(item, bb::<List<T>>(lst)) }
+fn lst_new<T>() -> List<T> { List::Nil }
+fn lst_new_0<T>() -> List<T> { List::Nil }
+fn lst_new_1<T>(item : T) -> List<T> { lst_cons::<T>(item, List::Nill); }
+
+fn vec_to_lst<T : Copy + Clone>(vec : &Vec<T>) -> List<T> {
+    let mut lst = List::Nil;
+    let mut i = 0;
+    while i < vec.len() {
+        lst = List::Cons(vec[i], bb::<List<T>>(lst));
+        i += 1;
+    }
+    lst
+}
+
+fn lst_len<T>(lst : &List<T>) -> u32 {
+    match lst {
+        &List::Nil => 0,
+        &List::Cons(_, box ref xs) => (1 + list_len::<T>(xs))
+    }
+}
+
+fn bb<T>(x : T) -> Box<T> { Box::new(x) }
+/*fn main() {
+   let x : List<u32> = List::Cons(5, bb(List::Cons(3, bb(List::Nil))));
+   println!("{}", list_len::<u32>(&x));
+
+   let vec : Vec<i32> = vec![1, 2, 3];
+   let lst = vec_to_lst::<i32>(&vec);
+}
+fn list_len<T>(lst: List<T>) -> i32 {
+   match lst {
+      List::Nil => 0,
+      List::Cons(_, box xs) => (1 + list_len::<T>(xs))
+   }
+}
+//use println!("{}", list_len::<u32>(x));*/
+
 
