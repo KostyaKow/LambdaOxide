@@ -1,5 +1,5 @@
-#![feature(slice_patterns)]
-#![feature(box_syntax, box_patterns)]
+#![feature(box_syntax, box_patterns, slice_patterns)]
+//#![feature(slice_patterns)]
 //replaced with custom char_at #![feature(str_char)]
 
 use std::collections::HashMap;
@@ -150,6 +150,7 @@ enum Lexeme {
 }
 
 #[allow(dead_code)]
+//#[derive(Copy, Clone)]
 enum Sexps {
    Str(String),
    Num(f64),
@@ -157,6 +158,19 @@ enum Sexps {
    SubSexps(Box<Vec<Sexps>>),
    Err(String)
 }
+impl Copy for Sexps {}
+impl Clone for Sexps {
+   fn clone(&self) -> Sexps {
+      match *self {
+         Sexps::Str(x) => Sexps::Str(x),
+         Sexps::Num(x) => Sexps::Num(x),
+         Sexps::Sym(x) => Sexps::Sym(x),
+         Sexps::Err(x) => Sexps::Err(x),
+         Sexps::SubSexps(x) => Sexps::SubSexps(x)
+      }
+   }
+}
+
 enum Binding { Normal(Sexps), Special(Sexps) }
 
 struct SymTable {
@@ -173,34 +187,32 @@ impl SymTable {
          children : Box::new(List::Nil)
       }
    }
-   fn apply(&mut self, func : Sexps, args: List<Sexps>) {
+   fn apply(&mut self, func : Sexps, args: List<Sexps>) -> Sexps {
 
    }
 
-   fn eval(&mut self, code : &str) {
+   fn eval(&mut self, sexps : &Sexps) -> Sexps {
+      if let Sexps::SubSexps(box v) = *sexps {
+         match &v[..] {
+            [] => Sexps::Err(String::from("Trying to evaluate empty list")),
+            [x] => self.apply(self.eval(&x), lst_new::<Sexps>()),
+            [x, xs..] => self.apply(self.eval(&x), vec_to_lst::<Sexps>(xs))
+         }
+      }
+      else { *sexps } //we're an atom
+   }
+
+   fn run(&mut self, code : &str) -> Sexps {
       let lexemes = lex(code);
       let sexps_opt = parse(&lexemes);
 
-      if let Some(ref sexps) = sexps_opt {
-         if let Sexps::SubSexps(box ref s) = sexps {
-            match s {
-               [] => Err("Trying to evaluate empty list"),
-               [x] => self.apply(self.eval(x), []),
-               [x, xs..] => self.apply(self.eval(x), xs)
-            }
-         }
-         else { s }
+      if let Some(sexps) = sexps_opt {
+         self.eval(&sexps)
       }
-      else { Err("Couldn't parse code") }
+      else { Sexps::Err(String::from("Couldn't parse code")) }
    }
 }
-
-fn eval(sexps : &Sexps, sym_table : &mut SymTable) -> Sexps {
-   Sexps::Num(0.3)
-         //let ret = eval(sexps, &mut sym_table);
-         //print_tree(&ret, 0);
-
-}
+//Sexps::Num(0.3)
 
 fn main() {
    //let code : &str = "(hello (+ world) \"string\")";
@@ -216,7 +228,7 @@ fn main() {
 #[allow(dead_code)]
 fn eval_test(code : &str) {
    let mut sym_table = SymTable::new();
-
+   sym_table.run(code);
 }
 
 #[allow(dead_code)]
@@ -365,7 +377,7 @@ enum List<T> {
 fn lst_cons<T>(item : T, lst : List<T>) -> List<T> { List::Cons(item, bb::<List<T>>(lst)) }
 fn lst_new<T>() -> List<T> { List::Nil }
 fn lst_new_0<T>() -> List<T> { List::Nil }
-fn lst_new_1<T>(item : T) -> List<T> { lst_cons::<T>(item, List::Nill); }
+fn lst_new_1<T>(item : T) -> List<T> { lst_cons::<T>(item, List::Nil); }
 
 fn vec_to_lst<T : Copy + Clone>(vec : &Vec<T>) -> List<T> {
     let mut lst = List::Nil;
@@ -380,7 +392,7 @@ fn vec_to_lst<T : Copy + Clone>(vec : &Vec<T>) -> List<T> {
 fn lst_len<T>(lst : &List<T>) -> u32 {
     match lst {
         &List::Nil => 0,
-        &List::Cons(_, box ref xs) => (1 + list_len::<T>(xs))
+        &List::Cons(_, box ref xs) => (1 + lst_len::<T>(xs))
     }
 }
 
