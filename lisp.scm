@@ -13,6 +13,26 @@
       ())))
 
 "
+current:
+   features
+      _ all variables
+   build-in
+      (if (x) a b)
+      (define (f x) x)
+      (display x)
+      (eval x)
+      (apply x lst)
+      cons, car, cdr
+      display
+      =, >, <
+      +, -, *, /
+   stdlib
+      map, filter, fold
+      begin, list
+      null?
+      or, and (macro-less version, without short-circuit evaluation)
+
+next version brainstorming:
 ;syntax
 ;;;;type system
 types       : values => [typeclass]
@@ -38,6 +58,7 @@ notes
    nil is typeclass and value
    list and nil types share value nil
    short-circuit or and and
+   macros are flawed and need to be re-designed based on Scheme macros
    macros
       (macro (f a b) (eval a) (eval b))
       (macro (f) (car _))
@@ -51,7 +72,7 @@ build-in macros
    ;;;;;replaced with macro (lambda* exp) ;all arguments are passed as list of sexps
    ;for defining macro
    (macro name (exp))
-   (invoke-normal macro-name) ;invoke macro like a function
+   (invoke-normal macro-name param param) ;invoke macro like a function
    (def id binding)
    (display x) ;display a variable
    (let ((x exp) (y exp)) (exp))
@@ -60,10 +81,10 @@ build-in macros
    ;;(return x) ;return early ?????
 
 build-in functions
+   is-nil, is-lst, is-bool, is-num, is-str, is-char, is-lst
    (cons a b)
    (car x)
    (cdr x)
-   (list x y z)
    (apply f (x y z))
    =, >, <
    +, -, *, /
@@ -71,31 +92,22 @@ build-in functions
          (else 'blah))
 
 library macros
-   (def test (lambda* (print (car _))))
-   ;(test 3) => (print 3)
-   ;(test (+ 3 5)) => (print '(+ 3 5))
-
-   ;(macro name (exp))
-   ;(name (blah test))
-   ;(name "eval" blah)
-   ;(name "eval-1st" blah blah) ???
-   (def macro
-      (lambda*
-         (cond ((null? _) (syntax-error "macro needs parameters")
-               (else (def (car _) (
-               ((eq? (car _) "eval" )
-                (
-
    (macro define ())
    ;(define (f x y z) (exp))
 
    (macro or
       (cond ((null? _) false)
             ((= (car _) true) true)
-            (else (or (cdr )))))
+            (else (invoke-normal or (cdr _)))))
+   (macro and
+      (cond ((null? _) true)
+            ((= (car a) false) false)
+            (else (invoke-normal and (cdr _)))))
 
-   or, and
-
+   (macro define ;(define (a b c) exp)
+      (if (or (null? _) (null? (cdr _)))
+         (syntax-error "Got empty define")
+         (def (car _) (lambda () (cdr _)))))
 
 standard library (t= means typeclass of given variable):
    ;boolify :: (boolish a) => a -> Bool
