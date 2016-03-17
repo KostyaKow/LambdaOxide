@@ -159,6 +159,14 @@ enum Sexps {
    Err(String)
 }
 
+enum Sexp {
+   Str(String),
+   Num(f64),
+   Sym(String),
+   SubSexps(Box<Vec<Sexp>>),
+   Err(String)
+}
+
 enum Binding { Normal(Sexps), Special(Sexps) }
 
 struct SymTable {
@@ -167,45 +175,38 @@ struct SymTable {
    parent : Option<Box<SymTable>>
 }
 
-fn my_copy(s : Sexps) -> Sexps {
-   match s {
-      Sexps::Str(s) => Sexps::Str(s),
-      Sexps::Num(s) => Sexps::Num(s),
-      Sexps::Sym(s) => Sexps::Sym(s),
-      Sexps::Err(s) => Sexps::Err(s),
-      Sexps::SubSexps(s) => Sexps::SubSexps(s)
-   }
-}
-fn hack(s : &[Sexps]) -> Vec<Sexps> {
-   let mut v : Vec<Sexps> = Vec::new();
-   for x in s {
-      v.push(my_copy(*x));
-   }
-   v
-}
+fn convert(sexps : Sexps) -> Sexp {}
 
 impl SymTable {
-   fn new() -> SymTable {
+   fn new(parent) -> SymTable {
       SymTable {
          bindings : HashMap::new(),
-         parent   : None,
-         children : Box::new(List::Nil)
+         parent   : parent,
+         children : Box::new(List::Nil),
+         sexps    : Sexp::Err("".to_string())
       }
    }
-   fn apply(&mut self, func : Sexps, args: List<Sexps>) -> Sexps {
 
+   fn apply(&mut self, func : &Sexps, args: List<Sexps>) -> Sexps {
       Sexps::Num(5.4)
    }
 
-   fn eval(&mut self, sexps : Sexps) -> Sexps {
-      if let Sexps::SubSexps(box v) = *sexps {
+   fn eval(&mut self, sexps : &Sexps) -> Sexps {
+      /*if let Sexps::SubSexps(box v) = *sexps {
          match &v[..] {
             [] => Sexps::Err(String::from("Trying to evaluate empty list")),
             [ref x] => self.apply(self.eval(&x), lst_new::<Sexps>()),
             [ref x, ref xs..] => self.apply(self.eval(&x), vec_to_lst::<Sexps>(&hack(&xs))),
          }
       }
-      else { *sexps } //we're an atom
+      else { *sexps } //we're an atom*/
+      match *sexps {
+         Sexps::SubSexps(box v) =
+
+      }
+      //if let Sexps::SubSexps(box v) = *sexps {
+
+      }
    }
 
    fn run(&mut self, code : &str) -> Sexps {
@@ -221,8 +222,8 @@ impl SymTable {
 //Sexps::Num(0.3)
 
 fn main() {
-   //let code : &str = "(hello (+ world) \"string\")";
    let code : &str = "((6 +) (+ (test) 5))";
+   //let code : &str = "(hello (+ world) \"string\")";
    //let code : &str = "(hello (world) (yo test) 5)";
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
 
