@@ -1,4 +1,8 @@
 #![feature(box_syntax, box_patterns, slice_patterns)]
+
+#![allow(dead_code)] //kk removme
+#![allow(unused_variables)] //kk removeme
+
 //#![feature(slice_patterns)]
 //replaced with custom char_at #![feature(str_char)]
 
@@ -159,54 +163,58 @@ enum Sexps {
    Err(String)
 }
 
-enum Sexp {
-   Str(String),
-   Num(f64),
-   Sym(String),
-   SubSexps(Box<Vec<Sexp>>),
-   Err(String)
-}
-
 enum Binding { Normal(Sexps), Special(Sexps) }
 
 struct SymTable {
    bindings : HashMap<String, Binding>,
-   children : Box<List<SymTable>>,
+   /*children : Box<List<SymTable>>,*/
+   children: Box<Vec<SymTable>>,
    parent : Option<Box<SymTable>>
 }
 
-fn convert(sexps : Sexps) -> Sexp {}
-
 impl SymTable {
-   fn new(parent) -> SymTable {
+   fn new(parent : Option<Box<SymTable>>) -> SymTable {
       SymTable {
          bindings : HashMap::new(),
          parent   : parent,
-         children : Box::new(List::Nil),
-         sexps    : Sexp::Err("".to_string())
+         children : Box::new(Vec::new()), //(List::Nil),
+         //sexps    : Sexp::Err("".to_string())
       }
+   }
+
+   fn lookup(&self, s : String) -> Sexps { Sexps::Err("none".to_string()) }
+
+   fn eval(&mut self, sexps : &Sexps) -> Sexps {
+      match *sexps {
+         e @ Sexps::Str(_) => { e },
+         e @ Sexps::Num(ref n) => { e },
+         e @ Sexps::Sym(ref s) => { e },
+         e @ Sexps::Err(ref s) => { e },
+         e @ Sexps::SubSexps(ref subsexps) => {
+            let mut children = Vec::new();
+            let mut first_child : Option<SymTable> = None;
+
+            for subsexp in (*subsexps).iter() {
+               let t = SymTable::new(Some(box *self));
+               t.eval(subsexp);
+               if let None = first_child { first_child = Some(t); }
+               else { children.push(t); }
+            }
+            self.children = Box::new(children);
+
+            if let Some(first) = first_child {
+               self.apply(first, self.children)
+            } //kk left here
+            else {
+               Sexps::Err("Cannot eval empty".to_string())
+            }
+         },
+      }
+      //if let Sexps::SubSexps(box v) = *sexps
    }
 
    fn apply(&mut self, func : &Sexps, args: List<Sexps>) -> Sexps {
       Sexps::Num(5.4)
-   }
-
-   fn eval(&mut self, sexps : &Sexps) -> Sexps {
-      /*if let Sexps::SubSexps(box v) = *sexps {
-         match &v[..] {
-            [] => Sexps::Err(String::from("Trying to evaluate empty list")),
-            [ref x] => self.apply(self.eval(&x), lst_new::<Sexps>()),
-            [ref x, ref xs..] => self.apply(self.eval(&x), vec_to_lst::<Sexps>(&hack(&xs))),
-         }
-      }
-      else { *sexps } //we're an atom*/
-      match *sexps {
-         Sexps::SubSexps(box v) =
-
-      }
-      //if let Sexps::SubSexps(box v) = *sexps {
-
-      }
    }
 
    fn run(&mut self, code : &str) -> Sexps {
@@ -234,7 +242,7 @@ fn main() {
 
 #[allow(dead_code)]
 fn eval_test(code : &str) {
-   let mut sym_table = SymTable::new();
+   let mut sym_table = SymTable::new(None);
    sym_table.run(code);
 }
 
@@ -349,6 +357,7 @@ fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
 
    ranges
 }
+//end internal functions
 
 /*
 //TODO: unit test
@@ -376,19 +385,19 @@ use std::env; use std::io; use std::io::prelude::*; use std::io::BufReader; use 
 //https://gist.github.com/lovasoa/5260e87e994009ca658a
 //http://rustbyexample.com/custom_types/enum/testcase_linked_list.html
 
+//list
 #[derive(Debug)]
 enum List<T> {
    Cons(T, Box<List<T>>),
    Nil,
 }
-
 fn lst_cons<T>(item : T, lst : List<T>) -> List<T> { List::Cons(item, bb::<List<T>>(lst)) }
 fn lst_new<T>() -> List<T> { List::Nil }
 fn lst_new_0<T>() -> List<T> { List::Nil }
 fn lst_new_1<T>(item : T) -> List<T> { lst_cons::<T>(item, List::Nil) }
 
 //T : Copy + Clone
-fn vec_to_lst<T>(vec : &Vec<T>) -> List<T> {
+fn vec_to_lst<T : Clone + Copy>(vec : &Vec<T>) -> List<T> {
     let mut lst = List::Nil;
     let mut i = 0;
     while i < vec.len() {
@@ -406,6 +415,7 @@ fn lst_len<T>(lst : &List<T>) -> u32 {
 }
 
 fn bb<T>(x : T) -> Box<T> { Box::new(x) }
+
 /*fn main() {
    let x : List<u32> = List::Cons(5, bb(List::Cons(3, bb(List::Nil))));
    println!("{}", list_len::<u32>(&x));
