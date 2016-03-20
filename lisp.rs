@@ -9,51 +9,10 @@
 use std::collections::HashMap;
 use std::boxed::Box;
 
-fn lex(code : &str) -> Vec<Lexeme> {
-   let mut lexemes : Vec<Lexeme> = Vec::new();
+extern crate lexer;
+use lexer::lex;
 
-   let mut sym_collector = String::new();
-   let ranges = get_char_ranges(code); //range of strings
-   let mut r_it = 0; //current string range
-   let mut i = 0;
-   let code_len = code.len();
-
-   while i < code_len {
-      let str_start = r_it < ranges.len() && ranges[r_it].0 == i;
-      let (start, end) = if str_start { ranges[r_it] } else { (0, 0) };
-
-      //if current character c is string or
-      //special character push previously collected
-      if let Some(c) = char_at(code, i) {
-         //should we collect symbols
-         let collect = str_start || c == '(' || c == ')' || c == ' ';
-
-         if collect && !sym_collector.is_empty() {
-            lexemes.push(Lexeme::Sym(sym_collector));
-            sym_collector = String::new();
-         }
-      }
-      if str_start {
-         let l = Lexeme::Str(slice_str(code, start, end));
-         lexemes.push(l);
-         i = end + 1;
-         r_it += 1;
-      }
-      if let Some(c) = char_at(code, i) {
-         match c {
-            '(' => lexemes.push(Lexeme::OpenParen),
-            ')' => lexemes.push(Lexeme::CloseParen),
-            ' ' => {},
-            '"' => i-=1, //"string""s2"
-            _   => sym_collector.push(c)
-         }
-      }
-      i += 1;
-   }
-
-   lexemes
-}
-
+//parsing
 //inclusive let i = start; while (i <= end)
 fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Vec<(usize, usize)>
 {
@@ -148,6 +107,7 @@ fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
    if good_range { return parse_range(lexemes, start+1, end-1) }
    return None
 }
+//end parsing
 
 enum Lexeme {
    OpenParen, CloseParen, Str(String), Sym(String)
@@ -156,19 +116,15 @@ enum Lexeme {
 #[allow(dead_code)]
 //#[derive(Copy, Clone)]
 enum Sexps {
-   Str(String),
-   Num(f64),
-   Sym(String),
+   Str(String), Num(f64), Sym(String),
    SubSexps(Box<Vec<Sexps>>),
    Err(String)
 }
-
 enum Binding { Normal(Sexps), Special(Sexps) }
-
 struct SymTable {
    bindings : HashMap<String, Binding>,
-   /*children : Box<List<SymTable>>,*/
-   children: Box<Vec<SymTable>>,
+   //unused children : Box<List<SymTable>>,
+   //maybe needed children: Box<Vec<SymTable>>,
    parent : Option<Box<SymTable>>
 }
 
@@ -177,7 +133,7 @@ impl SymTable {
       SymTable {
          bindings : HashMap::new(),
          parent   : parent,
-         children : Box::new(Vec::new()), //(List::Nil),
+         //maybe needed later children : Box::new(Vec::new()), //(List::Nil),
          //sexps    : Sexp::Err("".to_string())
       }
    }
@@ -288,147 +244,5 @@ fn print_lexemes(lexemes: &Vec<Lexeme>) {
       }
    }
 }
-
-
-//internal functions
-fn syntax_err(s: &str, char_loc: u32) {
-   println!("error at charachter {}: {}", char_loc, s);
-}
-fn syntax_err_lex(s: &str, lex_num: u32) {
-   println!("error at lexeme {}: {}", lex_num, s);
-}
-fn internal_err(s: &str) {
-   println!("internal error: {}", s);
-}
-fn print_space(n: u8) {
-   let mut i = 0;
-   while i < n { print!(" "); i += 1; }
-}
-fn print_nest(s: &str, n: u8) {
-   print_space(n); println!("{}", s);
-}
-fn char_at(code : &str, n : usize) -> Option<char> {
-    for (i, c) in code.chars().enumerate() {
-        if i == n { return Some(c) }
-    }
-    return None
-}
-//replace with build-in
-//slice_str("hello", 1, 3) => "ell"
-fn slice_str(s: &str, start: usize, end: usize) -> String {
-   let mut sub: String = String::new();
-   let mut started: bool = false;
-
-   if start >= end { internal_err("slice_str: start>=end"); }
-   if end >= s.len() {  internal_err("slice_str: end >= string end"); }
-
-   for (i, c) in s.chars().enumerate() {
-      if i >= end+1 { return sub; }
-      if started { sub.push(c); continue; }
-      if i >= start { started = true; sub.push(c); }
-   }
-   sub
-}
-fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
-   let mut ranges : Vec<(usize, usize)> = Vec::new();
-
-   let mut start_quote : Option<usize> = None;
-   let mut ignore_next_quote = false;
-
-   for (i, c) in code.chars().enumerate() {
-      if c == '"' {
-         match start_quote {
-            //if we have start
-            Some(start) if !ignore_next_quote => {
-               ranges.push((start, i));
-               start_quote = None;
-            }
-            None if !ignore_next_quote => {
-               start_quote = Some(i);
-            }
-            _ => {}
-         }
-      }
-      if c == '\\' { ignore_next_quote = true; }
-      else { ignore_next_quote = false; }
-   }
-
-   if let Some(x) = start_quote { syntax_err("unterminated quote", x as u32); }
-
-   ranges
-}
-//end internal functions
-
-/*
-//TODO: unit test
-//println!("{}", slice_str("hello", 1, 3));
-
-use std::env; use std::io; use std::io::prelude::*; use std::io::BufReader; use std::fs::File;
-
-   for arg in env::args() {
-      println!("{}", arg);
-   }
-   let zz = lex(code); for c in zz {println!("{}", c)}
-
-   let a :[i32; 3] = [1, 2, 3];
-   println!("{}", a[0]);
-
-   fn lex(code : &str) -> Vec<String> {
-      for c in code.chars() {
-            lex = String::new();
-         lex.push(c);
-      if !lex.is_empty() { lexemes.push(lex); }
-   }
-*/
-
-//cool lists
-//https://gist.github.com/lovasoa/5260e87e994009ca658a
-//http://rustbyexample.com/custom_types/enum/testcase_linked_list.html
-
-//list
-#[derive(Debug)]
-enum List<T> {
-   Cons(T, Box<List<T>>),
-   Nil,
-}
-fn lst_cons<T>(item : T, lst : List<T>) -> List<T> { List::Cons(item, bb::<List<T>>(lst)) }
-fn lst_new<T>() -> List<T> { List::Nil }
-fn lst_new_0<T>() -> List<T> { List::Nil }
-fn lst_new_1<T>(item : T) -> List<T> { lst_cons::<T>(item, List::Nil) }
-
-//T : Copy + Clone
-fn vec_to_lst<T : Clone + Copy>(vec : &Vec<T>) -> List<T> {
-    let mut lst = List::Nil;
-    let mut i = 0;
-    while i < vec.len() {
-        lst = List::Cons(vec[i], bb::<List<T>>(lst));
-        i += 1;
-    }
-    lst
-}
-
-fn lst_len<T>(lst : &List<T>) -> u32 {
-    match lst {
-        &List::Nil => 0,
-        &List::Cons(_, box ref xs) => (1 + lst_len::<T>(xs))
-    }
-}
-
-fn bb<T>(x : T) -> Box<T> { Box::new(x) }
-
-/*fn main() {
-   let x : List<u32> = List::Cons(5, bb(List::Cons(3, bb(List::Nil))));
-   println!("{}", list_len::<u32>(&x));
-
-   let vec : Vec<i32> = vec![1, 2, 3];
-   let lst = vec_to_lst::<i32>(&vec);
-}
-fn list_len<T>(lst: List<T>) -> i32 {
-   match lst {
-      List::Nil => 0,
-      List::Cons(_, box xs) => (1 + list_len::<T>(xs))
-   }
-}
-//use println!("{}", list_len::<u32>(x));*/
 
 

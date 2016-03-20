@@ -10,3 +10,31 @@ old eval:
       }
       else { *sexps } //we're an atom*/
 
+other old stuff:
+   //TODO: unit test
+   //println!("{}", slice_str("hello", 1, 3));
+
+   use std::env; use std::io; use std::io::prelude::*;
+   use std::io::BufReader; use std::fs::File;
+
+      for arg in env::args() {
+         println!("{}", arg);
+      }
+      let zz = lex(code); for c in zz {println!("{}", c)}
+
+      let a :[i32; 3] = [1, 2, 3];
+      println!("{}", a[0]);
+
+      fn lex(code : &str) -> Vec<String> {
+         for c in code.chars() {
+               lex = String::new();
+            lex.push(c);
+         if !lex.is_empty() { lexemes.push(lex); }
+      }
+   */
+
+   //cool lists
+   //https://gist.github.com/lovasoa/5260e87e994009ca658a
+   //http://rustbyexample.com/custom_types/enum/testcase_linked_list.html
+
+
