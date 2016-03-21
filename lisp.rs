@@ -9,8 +9,64 @@
 use std::collections::HashMap;
 use std::boxed::Box;
 
-extern crate lexer;
-use lexer::lex;
+extern crate list;
+use list::List;
+
+extern crate utils;
+use utils::get_char_ranges;
+use utils::slice_str;
+use utils::syntax_err;
+use utils::syntax_err_lex;
+use utils::internal_err;
+use utils::print_space;
+use utils::print_nest;
+use utils::char_at;
+
+
+fn lex(code : &str) -> Vec<Lexeme> {
+   let mut lexemes : Vec<Lexeme> = Vec::new();
+
+   let mut sym_collector = String::new();
+   let ranges = get_char_ranges(code); //range of strings
+   let mut r_it = 0; //current string range
+   let mut i = 0;
+   let code_len = code.len();
+
+   while i < code_len {
+      let str_start = r_it < ranges.len() && ranges[r_it].0 == i;
+      let (start, end) = if str_start { ranges[r_it] } else { (0, 0) };
+
+      //if current character c is string or
+      //special character push previously collected
+      if let Some(c) = char_at(code, i) {
+         //should we collect symbols
+         let collect = str_start || c == '(' || c == ')' || c == ' ';
+
+         if collect && !sym_collector.is_empty() {
+            lexemes.push(Lexeme::Sym(sym_collector));
+            sym_collector = String::new();
+         }
+      }
+      if str_start {
+         let l = Lexeme::Str(slice_str(code, start, end));
+         lexemes.push(l);
+         i = end + 1;
+         r_it += 1;
+      }
+      if let Some(c) = char_at(code, i) {
+         match c {
+            '(' => lexemes.push(Lexeme::OpenParen),
+            ')' => lexemes.push(Lexeme::CloseParen),
+            ' ' => {},
+            '"' => i-=1, //"string""s2"
+            _   => sym_collector.push(c)
+         }
+      }
+      i += 1;
+   }
+
+   lexemes
+}
 
 //parsing
 //inclusive let i = start; while (i <= end)
@@ -156,7 +212,7 @@ impl SymTable {
                if let None = first_child { first_child = Some(t); }
                else { children.push(t); }
             }
-            self.children = Box::new(children);
+            //self.children = Box::new(children);
 
             if let Some(first) = first_child {
                self.apply(first, self.children)

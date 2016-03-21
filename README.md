@@ -37,4 +37,9 @@ other old stuff:
    //https://gist.github.com/lovasoa/5260e87e994009ca658a
    //http://rustbyexample.com/custom_types/enum/testcase_linked_list.html
 
+#http://rustbyexample.com/crates/lib.html
+#rustc --crate-name list --crate-type lib list.rs
+#rustc --crate-name utils --crate-type lib utils.rs
+#rustc -L . lisp.rs
+
 
