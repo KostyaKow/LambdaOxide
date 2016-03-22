@@ -172,9 +172,8 @@ enum Lexeme {
 #[allow(dead_code)]
 //#[derive(Copy, Clone)]
 enum Sexps {
-   Str(String), Num(f64), Sym(String),
+   Str(String), Num(f64), Sym(String), Err(String),
    SubSexps(Box<Vec<Sexps>>),
-   Err(String)
 }
 enum Binding { Normal(Sexps), Special(Sexps) }
 struct SymTable {
@@ -194,17 +193,35 @@ impl SymTable {
       }
    }
 
-   fn lookup(&self, s : String) -> Sexps { Sexps::Err("none".to_string()) }
+   fn lookup(&self, s : &String) -> Box<Binding> {
+      //Sexps::Err("none".to_string())
+      //if !self.bindings.contains_key(s)
+      let b = self.bindings.get(s);
+      match b {
+         Some(&x) => box x,
+         None => {
+            match self.parent {
+               None => {
+                  syntax_err("Cannot find symbol", 0);
+                  box Binding::Normal(Sexps::Err("None".to_string()))
+               },
+               Some(ref parent) => parent.lookup(s)
+            }
+         }
+      }
+   }
 
    fn eval(&mut self, sexps : &Sexps) -> Sexps {
-      match *sexps {
-         e @ Sexps::Str(_) => { e },
-         e @ Sexps::Num(ref n) => { e },
-         e @ Sexps::Sym(ref s) => { e },
-         e @ Sexps::Err(ref s) => { e },
-         e @ Sexps::SubSexps(ref subsexps) => {
-            let mut children = Vec::new();
-            let mut first_child : Option<SymTable> = None;
+      match sexps {
+         e @ &Sexps::Str(_) => { *e },
+         e @ &Sexps::Num(_) => { *e },
+         e @ &Sexps::Sym(_) => { *e },
+         e @ &Sexps::Err(_) => { *e },
+         e @ &Sexps::SubSexps(_) => {
+            self.apply(&e)
+            /*
+            //let mut children = Vec::new();
+            //let mut first_child : Option<SymTable> = None;
 
             for subsexp in (*subsexps).iter() {
                let t = SymTable::new(Some(box *self));
@@ -212,22 +229,32 @@ impl SymTable {
                if let None = first_child { first_child = Some(t); }
                else { children.push(t); }
             }
-            //self.children = Box::new(children);
+            self.children = Box::new(children);
 
             if let Some(first) = first_child {
                self.apply(first, self.children)
             } //kk left here
             else {
                Sexps::Err("Cannot eval empty".to_string())
-            }
+            }*/
          },
       }
       //if let Sexps::SubSexps(box v) = *sexps
    }
-
-   fn apply(&mut self, func : &Sexps, args: List<Sexps>) -> Sexps {
-      Sexps::Num(5.4)
+   fn apply(&mut self, args: &Sexps) -> Sexps {
+      if let Sexps::SubSexps(args) = *args {
+         let first : Sexps = args[0];
+         if let Sexps::Sym(op) = first {
+            if op == "+" { println!("detected +") }
+            Sexps::Num(1.3)
+         }
+         else { syntax_err("first element needs to be symbol", 0); Sexps::Err("non".to_string()) }
+      }
+      else { syntax_err("apply needs SubSexps", 0); Sexps::Err("non".to_string()) }
    }
+   /*fn apply(&mut self, func : &Sexps, args: Option<&Sexps>) -> Sexps {
+      Sexps::Num(5.4)
+   }*/
 
    fn run(&mut self, code : &str) -> Sexps {
       let lexemes = lex(code);
