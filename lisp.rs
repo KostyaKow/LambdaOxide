@@ -322,36 +322,18 @@ impl SymTable {
    }
 }
 
-fn is_var(sexps : &Sexps) -> bool {
-   if let Sexps::Var(ref x) = *sexps { true } else { false }
-}
-fn get_var(sexps : &Sexps) -> String {
-   if let Sexps::Var(ref x) = *sexps { x.clone() }
-   else { "none".to_string() }
-}
-fn is_self_eval(exp : &Sexps) -> bool {
-   match *exp {
-      Sexps::Str(_) => false,
-      Sexps::Num(_) => false,
-      _ => true
-   }
-}
-fn is_sub(exp : &Sexps) -> bool {
-   if let Sexps::Sub(_) = *exp { true } else { false }
-}
 fn eval_sub(exp : &Sexps, table : &mut SymTable) -> Sexps {
-   //let Sexps::Sub
+   //let Sexps::Sub(x)
    Sexps::Err("error".to_string())
 }
 
 fn eval(exp : &Sexps, table : &mut SymTable) -> Sexps {
-   /*match *exp {
-
-   }*/
-   if is_self_eval(exp) { exp.clone() }
-   else if is_var(exp) { table.lookup(&get_var(exp)) }
-   else if is_sub(exp) { eval_sub(exp, table) }
-   else { Sexps::Err("error".to_string()) }
+   match *exp {
+      Sexps::Str(_) | Sexps::Num(_) => exp.clone(), //self evaluation
+      Sexps::Var(ref s)             => table.lookup(&s.clone()),
+      Sexps::Sub(_)                 => eval_sub(exp, table),
+      Sexps::Err(ref s)             => Sexps::Err(s.clone()),
+   }
 }
 
 fn apply() {}
