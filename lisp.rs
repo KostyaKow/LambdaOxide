@@ -10,17 +10,18 @@ use std::collections::HashMap;
 use std::boxed::Box;
 
 extern crate list;
-use list::List;
-use list::lst_cons;
-use list::lst_new;
-use list::bb;
+use list::Cons;
+use list::cons;
+use list::cons_map;
+//use list::cons_len;
+//use list::List;
 
 extern crate utils;
 use utils::get_char_ranges;
 use utils::slice_str;
 use utils::syntax_err;
 use utils::syntax_err_lex;
-use utils::internal_err;
+//use utils::internal_err;
 use utils::print_space;
 use utils::print_nest;
 use utils::char_at;
@@ -106,7 +107,7 @@ fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Vec<(u
 
 //range without include parenthesis
 fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sexps> {
-   let mut sexps : Vec<Sexps> = Vec::new();
+   let mut sub : Cons<Sexps> = Cons::Nil; //: Vec<Sexps> = Vec::new()
 
    let children = get_child_sexps(lexemes, start, end);
    let mut c_it = 0; //current child
@@ -117,7 +118,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sex
 
       if child_start {
          let child = parse_range(lexemes, c_start+1, c_end-1);
-         if let Some(c) = child { sexps.push(c); }
+         if let Some(c) = child { sub = cons(c, sub); }
          else { println!("Couldn't parse child"); return None; }
          c_it += 1;
          i = c_end + 1;
@@ -127,15 +128,15 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sex
       //Sexps::Str(String::from("Test"));
       let ref l = lexemes[i];
       match l {
-         &Lexeme::Str(ref s) => { sexps.push(Sexps::Str(s.to_string())) },
-         &Lexeme::Sym(ref s) => { sexps.push(Sexps::Var(s.to_string())) },
-         &Lexeme::Num(ref n) => { sexps.push(Sexps::Num(*n)) },
-         _ => { syntax_err_lex("Parsing failed: bad lexeme", i as u32) }
+         &Lexeme::Str(ref s) => { sub = cons(Sexps::Str(s.to_string()), sub) },
+         &Lexeme::Sym(ref s) => { sub = cons(Sexps::Var(s.to_string()), sub) },
+         &Lexeme::Num(ref n) => { sub = cons(Sexps::Num(*n), sub) },
+         _ => { sub = cons(Sexps::Err("Parsing failed: bad lexeme".to_string()), sub) }
       }
       i += 1;
    }
 
-   Some(Sexps::Sub(Box::new(sexps)))
+   Some(Sexps::Sub(Box::new(sub)))
 }
 
 fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
@@ -290,7 +291,7 @@ fn display_sexps(exp: &Sexps) {
 #[derive(Clone)]
 enum Sexps {
    Str(String), Num(i64), Var(String), Err(String),
-   Sub(Box<List<Sexps>>),
+   Sub(Box<Cons<Sexps>>), //Sub(Box<Vec<Sexps>>)
 }
 
 struct SymTable {
@@ -360,7 +361,7 @@ fn main() {
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
 
    //lex_test();
-   //parse_test();
+   parse_test();
    display_sexps(&run(code));
 }
 
@@ -387,9 +388,10 @@ fn print_tree(t: &Sexps, deepness: u8) {
       Sexps::Str(ref s) => { print_nest(&s, deepness, Some("str")) },
       Sexps::Var(ref s) => { print_space(deepness); println!("var: {}", s) },
       Sexps::Num(ref n) => { print_space(deepness); println!("num: {}", n) },
-      Sexps::Sub(box ref sexps) => { //box ref sexps
+      Sexps::Sub(box ref sub) => { //box ref sexps
          print_nest("(", deepness, None);
-         for x in sexps { print_tree(&x, deepness+4); }
+         //kk for x in sub { print_tree(&x, deepness+4); }
+         cons_map(sub, |x| print_tree(x, deepness+4));
          print_nest(")", deepness, None);
       },
       Sexps::Err(ref s) => { println!("error: {}", s) }

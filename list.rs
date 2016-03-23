@@ -1,11 +1,27 @@
 #![feature(box_syntax, box_patterns)]
 
-
+//doesn't have silly pair
+#[derive(Clone)]
 pub enum Cons<T> {
    Cons(T, Box<Cons<T>>),
    Single(T),
    Nil
 }
+
+pub enum Status<S, F> { Success(S), Failure(F) }
+
+pub fn cons_map<I, O, F>(c : &Cons<I>, f : F) -> Cons<O>
+   where F : Fn(&I) -> O
+{
+   match *c {
+      Cons::Single(ref x) => Cons::Single(f(x)),
+      Cons::Nil => Cons::Nil,
+      Cons::Cons(ref x, ref xs) => {
+         Cons::Cons(f(x), bb(cons_map(xs, f)))
+      }
+   }
+}
+
 pub fn cons_nil<T>() -> Cons<T> { Cons::Nil }
 pub fn cons_single<T>(x : T) -> Cons<T> { Cons::Single(x) }
 pub fn cons<T>(x : T, xs : Cons<T>) -> Cons<T> {
@@ -23,7 +39,32 @@ pub fn cdr<T>(cons : &Cons<T>) -> Option<&Cons<T>> {
       Cons::Nil | Cons::Single(..)  => None
    }
 }
+pub fn cons_len<T>(c : &Cons<T>) -> usize {
+   match *c {
+      Cons::Nil               => 0,
+      Cons::Single(_)         => 1,
+      Cons::Cons(_, ref xs)   => 1 + cons_len(xs)
+   }
+}
 
+fn cons_reverse_helper<'a,T>(c : &'a Cons<T>, acc: Cons<&'a T>)
+   -> Cons<&'a T>
+{
+   match *c {
+      Cons::Nil => acc,
+      Cons::Single(ref x) => Cons::Single(x),
+      Cons::Cons(ref x, ref xs) =>
+         cons_reverse_helper(xs, cons(x, acc))
+   }
+}
+
+pub fn cons_reverse<T>(c : &Cons<T>) -> Cons<&T> {
+   match *c {
+      Cons::Nil => Cons::Nil,
+      Cons::Single(ref x) => Cons::Single(x),
+      _ => cons_reverse_helper(c, Cons::Nil)
+   }
+}
 
 /*
 compared to other one, this is more cumbersome but
