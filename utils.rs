@@ -31,18 +31,19 @@ pub fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
 //replace with build-in
 //slice_str("hello", 1, 3) => "ell"
 pub fn slice_str(s: &str, start: usize, end: usize) -> String {
-   let mut sub: String = String::new();
+   /*let mut sub: String = String::new();
    let mut started: bool = false;
 
    if start >= end { internal_err("slice_str: start>=end"); }
    if end >= s.len() {  internal_err("slice_str: end >= string end"); }
 
    for (i, c) in s.chars().enumerate() {
-      if i >= end+1 { return sub; }
+      if i >= end+1 { return &sub; }
       if started { sub.push(c); continue; }
       if i >= start { started = true; sub.push(c); }
    }
-   sub
+   &sub*/
+   (&s[start..end+1]).to_string()
 }
 
 pub fn syntax_err(s: &str, char_loc: u32) {

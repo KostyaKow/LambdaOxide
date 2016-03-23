@@ -175,6 +175,8 @@ enum Sexps {
    Str(String), Num(f64), Sym(String), Err(String),
    SubSexps(Box<Vec<Sexps>>),
 }
+
+/*
 enum Binding { Normal(Sexps), Special(Sexps) }
 struct SymTable {
    bindings : HashMap<String, Binding>,
@@ -219,7 +221,7 @@ impl SymTable {
          e @ &Sexps::Err(_) => { *e },
          e @ &Sexps::SubSexps(_) => {
             self.apply(&e)
-            /*
+          kk*/ /*
             //let mut children = Vec::new();
             //let mut first_child : Option<SymTable> = None;
 
@@ -236,7 +238,7 @@ impl SymTable {
             } //kk left here
             else {
                Sexps::Err("Cannot eval empty".to_string())
-            }*/
+            }*/ /*kk
          },
       }
       //if let Sexps::SubSexps(box v) = *sexps
@@ -252,9 +254,7 @@ impl SymTable {
       }
       else { syntax_err("apply needs SubSexps", 0); Sexps::Err("non".to_string()) }
    }
-   /*fn apply(&mut self, func : &Sexps, args: Option<&Sexps>) -> Sexps {
-      Sexps::Num(5.4)
-   }*/
+   //fn apply(&mut self, func : &Sexps, args: Option<&Sexps>) -> Sexps {Sexps::Num(5.4)}
 
    fn run(&mut self, code : &str) -> Sexps {
       let lexemes = lex(code);
@@ -267,6 +267,7 @@ impl SymTable {
    }
 }
 //Sexps::Num(0.3)
+*/
 
 fn main() {
    let code : &str = "((6 +) (+ (test) 5))";
@@ -275,14 +276,14 @@ fn main() {
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
 
    //lex_test();
-   //parse_test();
-   eval_test(code);
+   parse_test();
+   //eval_test(code);
 }
 
 #[allow(dead_code)]
 fn eval_test(code : &str) {
-   let mut sym_table = SymTable::new(None);
-   sym_table.run(code);
+   //let mut sym_table = SymTable::new(None);
+   //sym_table.run(code);
 }
 
 #[allow(dead_code)]
