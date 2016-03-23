@@ -1,4 +1,15 @@
 
+pub fn is_numeric(s : &str) -> bool {
+   let mut i = 0;
+   while i < s.len() {
+      if let Some(c) = char_at(s, i) {
+         if !c.is_digit(10) { return false; }
+      }
+      i += 1;
+   }
+   true
+}
+
 pub fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
    let mut ranges : Vec<(usize, usize)> = Vec::new();
 
@@ -59,8 +70,10 @@ pub fn print_space(n: u8) {
    let mut i = 0;
    while i < n { print!(" "); i += 1; }
 }
-pub fn print_nest(s: &str, n: u8) {
-   print_space(n); println!("{}", s);
+pub fn print_nest(s: &str, n: u8, extra: Option<&str>) {
+   print_space(n);
+   if let Some(ex) = extra { println!("{} {}", ex, s) }
+   else { println!("{}", s) }
 }
 pub fn char_at(code : &str, n : usize) -> Option<char> {
     for (i, c) in code.chars().enumerate() {

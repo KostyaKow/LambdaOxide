@@ -21,12 +21,12 @@ use utils::internal_err;
 use utils::print_space;
 use utils::print_nest;
 use utils::char_at;
-
+use utils::is_numeric;
 
 fn lex(code : &str) -> Vec<Lexeme> {
    let mut lexemes : Vec<Lexeme> = Vec::new();
 
-   let mut sym_collector = String::new();
+   let mut col = String::new(); //symbol collector
    let ranges = get_char_ranges(code); //range of strings
    let mut r_it = 0; //current string range
    let mut i = 0;
@@ -42,9 +42,12 @@ fn lex(code : &str) -> Vec<Lexeme> {
          //should we collect symbols
          let collect = str_start || c == '(' || c == ')' || c == ' ';
 
-         if collect && !sym_collector.is_empty() {
-            lexemes.push(Lexeme::Sym(sym_collector));
-            sym_collector = String::new();
+         if collect && !col.is_empty() {
+            lexemes.push(
+               if is_numeric(&col) { Lexeme::Num(col.parse::<i64>().unwrap()) }
+               else { Lexeme::Sym(col) });
+
+            col = String::new();
          }
       }
       if str_start {
@@ -59,7 +62,7 @@ fn lex(code : &str) -> Vec<Lexeme> {
             ')' => lexemes.push(Lexeme::CloseParen),
             ' ' => {},
             '"' => i-=1, //"string""s2"
-            _   => sym_collector.push(c)
+            _   => col.push(c)
          }
       }
       i += 1;
@@ -123,6 +126,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sex
       match l {
          &Lexeme::Str(ref s) => { sexps.push(Sexps::Str(s.to_string())) },
          &Lexeme::Sym(ref s) => { sexps.push(Sexps::Var(s.to_string())) },
+         &Lexeme::Num(ref n) => { sexps.push(Sexps::Num(*n)) },
          _ => { syntax_err_lex("Parsing failed: bad lexeme", i as u32) }
       }
       i += 1;
@@ -166,7 +170,7 @@ fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
 //end parsing
 
 enum Lexeme {
-   OpenParen, CloseParen, Str(String), Sym(String)
+   OpenParen, CloseParen, Str(String), Sym(String), Num(i64)
 }
 
 /*
@@ -282,7 +286,7 @@ fn display_sexps(exp: &Sexps) {
 
 #[derive(Clone)]
 enum Sexps {
-   Str(String), Num(f64), Var(String), Err(String),
+   Str(String), Num(i64), Var(String), Err(String),
    SubSexps(Box<Vec<Sexps>>),
 }
 
@@ -325,12 +329,15 @@ fn get_var(sexps : &Sexps) -> String {
    if let Sexps::Var(ref x) = *sexps { x.clone() }
    else { "none".to_string() }
 }
-fn is_self_eval(sexps : &Sexps) -> bool {
-   match *sexps {
+fn is_self_eval(exp : &Sexps) -> bool {
+   match *exp {
       Sexps::Str(_) => false,
       Sexps::Num(_) => false,
       _ => true
    }
+}
+fn is_complex(exp : &Sexps) -> bool {
+   if let Sexps::SubSexps(_) = *exp { true } else { false}
 }
 
 fn eval(exp : &Sexps, table : &mut SymTable) -> Sexps {
@@ -358,13 +365,13 @@ fn main() {
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
 
    //lex_test();
-   //parse_test();
-   display_sexps(&run(code));
+   parse_test();
+   //display_sexps(&run(code));
 }
 
 #[allow(dead_code)]
 fn parse_test() {
-   let code : &str = "((6 +) (+ (test) 5))";
+   let code : &str = "'((6 +) (+ (test) 5))";
    let lexemes = lex(code);
    let tree_maybe = parse(&lexemes);
    if let Some(tree) = tree_maybe {
@@ -375,22 +382,22 @@ fn parse_test() {
 
 #[allow(dead_code)]
 fn lex_test() {
-   let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
+   let code : &str = "'(hello (\"world\"\"test1\" + 69 test 42) 47 \"another \\\"string\")";
    let lexemes = lex(code);
    print_lexemes(&lexemes);
 }
 
 fn print_tree(t: &Sexps, deepness: u8) {
    match *t {
-      Sexps::Str(ref s) => { print_nest(&s, deepness) },
-      Sexps::Var(ref s) => { print_space(deepness); println!("{}", s) },
-      Sexps::Num(ref n) => { print_space(deepness); println!("{}", n) },
+      Sexps::Str(ref s) => { print_nest(&s, deepness, Some("str")) },
+      Sexps::Var(ref s) => { print_space(deepness); println!("var: {}", s) },
+      Sexps::Num(ref n) => { print_space(deepness); println!("num: {}", n) },
       Sexps::SubSexps(box ref sexps) => { //box ref sexps
-         print_nest("(", deepness);
+         print_nest("(", deepness, None);
          for x in sexps { print_tree(&x, deepness+4); }
-         print_nest(")", deepness);
+         print_nest(")", deepness, None);
       },
-      Sexps::Err(ref s) => { println!("{}", s) }
+      Sexps::Err(ref s) => { println!("error: {}", s) }
    }
 }
 fn print_lexemes(lexemes: &Vec<Lexeme>) {
@@ -401,6 +408,7 @@ fn print_lexemes(lexemes: &Vec<Lexeme>) {
          Lexeme::CloseParen => println!("close paren"),
          Lexeme::Str(ref s) => println!("string {}", s),
          Lexeme::Sym(ref s) => println!("sym {}", s),
+         Lexeme::Num(ref n) => println!("number {}", n),
       }
    }
 }
