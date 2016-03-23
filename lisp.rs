@@ -122,7 +122,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sex
       let ref l = lexemes[i];
       match l {
          &Lexeme::Str(ref s) => { sexps.push(Sexps::Str(s.to_string())) },
-         &Lexeme::Sym(ref s) => { sexps.push(Sexps::Sym(s.to_string())) },
+         &Lexeme::Sym(ref s) => { sexps.push(Sexps::Var(s.to_string())) },
          _ => { syntax_err_lex("Parsing failed: bad lexeme", i as u32) }
       }
       i += 1;
@@ -169,6 +169,7 @@ enum Lexeme {
    OpenParen, CloseParen, Str(String), Sym(String)
 }
 
+/*
 #[allow(dead_code)]
 //#[derive(Copy, Clone)]
 enum Sexps {
@@ -217,11 +218,11 @@ impl SymTable {
       match sexps {
          e @ &Sexps::Str(_) => { *e },
          e @ &Sexps::Num(_) => { *e },
-         e @ &Sexps::Sym(_) => { *e },
+         e @ &Sexps::Var(_) => { *e },
          e @ &Sexps::Err(_) => { *e },
          e @ &Sexps::SubSexps(_) => {
             self.apply(&e)
-          /*
+          kk*/ /*
             //let mut children = Vec::new();
             //let mut first_child : Option<SymTable> = None;
 
@@ -238,7 +239,7 @@ impl SymTable {
             } //kk left here
             else {
                Sexps::Err("Cannot eval empty".to_string())
-            }*/
+            }*/ /*kk
          },
       }
       //if let Sexps::SubSexps(box v) = *sexps
@@ -246,7 +247,7 @@ impl SymTable {
    fn apply(&mut self, args: &Sexps) -> Sexps {
       if let Sexps::SubSexps(args) = *args {
          let first : Sexps = args[0];
-         if let Sexps::Sym(op) = first {
+         if let Sexps::Var(op) = first {
             if op == "+" { println!("detected +") }
             Sexps::Num(1.3)
          }
@@ -267,7 +268,88 @@ impl SymTable {
    }
 }
 //Sexps::Num(0.3)
+*/
 
+fn display_sexps(exp: &Sexps) {
+   match *exp {
+      Sexps::Str(ref s) => println!("{}", s),
+      Sexps::Num(ref n) => println!("{}", n),
+      Sexps::Var(ref s) => println!("{}", s),
+      Sexps::Err(ref s) => println!("{}", s),
+      _                 => println!("bad sexps, cant print")
+   }
+}
+
+#[derive(Clone)]
+enum Sexps {
+   Str(String), Num(f64), Var(String), Err(String),
+   SubSexps(Box<Vec<Sexps>>),
+}
+
+struct SymTable {
+   bindings : HashMap<String, Sexps>,
+   parent : Option<Box<SymTable>>
+}
+
+impl SymTable {
+   fn new(parent : Option<Box<SymTable>>) -> SymTable {
+      SymTable {
+         bindings : HashMap::new(),
+         parent   : parent,
+      }
+   }
+
+   fn lookup(&self, s : &String) -> Sexps {
+      //Sexps::Err("none".to_string())
+      //if !self.bindings.contains_key(s)
+      let b = self.bindings.get(s);
+      match b {
+         Some(x) => x.clone(),
+         None => {
+            match self.parent {
+               None => {
+                  syntax_err("Cannot find symbol", 0);
+                  Sexps::Err("None".to_string())
+               },
+               Some(ref parent) => parent.lookup(s)
+            }
+         }
+      }
+   }
+}
+
+fn is_var(sexps : &Sexps) -> bool {
+   if let Sexps::Var(ref x) = *sexps { true } else { false }
+}
+fn get_var(sexps : &Sexps) -> String {
+   if let Sexps::Var(ref x) = *sexps { x.clone() }
+   else { "none".to_string() }
+}
+fn is_self_eval(sexps : &Sexps) -> bool {
+   match *sexps {
+      Sexps::Str(_) => false,
+      Sexps::Num(_) => false,
+      _ => true
+   }
+}
+
+fn eval(exp : &Sexps, table : &mut SymTable) -> Sexps {
+   if is_self_eval(exp) { exp.clone() }
+   else if is_var(exp) { table.lookup(&get_var(exp)) }
+   else { Sexps::Err("error".to_string()) }
+}
+
+fn run(code : &str) -> Sexps {
+   let lexemes = lex(code);
+   let exp_opt = parse(&lexemes);
+
+   let mut env = SymTable::new(None);
+
+   if let Some(exp) = exp_opt {
+      eval(&exp, &mut env)
+   }
+   else { Sexps::Err(String::from("Couldn't parse code")) }
+}
 
 fn main() {
    let code : &str = "((6 +) (+ (test) 5))";
@@ -277,13 +359,7 @@ fn main() {
 
    //lex_test();
    //parse_test();
-   eval_test(code);
-}
-
-#[allow(dead_code)]
-fn eval_test(code : &str) {
-   let mut sym_table = SymTable::new(None);
-   sym_table.run(code);
+   display_sexps(&run(code));
 }
 
 #[allow(dead_code)]
@@ -307,7 +383,7 @@ fn lex_test() {
 fn print_tree(t: &Sexps, deepness: u8) {
    match *t {
       Sexps::Str(ref s) => { print_nest(&s, deepness) },
-      Sexps::Sym(ref s) => { print_space(deepness); println!("{}", s) },
+      Sexps::Var(ref s) => { print_space(deepness); println!("{}", s) },
       Sexps::Num(ref n) => { print_space(deepness); println!("{}", n) },
       Sexps::SubSexps(box ref sexps) => { //box ref sexps
          print_nest("(", deepness);
