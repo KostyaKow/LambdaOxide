@@ -13,6 +13,7 @@ extern crate list;
 use list::Cons;
 use list::cons;
 use list::cons_map;
+use list::cons_reverse;
 //use list::cons_len;
 //use list::List;
 
@@ -136,7 +137,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sex
       i += 1;
    }
 
-   Some(Sexps::Sub(Box::new(sub)))
+   Some(Sexps::Sub(Box::new(cons_reverse(sub))))
 }
 
 fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
@@ -289,17 +290,17 @@ fn display_sexps(exp: &Sexps) {
 }
 
 #[derive(Clone)]
-enum Sexps<'a> {
+enum Sexps {
    Str(String), Num(i64), Var(String), Err(String),
-   Sub(Box<Cons<&'a Sexps<'a>>>), //Sub(Box<Vec<Sexps>>)
+   Sub(Box<Cons<Sexps>>), //Sub(Box<Vec<Sexps>>)
 }
 
-struct SymTable<'a> {
-   bindings : HashMap<String, Sexps<'a>>,
-   parent : Option<Box<SymTable<'a>>>
+struct SymTable {
+   bindings : HashMap<String, Sexps>,
+   parent : Option<Box<SymTable>>
 }
 
-impl<'a> SymTable<'a> {
+impl SymTable {
    fn new(parent : Option<Box<SymTable>>) -> SymTable {
       SymTable {
          bindings : HashMap::new(),
@@ -326,12 +327,12 @@ impl<'a> SymTable<'a> {
    }
 }
 
-fn eval_sub<'a>(exp : &Sexps<'a>, table : &mut SymTable) -> Sexps<'a> {
+fn eval_sub(exp : &Sexps, table : &mut SymTable) -> Sexps {
    //let Sexps::Sub(x)
    Sexps::Err("error".to_string())
 }
 
-fn eval<'a>(exp : &Sexps<'a>, table : &mut SymTable<'a>) -> Sexps<'a> {
+fn eval(exp : &Sexps, table : &mut SymTable) -> Sexps {
    match *exp {
       Sexps::Str(_) | Sexps::Num(_) => exp.clone(), //self evaluation
       Sexps::Var(ref s)             => table.lookup(&s.clone()),

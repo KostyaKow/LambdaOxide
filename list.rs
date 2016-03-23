@@ -9,7 +9,6 @@ pub enum Cons<T> {
 }
 
 pub enum Status<S, F> { Success(S), Failure(F) }
-
 pub fn cons_map<I, O, F>(c : &Cons<I>, f : F) -> Cons<O>
    where F : Fn(&I) -> O
 {
@@ -21,7 +20,6 @@ pub fn cons_map<I, O, F>(c : &Cons<I>, f : F) -> Cons<O>
       }
    }
 }
-
 pub fn cons_nil<T>() -> Cons<T> { Cons::Nil }
 pub fn cons_single<T>(x : T) -> Cons<T> { Cons::Single(x) }
 pub fn cons<T>(x : T, xs : Cons<T>) -> Cons<T> {
@@ -47,22 +45,19 @@ pub fn cons_len<T>(c : &Cons<T>) -> usize {
    }
 }
 
-fn cons_reverse_helper<'a,T>(c : &'a Cons<T>, acc: Cons<&'a T>)
-   -> Cons<&'a T>
+fn cons_reverse_helper<T>(c : Cons<T>, acc: Cons<T>)
+   -> Cons<T>
 {
-   match *c {
+   match c {
       Cons::Nil => acc,
-      Cons::Single(ref x) => Cons::Single(x),
-      Cons::Cons(ref x, ref xs) =>
+      Cons::Single(x) => Cons::Single(x),
+      Cons::Cons(x, box xs) =>
          cons_reverse_helper(xs, cons(x, acc))
    }
 }
-pub fn cons_reverse<T>(c : &Cons<T>) -> Cons<&T> {
-   match *c {
-      Cons::Nil => Cons::Nil,
-      Cons::Single(ref x) => Cons::Single(x),
-      _ => cons_reverse_helper(c, Cons::Nil)
-   }
+
+pub fn cons_reverse<T>(c : Cons<T>) -> Cons<T> {
+  cons_reverse_helper(c, Cons::Nil)
 }
 
 /*
