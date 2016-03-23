@@ -289,17 +289,17 @@ fn display_sexps(exp: &Sexps) {
 }
 
 #[derive(Clone)]
-enum Sexps {
+enum Sexps<'a> {
    Str(String), Num(i64), Var(String), Err(String),
-   Sub(Box<Cons<Sexps>>), //Sub(Box<Vec<Sexps>>)
+   Sub(Box<Cons<&'a Sexps<'a>>>), //Sub(Box<Vec<Sexps>>)
 }
 
-struct SymTable {
-   bindings : HashMap<String, Sexps>,
-   parent : Option<Box<SymTable>>
+struct SymTable<'a> {
+   bindings : HashMap<String, Sexps<'a>>,
+   parent : Option<Box<SymTable<'a>>>
 }
 
-impl SymTable {
+impl<'a> SymTable<'a> {
    fn new(parent : Option<Box<SymTable>>) -> SymTable {
       SymTable {
          bindings : HashMap::new(),
@@ -326,12 +326,12 @@ impl SymTable {
    }
 }
 
-fn eval_sub(exp : &Sexps, table : &mut SymTable) -> Sexps {
+fn eval_sub<'a>(exp : &Sexps<'a>, table : &mut SymTable) -> Sexps<'a> {
    //let Sexps::Sub(x)
    Sexps::Err("error".to_string())
 }
 
-fn eval(exp : &Sexps, table : &mut SymTable) -> Sexps {
+fn eval<'a>(exp : &Sexps<'a>, table : &mut SymTable<'a>) -> Sexps<'a> {
    match *exp {
       Sexps::Str(_) | Sexps::Num(_) => exp.clone(), //self evaluation
       Sexps::Var(ref s)             => table.lookup(&s.clone()),

@@ -57,7 +57,6 @@ fn cons_reverse_helper<'a,T>(c : &'a Cons<T>, acc: Cons<&'a T>)
          cons_reverse_helper(xs, cons(x, acc))
    }
 }
-
 pub fn cons_reverse<T>(c : &Cons<T>) -> Cons<&T> {
    match *c {
       Cons::Nil => Cons::Nil,
