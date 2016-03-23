@@ -1,5 +1,70 @@
 #![feature(box_syntax, box_patterns)]
 
+
+pub enum Cons<T> {
+   Cons(T, Box<Cons<T>>),
+   Single(T),
+   Nil
+}
+pub fn cons_nil<T>() -> Cons<T> { Cons::Nil }
+pub fn cons_single<T>(x : T) -> Cons<T> { Cons::Single(x) }
+pub fn cons<T>(x : T, xs : Cons<T>) -> Cons<T> {
+   Cons::Cons(x, bb::<Cons<T>>(xs))
+}
+pub fn car<T>(cons : &Cons<T>) -> Option<&T> {
+   match *cons {
+      Cons::Cons(ref x, _) => Some(x),
+      Cons::Nil | Cons::Single(_) => None
+   }
+}
+pub fn cdr<T>(cons : &Cons<T>) -> Option<&Cons<T>> {
+    match *cons {
+      Cons::Cons(_, ref xs)         => Some(xs),
+      Cons::Nil | Cons::Single(..)  => None
+   }
+}
+
+
+/*
+compared to other one, this is more cumbersome but
+can have Cons::Pair(x, y) without Second element having to be list
+pub enum Cons<T> {
+   Pair(T, T),
+   Cons(T, Box<Cons<T>>),
+   Nil
+}
+pub fn cons_new<T>() -> Cons<T> { Cons::Nil }
+pub fn cons_pair<T>(item1 : T, item2 : T) -> Cons<T> {
+   Cons::Pair(item1, item2)
+}
+pub fn cons_lst<T>(item : T, cons : Cons<T>) -> Cons<T> {
+   Cons::Cons(item, bb::<Cons<T>>(cons))
+}
+pub fn car<T>(cons : &Cons<T>) -> Option<&T> {
+   match *cons {
+      Cons::Pair(ref x, _) | Cons::Cons(ref x, _) => Some(x),
+      Cons::Nil => None
+   }
+}
+pub fn cdr_pair<T>(cons : &Cons<T>) -> Option<&T> {
+    match *cons {
+      Cons::Pair(_, ref xs)       => Some(xs),
+      Cons::Nil | Cons::Cons(..)  => None
+   }
+}
+pub fn cdr_lst<T>(cons : &Cons<T>) -> Option<&Cons<T>>
+{
+   match *cons {
+      Cons::Cons(_, ref y) => Some(y),
+      Cons::Pair(..) | Cons::Nil => None
+   }
+
+}
+*/
+
+//kkkkk
+
+
 #[derive(Debug)]
 pub enum List<T> {
    Cons(T, Box<List<T>>),
@@ -14,13 +79,13 @@ pub fn bb<T>(x : T) -> Box<T> { Box::new(x) }
 pub fn lst_cons<T>(item : T, lst : List<T>) -> List<T> {
    List::Cons(item, bb::<List<T>>(lst))
 }
-pub fn car<T>(lst : &List<T>) -> Option<&T> {
+pub fn lst_car<T>(lst : &List<T>) -> Option<&T> {
    match *lst {
       List::Cons(ref x, _) => Some(x),
       List::Nil            => None
    }
 }
-pub fn cdr<T>(lst : &List<T>) -> Option<&List<T>> {
+pub fn lst_cdr<T>(lst : &List<T>) -> Option<&List<T>> {
     match *lst {
       List::Cons(_, ref xs) => Some(xs),
       List::Nil            => None
