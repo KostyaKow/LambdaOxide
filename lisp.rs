@@ -132,7 +132,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sex
       i += 1;
    }
 
-   Some(Sexps::SubSexps(Box::new(sexps)))
+   Some(Sexps::Sub(Box::new(sexps)))
 }
 
 fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
@@ -178,7 +178,7 @@ enum Lexeme {
 //#[derive(Copy, Clone)]
 enum Sexps {
    Str(String), Num(f64), Sym(String), Err(String),
-   SubSexps(Box<Vec<Sexps>>),
+   Sub(Box<Vec<Sexps>>),
 }
 
 
@@ -224,7 +224,7 @@ impl SymTable {
          e @ &Sexps::Num(_) => { *e },
          e @ &Sexps::Var(_) => { *e },
          e @ &Sexps::Err(_) => { *e },
-         e @ &Sexps::SubSexps(_) => {
+         e @ &Sexps::Sub(_) => {
             self.apply(&e)
           kk*/ /*
             //let mut children = Vec::new();
@@ -246,10 +246,10 @@ impl SymTable {
             }*/ /*kk
          },
       }
-      //if let Sexps::SubSexps(box v) = *sexps
+      //if let Sexps::Sub(box v) = *sexps
    }
    fn apply(&mut self, args: &Sexps) -> Sexps {
-      if let Sexps::SubSexps(args) = *args {
+      if let Sexps::Sub(args) = *args {
          let first : Sexps = args[0];
          if let Sexps::Var(op) = first {
             if op == "+" { println!("detected +") }
@@ -257,7 +257,7 @@ impl SymTable {
          }
          else { syntax_err("first element needs to be symbol", 0); Sexps::Err("non".to_string()) }
       }
-      else { syntax_err("apply needs SubSexps", 0); Sexps::Err("non".to_string()) }
+      else { syntax_err("apply needs Sub", 0); Sexps::Err("non".to_string()) }
    }
    //fn apply(&mut self, func : &Sexps, args: Option<&Sexps>) -> Sexps {Sexps::Num(5.4)}
 
@@ -287,7 +287,7 @@ fn display_sexps(exp: &Sexps) {
 #[derive(Clone)]
 enum Sexps {
    Str(String), Num(i64), Var(String), Err(String),
-   SubSexps(Box<Vec<Sexps>>),
+   Sub(Box<Vec<Sexps>>),
 }
 
 struct SymTable {
@@ -336,15 +336,24 @@ fn is_self_eval(exp : &Sexps) -> bool {
       _ => true
    }
 }
-fn is_complex(exp : &Sexps) -> bool {
-   if let Sexps::SubSexps(_) = *exp { true } else { false}
+fn is_sub(exp : &Sexps) -> bool {
+   if let Sexps::Sub(_) = *exp { true } else { false }
+}
+fn eval_sub(exp : &Sexps, table : &mut SymTable) -> Sexps {
+   let Sexps::Sub
 }
 
 fn eval(exp : &Sexps, table : &mut SymTable) -> Sexps {
+   /*match *exp {
+
+   }*/
    if is_self_eval(exp) { exp.clone() }
    else if is_var(exp) { table.lookup(&get_var(exp)) }
+   else if is_sub(exp) { eval_complex(exp, table) }
    else { Sexps::Err("error".to_string()) }
 }
+
+fn apply() {}
 
 fn run(code : &str) -> Sexps {
    let lexemes = lex(code);
@@ -365,8 +374,8 @@ fn main() {
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
 
    //lex_test();
-   parse_test();
-   //display_sexps(&run(code));
+   //parse_test();
+   display_sexps(&run(code));
 }
 
 #[allow(dead_code)]
@@ -392,7 +401,7 @@ fn print_tree(t: &Sexps, deepness: u8) {
       Sexps::Str(ref s) => { print_nest(&s, deepness, Some("str")) },
       Sexps::Var(ref s) => { print_space(deepness); println!("var: {}", s) },
       Sexps::Num(ref n) => { print_space(deepness); println!("num: {}", n) },
-      Sexps::SubSexps(box ref sexps) => { //box ref sexps
+      Sexps::Sub(box ref sexps) => { //box ref sexps
          print_nest("(", deepness, None);
          for x in sexps { print_tree(&x, deepness+4); }
          print_nest(")", deepness, None);
