@@ -5,13 +5,27 @@ pub enum List<T> {
    Cons(T, Box<List<T>>),
    Nil,
 }
-pub fn lst_cons<T>(item : T, lst : List<T>) -> List<T> {
-   List::Cons(item, bb::<List<T>>(lst))
-}
+
 pub fn lst_new<T>() -> List<T> { List::Nil }
 pub fn lst_new_0<T>() -> List<T> { List::Nil }
 pub fn lst_new_1<T>(item : T) -> List<T> { lst_cons::<T>(item, List::Nil) }
 pub fn bb<T>(x : T) -> Box<T> { Box::new(x) }
+
+pub fn lst_cons<T>(item : T, lst : List<T>) -> List<T> {
+   List::Cons(item, bb::<List<T>>(lst))
+}
+pub fn car<T>(lst : &List<T>) -> Option<&T> {
+   match *lst {
+      List::Cons(ref x, _) => Some(x),
+      List::Nil            => None
+   }
+}
+pub fn cdr<T>(lst : &List<T>) -> Option<&List<T>> {
+    match *lst {
+      List::Cons(_, ref xs) => Some(xs),
+      List::Nil            => None
+   }
+}
 
 //T : Copy + Clone
 pub fn vec_to_lst<T : Clone + Copy>(vec : &Vec<T>) -> List<T> {

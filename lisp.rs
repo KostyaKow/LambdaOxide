@@ -11,6 +11,9 @@ use std::boxed::Box;
 
 extern crate list;
 use list::List;
+use list::lst_cons;
+use list::lst_new;
+use list::bb;
 
 extern crate utils;
 use utils::get_char_ranges;
@@ -287,7 +290,7 @@ fn display_sexps(exp: &Sexps) {
 #[derive(Clone)]
 enum Sexps {
    Str(String), Num(i64), Var(String), Err(String),
-   Sub(Box<Vec<Sexps>>),
+   Sub(Box<List<Sexps>>),
 }
 
 struct SymTable {
