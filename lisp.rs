@@ -340,7 +340,8 @@ fn is_sub(exp : &Sexps) -> bool {
    if let Sexps::Sub(_) = *exp { true } else { false }
 }
 fn eval_sub(exp : &Sexps, table : &mut SymTable) -> Sexps {
-   let Sexps::Sub
+   //let Sexps::Sub
+   Sexps::Err("error".to_string())
 }
 
 fn eval(exp : &Sexps, table : &mut SymTable) -> Sexps {
@@ -349,7 +350,7 @@ fn eval(exp : &Sexps, table : &mut SymTable) -> Sexps {
    }*/
    if is_self_eval(exp) { exp.clone() }
    else if is_var(exp) { table.lookup(&get_var(exp)) }
-   else if is_sub(exp) { eval_complex(exp, table) }
+   else if is_sub(exp) { eval_sub(exp, table) }
    else { Sexps::Err("error".to_string()) }
 }
 
