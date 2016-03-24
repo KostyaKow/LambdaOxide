@@ -306,16 +306,22 @@ impl Drop for Sexps {
 }
 
 enum FunType {
-   BuiltIn(Box<Fn(Cons<Sexps>) -> Sexps>),
+   BuiltIn(Box<Fn(Box<Cons<Sexps>>) -> Sexps>),
    Lambda(Sexps)
 }
 struct Callable { env : SymTable, f : FunType, arg_names : Cons<String> }
 impl Callable {
-   fn new(arg_names : Cons<String>, f : FunType, parent_env : Box<SymTable>) -> Callable {
-      Callable { env: SymTable::new(Some(parent_env)), f: f, arg_names: arg_names }
+   fn new(arg_names : Cons<String>, f : FunType/*, parent_env : Box<SymTable>*/) -> Callable {
+      Callable { env: SymTable::new(/*Some(parent_env)*/None), f: f, arg_names: arg_names }
    }
-   fn exec(&self, args : Cons<Sexps>) -> Sexps {
-      match self.f { _ => Sexps::Err("calling .exec of callable".to_string()), }
+   fn exec(&self, args : Box<Cons<Sexps>>) -> Sexps {
+      Sexps::Err("calling .exec of callable".to_string());
+      match self.f {
+         FunType::BuiltIn(ref f) => {
+            f(args)
+         },
+         FunType::Lambda(ref s) => { Sexps::Err("user defined lamda".to_string()) }
+      }
    }
 }
 
@@ -333,12 +339,13 @@ impl SymTable {
       }
    }
    fn add_defaults(&mut self) {
-      let sum_ = |args_ : Cons<Sexps>| -> Sexps  {
-         let mut args = Box::new(args_);
+      let sum_ = |args_ : Box<Cons<Sexps>> | -> Sexps  {
+         let mut args = args_;
          let mut sum = 0;
          loop {
             match *args {
                Cons::Cons(Sexps::Num(n), y) => { sum += n; args = y; },
+               Cons::Cons(_, _) => { println!("testing"); break },
                Cons::Nil   => break,
                _ => return Sexps::Err("bad arguments to sum".to_string())
             };
@@ -348,11 +355,11 @@ impl SymTable {
       //let difference_ = | |
 
       let sum = Callable::new(Cons::Single("*".to_string()), //* = any arg
-                              FunType::BuiltIn(Box::new(sum_)),
-                              unsafe {Box::from_raw(self) });
+                              FunType::BuiltIn(Box::new(sum_))/*,
+                              unsafe { Box::from_raw(self) }*/);
 
       //let difference = Callable::new(Cons::Single(
-      self.add("+".to_string(), sum)
+      self.add("+".to_string(), sum);
       //self.add("-".to_string(), difference)
    }
    fn add(&mut self, key : String, f : Callable) { self.bindings.insert(key, f); }
@@ -395,7 +402,7 @@ fn eval(exp : &Sexps, env : &mut SymTable) -> Sexps {
       Sexps::Var(ref s)             => {
          let v = env.lookup(&s.clone());
          match v {
-            Some(l)     => l.exec(Cons::Nil),
+            Some(l)     => l.exec(Box::new(Cons::Nil)),
             None        => Sexps::Err("Undefined variable".to_string())
          }
       }
@@ -403,7 +410,11 @@ fn eval(exp : &Sexps, env : &mut SymTable) -> Sexps {
    }
 }
 
-fn apply(exp : &Sexps, env : &SymTable) -> Sexps {
+fn helper(a : &list::Cons<Sexps>) -> Box<list::Cons<Sexps>> {
+   Box::new(a.clone())
+}
+
+fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
    match *exp {
       Sexps::Sub(ref e @ box Cons::Cons(_, _)) => {
          Sexps::Err("Calling function".to_string());
@@ -411,11 +422,15 @@ fn apply(exp : &Sexps, env : &SymTable) -> Sexps {
          let maybe_args = cdr(e);
          if let Some(f) = maybe_f {
             if let Sexps::Var(ref s) = *f {
-               if let Some(lambda) = env.lookup(s) {
-                  //lambda.exec(cons_map(args, eval))
-                  Sexps::Err("executing lambda".to_string())
+               if let Some(f) = env.lookup(s) {
+                  println!("Not macro!");
+                  if let Some(args) = maybe_args {
+                     f.exec(helper(args)) //(cons_map(args, |arg| eval(arg, env)))
+                  }
+                  else { f.exec(Box::new(Cons::Nil)) }
                }
                else { //if can't find symbol assume it's macro
+                  println!("Macro!");
                   if let Some(args) = maybe_args {
                      apply_macro(s, args, env)
                   } else { Sexps::Err("bad args".to_string()) }
@@ -447,7 +462,8 @@ fn run(code : &str) -> Sexps {
 
 fn main() {
    //let code : &str = "(define (6 +) () (+ (test) 5))";
-   let code : &str = "(+ (- 6 4) (+ 3 5))";
+   //let code : &str = "(+ (- 6 4) (+ 3 5))";
+   let code : &str = "(+  3 (+ 5 4) 5 2)";
    //let code : &str = "(hello (+ world) \"string\")";
    //let code : &str = "(hello (world) (yo test) 5)";
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
