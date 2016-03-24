@@ -325,37 +325,38 @@ struct SymTable {
    parent : Option<Box<SymTable>>
 }
 
+fn add_defaults(env : Box<SymTable>) {
+   let sum_ = |args_ : Cons<Sexps>| -> Sexps  {
+      let mut args = Box::new(args_);
+      let mut sum = 0;
+      loop {
+         match *args {
+            Cons::Cons(Sexps::Num(n), y) => { sum += n; args = y; },
+            Cons::Nil   => break,
+            _ => return Sexps::Err("bad arguments to sum".to_string())
+         };
+      }
+      Sexps::Num(sum)
+   };
+   //let difference_ = | |
+
+   //unsafe {
+   let sum = Callable::new(Cons::Single("*".to_string()), //* = any arg
+                           FunType::BuiltIn(Box::new(sum_)),
+                           env);
+
+   //let difference = Callable::new(Cons::Single(
+   env.add("+".to_string(), sum)
+   //self.add("-".to_string(), difference)
+   //}
+}
+
 impl SymTable {
    fn new(parent : Option<Box<SymTable>>) -> SymTable {
       SymTable {
          bindings : HashMap::new(),
          parent   : parent,
       }
-   }
-   fn add_defaults(&mut self, self_box : Box<SymTable>) {
-      let sum_ = |args_ : Cons<Sexps>| -> Sexps  {
-         let mut args = Box::new(args_);
-         let mut sum = 0;
-         loop {
-            match *args {
-               Cons::Cons(Sexps::Num(n), y) => { sum += n; args = y; },
-               Cons::Nil   => break,
-               _ => return Sexps::Err("bad arguments to sum".to_string())
-            };
-         }
-         Sexps::Num(sum)
-      };
-      //let difference_ = | |
-
-      //unsafe {
-      let sum = Callable::new(Cons::Single("*".to_string()), //* = any arg
-                              FunType::BuiltIn(Box::new(sum_)),
-                              self_box);
-
-      //let difference = Callable::new(Cons::Single(
-      self.add("+".to_string(), sum)
-      //self.add("-".to_string(), difference)
-      //}
    }
    fn add(&mut self, key : String, f : Callable) { self.bindings.insert(key, f); }
    fn lookup(&self, s : &String) -> Option<&Callable> {
@@ -439,7 +440,7 @@ fn run(code : &str) -> Sexps {
    let exp_opt = parse(&lexemes);
 
    let mut env = SymTable::new(None);
-   env.add_defaults(Box::new(env));
+   add_defaults(Box::new(env));
 
    if let Some(exp) = exp_opt {
       eval(&exp, &mut env)
