@@ -309,9 +309,9 @@ enum FunType {
    BuiltIn(Box<Fn(Box<Cons<Sexps>>) -> Sexps>),
    Lambda(Sexps)
 }
-struct Callable { env : SymTable, f : FunType, arg_names : Cons<String> }
-impl Callable {
-   fn new(arg_names : Cons<String>, f : FunType/*, parent_env : Box<SymTable>*/) -> Callable {
+struct Callable<'a> { env : SymTable<'a>, f : FunType, arg_names : Cons<String> }
+impl<'a> Callable<'a> {
+   fn new(arg_names : Cons<String>, f : FunType/*, parent_env : Box<SymTable>*/) -> Callable<'a> {
       Callable { env: SymTable::new(/*Some(parent_env)*/None), f: f, arg_names: arg_names }
    }
    fn exec(&self, args : Box<Cons<Sexps>>) -> Sexps {
@@ -326,13 +326,13 @@ impl Callable {
 }
 
 //symtable
-struct SymTable {
-   bindings : HashMap<String, Callable>,
-   parent : Option<Box<SymTable>>
+struct SymTable<'a> {
+   bindings : HashMap<String, Callable<'a>>,
+   parent : Option<Box<&'a SymTable<'a>>>
 }
 
-impl SymTable {
-   fn new(parent : Option<Box<SymTable>>) -> SymTable {
+impl<'a> SymTable<'a> {
+   fn new(parent : Option<Box<&'a SymTable<'a>>>) -> SymTable<'a> {
       SymTable {
          bindings : HashMap::new(),
          parent   : parent,
@@ -362,7 +362,7 @@ impl SymTable {
       self.add("+".to_string(), sum);
       //self.add("-".to_string(), difference)
    }
-   fn add(&mut self, key : String, f : Callable) { self.bindings.insert(key, f); }
+   fn add(&mut self, key : String, f : Callable<'a>) { self.bindings.insert(key, f); }
    fn lookup(&self, s : &String) -> Option<&Callable> {
       //if !self.bindings.contains_key(s)
       let entry_opt = self.bindings.get(s);
@@ -469,7 +469,7 @@ fn run(code : &str) -> Sexps {
 fn main() {
    //let code : &str = "(define (6 +) () (+ (test) 5))";
    //let code : &str = "(+ (- 6 4) (+ 3 5))";
-   let code : &str = "(+  3 3 (+ 5 4) 5 2)";
+   let code : &str = "(+  (- 3 3) (+ 1 2) 2)";
    //let code : &str = "(hello (+ world) \"string\")";
    //let code : &str = "(hello (world) (yo test) 5)";
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
