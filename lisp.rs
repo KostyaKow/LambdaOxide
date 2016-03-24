@@ -425,7 +425,13 @@ fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
                if let Some(f) = env.lookup(s) {
                   println!("Not macro!");
                   if let Some(args) = maybe_args {
-                     f.exec(helper(args)) //(cons_map(args, |arg| eval(arg, env)))
+                     //kk left here
+                     //f.exec(helper(args))
+                     //(cons_map(args, |arg| eval(arg, env)))
+                     //f.exec(Box::new(cons_map(&args.clone(), |arg| eval(arg, env))))
+                     f.exec(Box::new(cons_map(&args.clone(), |arg| {
+                        eval(arg, &mut SymTable::new(Some(Box::new(env))))
+                     })))
                   }
                   else { f.exec(Box::new(Cons::Nil)) }
                }
@@ -463,7 +469,7 @@ fn run(code : &str) -> Sexps {
 fn main() {
    //let code : &str = "(define (6 +) () (+ (test) 5))";
    //let code : &str = "(+ (- 6 4) (+ 3 5))";
-   let code : &str = "(+  3 (+ 5 4) 5 2)";
+   let code : &str = "(+  3 3 (+ 5 4) 5 2)";
    //let code : &str = "(hello (+ world) \"string\")";
    //let code : &str = "(hello (world) (yo test) 5)";
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
