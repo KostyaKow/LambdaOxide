@@ -311,7 +311,7 @@ enum FunType {
 }
 struct Callable<'a> { env : SymTable<'a>, f : FunType, arg_names : Cons<String> }
 impl<'a> Callable<'a> {
-   fn new(arg_names : Cons<String>, f : FunType/*, parent_env : Box<SymTable>*/) -> Callable<'a> {
+   fn new(arg_names : Cons<String>, f : FunType, /*parent_env : Box<&'a SymTable<'a>>*/) -> Callable<'a> {
       Callable { env: SymTable::new(/*Some(parent_env)*/None), f: f, arg_names: arg_names }
    }
    fn exec(&self, args : Box<Cons<Sexps>>) -> Sexps {
@@ -372,10 +372,11 @@ impl<'a> SymTable<'a> {
 
       let sum = Callable::new(Cons::Single("*".to_string()), //* = any arg
                               FunType::BuiltIn(Box::new(sum_))/*,
-                              unsafe { Box::from_raw(self) }*/);
+                              Box::new(self)*/);
 
       let difference = Callable::new(Cons::Single("*".to_string()),
-                                     FunType::BuiltIn(Box::new(difference_)));
+                                     FunType::BuiltIn(Box::new(difference_))/*,
+                                     Box::new(self)*/);
       self.add("+".to_string(), sum);
       self.add("-".to_string(), difference);
       //self.add("-".to_string(), difference)
@@ -404,6 +405,7 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, env : &/*mut*/ SymTable) -> Sex
          Sexps::Err("new define".to_string())
       }
       "lambda" => {
+
          //if let Cons::Cons(x, xs) = *args {}
          //Callable::new(args, env)
          Sexps::Err("new lambda".to_string())
