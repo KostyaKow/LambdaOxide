@@ -311,8 +311,8 @@ enum FunType {
 }
 struct Callable { env : SymTable, f : FunType, arg_names : Cons<String> }
 impl Callable {
-   fn new(arg_names : Cons<String>, f : FunType, env : SymTable) -> Callable {
-      Callable { env: env, f: f, arg_names: arg_names }
+   fn new(arg_names : Cons<String>, f : FunType, parentEnv : Box<SymTable>) -> Callable {
+      Callable { env: SymTable::new(Some(parentEnv)), f: f, arg_names: arg_names }
    }
    fn exec(&self, args : Cons<Sexps>) -> Sexps {
       match self.f { _ => Sexps::Err("calling .exec of callable".to_string()), }
@@ -332,6 +332,30 @@ impl SymTable {
          parent   : parent,
       }
    }
+   fn add_dafaults(&mut self) {
+      let sum_ = |args_ : Cons<Sexps>| -> Sexps  {
+         let mut args = args_;
+         let sum = 0;
+         while let Cons::Cons(Sexps::Num(n), y) = a {
+            sum += n;
+            args = y;
+         }
+         match x {
+            Cons::Nil   => Sexps::Num(0),
+            Cons::Cons(Sexps::Num(n), y) => n + sum_(y),
+            _ => Sexps::Err("bad arguments to sum".to_string())
+         }
+      };
+      //let difference_ = | |
+
+      let sum = Callable::new(Cons::Single("*".to_string()),
+                              FunType::BuiltIn(sum_),
+                              Box::new(self));
+
+      //let difference = Callable::new(Cons::Single(
+      self.add("+".to_string(), sum)
+      //self.add("-".to_string(), difference)
+   }
    fn add(&mut self, key : String, f : Callable) { self.bindings.insert(key, f); }
    fn lookup(&self, s : &String) -> Option<&Callable> {
       //if !self.bindings.contains_key(s)
@@ -346,10 +370,12 @@ impl SymTable {
       }
    }
 }
+//end symtable
 
 fn apply_macro(name : &str, args : &Cons<Sexps>, env : &/*mut*/ SymTable) -> Sexps {
    match &name[..] {
       "define" => {
+         //match args { Cons::Cons(name, Cons::Cons::(binding, Nil)) }
          //env.add(name.to_string(), );
          Sexps::Err("new define".to_string())
       }
@@ -361,7 +387,6 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, env : &/*mut*/ SymTable) -> Sex
       _ => { Sexps::Err("Cannot execute symbolic expression which isn't func or macro".to_string()) }
    }
 }
-
 
 fn eval(exp : &Sexps, env : &mut SymTable) -> Sexps {
    match *exp {
@@ -421,7 +446,8 @@ fn run(code : &str) -> Sexps {
 }
 
 fn main() {
-   let code : &str = "(define (6 +) () (+ (test) 5))";
+   //let code : &str = "(define (6 +) () (+ (test) 5))";
+   let code : &str = "(+ (- 6 4) (+ 3 5))";
    //let code : &str = "(hello (+ world) \"string\")";
    //let code : &str = "(hello (world) (yo test) 5)";
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";

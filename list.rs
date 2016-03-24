@@ -98,8 +98,6 @@ pub fn cdr_lst<T>(cons : &Cons<T>) -> Option<&Cons<T>>
 */
 
 //kkkkk
-
-
 #[derive(Debug)]
 pub enum List<T> {
    Cons(T, Box<List<T>>),
