@@ -345,21 +345,39 @@ impl<'a> SymTable<'a> {
          loop {
             match *args {
                Cons::Cons(Sexps::Num(n), y) => { sum += n; args = y; },
-               Cons::Cons(_, _) => { println!("testing"); break },
+               Cons::Cons(_, _) => { Sexps::Err("bad arguments".to_string()); break },
                Cons::Nil   => break,
                _ => return Sexps::Err("bad arguments to sum".to_string())
             };
          }
          Sexps::Num(sum)
       };
-      //let difference_ = | |
+      let difference_ = |args_ : Box<Cons<Sexps>> | -> Sexps {
+         let mut args = args_;
+         let mut diff = 0;
+         let mut first = true;
+         loop {
+            match *args {
+               Cons::Cons(Sexps::Num(n), y) => {
+                  diff = if first { first = false; n } else { diff-n };
+                  args = y;
+               },
+               Cons::Cons(_, _) => { Sexps::Err("bad argument".to_string()); break },
+               Cons::Nil   => break,
+               _ => return Sexps::Err("bad arguments to sum".to_string())
+            };
+         }
+         Sexps::Num(diff)
+      };
 
       let sum = Callable::new(Cons::Single("*".to_string()), //* = any arg
                               FunType::BuiltIn(Box::new(sum_))/*,
                               unsafe { Box::from_raw(self) }*/);
 
-      //let difference = Callable::new(Cons::Single(
+      let difference = Callable::new(Cons::Single("*".to_string()),
+                                     FunType::BuiltIn(Box::new(difference_)));
       self.add("+".to_string(), sum);
+      self.add("-".to_string(), difference);
       //self.add("-".to_string(), difference)
    }
    fn add(&mut self, key : String, f : Callable<'a>) { self.bindings.insert(key, f); }
@@ -469,7 +487,7 @@ fn run(code : &str) -> Sexps {
 fn main() {
    //let code : &str = "(define (6 +) () (+ (test) 5))";
    //let code : &str = "(+ (- 6 4) (+ 3 5))";
-   let code : &str = "(+  (- 3 3) (+ 1 2) 2)";
+   let code : &str = "(+  (- 3 3) (+ 1 2) 2 (- 6 6 6))"; //-1
    //let code : &str = "(hello (+ world) \"string\")";
    //let code : &str = "(hello (world) (yo test) 5)";
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
