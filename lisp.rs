@@ -14,6 +14,8 @@ use list::Cons;
 use list::cons;
 use list::cons_map;
 use list::cons_reverse;
+use list::car;
+use list::cdr;
 //use list::cons_len;
 //use list::List;
 
@@ -291,12 +293,35 @@ fn display_sexps(exp: &Sexps) {
 
 #[derive(Clone)]
 enum Sexps {
-   Str(String), Num(i64), Var(String), Err(String),
+   Str(String), Num(i64), Var(String), Err(String), //Literal(String),
    Sub(Box<Cons<Sexps>>), //Sub(Box<Vec<Sexps>>)
 }
+impl Drop for Sexps {
+   fn drop(&mut self) {
+      match *self {
+         Sexps::Err(ref s) => println!("err dropping: {}", s),
+         _ => {} //println!("Sexps going out of scope")
+      }
+   }
+}
 
+enum FunType {
+   BuiltIn(Box<Fn(Cons<Sexps>) -> Sexps>),
+   Lambda(Sexps)
+}
+struct Callable { env : SymTable, f : FunType, arg_names : Cons<String> }
+impl Callable {
+   fn new(arg_names : Cons<String>, f : FunType, env : SymTable) -> Callable {
+      Callable { env: env, f: f, arg_names: arg_names }
+   }
+   fn exec(&self, args : Cons<Sexps>) -> Sexps {
+      match self.f { _ => Sexps::Err("calling .exec of callable".to_string()), }
+   }
+}
+
+//symtable
 struct SymTable {
-   bindings : HashMap<String, Sexps>,
+   bindings : HashMap<String, Callable>,
    parent : Option<Box<SymTable>>
 }
 
@@ -307,41 +332,82 @@ impl SymTable {
          parent   : parent,
       }
    }
-
-   fn lookup(&self, s : &String) -> Sexps {
-      //Sexps::Err("none".to_string())
+   fn add(&mut self, key : String, f : Callable) { self.bindings.insert(key, f); }
+   fn lookup(&self, s : &String) -> Option<&Callable> {
       //if !self.bindings.contains_key(s)
-      let b = self.bindings.get(s);
-      match b {
-         Some(x) => x.clone(),
-         None => {
-            match self.parent {
-               None => {
-                  syntax_err("Cannot find symbol", 0);
-                  Sexps::Err("None".to_string())
-               },
-               Some(ref parent) => parent.lookup(s)
-            }
+      let entry_opt = self.bindings.get(s);
+      if let Some(ref entry) = entry_opt { Some(entry.clone()) }
+      else {
+         if let Some(ref parent) = self.parent { parent.lookup(s) }
+         else {
+            syntax_err("Cannot find symbol in symbol table", 0);
+            None //Sexps::Err("None".to_string())
          }
       }
    }
 }
 
-fn eval_sub(exp : &Sexps, table : &mut SymTable) -> Sexps {
-   //let Sexps::Sub(x)
-   Sexps::Err("error".to_string())
-}
-
-fn eval(exp : &Sexps, table : &mut SymTable) -> Sexps {
-   match *exp {
-      Sexps::Str(_) | Sexps::Num(_) => exp.clone(), //self evaluation
-      Sexps::Var(ref s)             => table.lookup(&s.clone()),
-      Sexps::Sub(_)                 => eval_sub(exp, table),
-      Sexps::Err(ref s)             => Sexps::Err(s.clone()),
+fn apply_macro(name : &str, args : Cons<Sexps>, env : &mut SymTable) -> Sexps {
+   match &name[..] {
+      "define" => {
+         //env.add(name.to_string(), );
+         Sexps::Err("new define".to_string())
+      }
+      "lambda" => {
+         if let Cons::Cons(x, xs) = args {
+         }
+         //Callable::new(args, env)
+         Sexps::Err("new lambda".to_string())
+      }
+      _ => { Sexps::Err("Cannot execute symbolic expression which isn't func or macro".to_string()) }
    }
 }
 
-fn apply() {}
+
+fn eval(exp : &Sexps, env : &mut SymTable) -> Sexps {
+   match *exp {
+      Sexps::Str(_) | Sexps::Num(_) => exp.clone(), //self evaluation
+      Sexps::Sub(_)                 => apply(exp, env),
+      Sexps::Err(ref s)             => Sexps::Err(s.clone()),
+      Sexps::Var(ref s)             => {
+         let v = env.lookup(&s.clone());
+         match v {
+            Some(l)     => l.exec(Cons::Nil),
+            None        => Sexps::Err("Undefined variable".to_string())
+         }
+      }
+
+   }
+}
+
+fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
+   match *exp {
+      Sexps::Sub(e @ box Cons::Cons(_, _)) => {
+         Sexps::Err("Calling function".to_string());
+         let maybe_f = car(&e);
+         let maybe_args = cdr(&e);
+         if let Some(f) = maybe_f {
+            if let Sexps::Var(ref s) = *f {
+               if let Some(lambda) = env.lookup(s) {
+                  //lambda.exec(cons_map(args, eval))
+                  Sexps::Err("executing lambda".to_string())
+               }
+               else { //if can't find symbol assume it's macro
+                  if let Some(args) = maybe_args {
+                     apply_macro(s, *args, env)
+                  } else { Sexps::Err("bad args".to_string()) }
+               }
+            }
+            else { Sexps::Err("function not var".to_string()) }
+         }
+         else { Sexps::Err("bad args".to_string()) }
+      }
+      Sexps::Sub(box Cons::Nil) => {
+         Sexps::Err("Empty subexpression".to_string())
+      }
+      _ => Sexps::Err("Bad apply call".to_string())
+   }
+}
 
 fn run(code : &str) -> Sexps {
    let lexemes = lex(code);
@@ -356,19 +422,19 @@ fn run(code : &str) -> Sexps {
 }
 
 fn main() {
-   let code : &str = "((6 +) (+ (test) 5))";
+   let code : &str = "(define (6 +) () (+ (test) 5))";
    //let code : &str = "(hello (+ world) \"string\")";
    //let code : &str = "(hello (world) (yo test) 5)";
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
 
    //lex_test();
-   parse_test();
+   //parse_test();
    display_sexps(&run(code));
 }
 
 #[allow(dead_code)]
 fn parse_test() {
-   let code : &str = "'((6 +) (+ (test) 5))";
+   let code : &str = "'((6 +) () (+ (test) 5))";
    let lexemes = lex(code);
    let tree_maybe = parse(&lexemes);
    if let Some(tree) = tree_maybe {
