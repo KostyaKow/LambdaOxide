@@ -347,15 +347,14 @@ impl SymTable {
    }
 }
 
-fn apply_macro(name : &str, args : Cons<Sexps>, env : &mut SymTable) -> Sexps {
+fn apply_macro(name : &str, args : &Cons<Sexps>, env : &/*mut*/ SymTable) -> Sexps {
    match &name[..] {
       "define" => {
          //env.add(name.to_string(), );
          Sexps::Err("new define".to_string())
       }
       "lambda" => {
-         if let Cons::Cons(x, xs) = args {
-         }
+         //if let Cons::Cons(x, xs) = *args {}
          //Callable::new(args, env)
          Sexps::Err("new lambda".to_string())
       }
@@ -380,12 +379,12 @@ fn eval(exp : &Sexps, env : &mut SymTable) -> Sexps {
    }
 }
 
-fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
+fn apply(exp : &Sexps, env : &SymTable) -> Sexps {
    match *exp {
-      Sexps::Sub(e @ box Cons::Cons(_, _)) => {
+      Sexps::Sub(ref e @ box Cons::Cons(_, _)) => {
          Sexps::Err("Calling function".to_string());
-         let maybe_f = car(&e);
-         let maybe_args = cdr(&e);
+         let maybe_f = car(e);
+         let maybe_args = cdr(e);
          if let Some(f) = maybe_f {
             if let Sexps::Var(ref s) = *f {
                if let Some(lambda) = env.lookup(s) {
@@ -394,7 +393,7 @@ fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
                }
                else { //if can't find symbol assume it's macro
                   if let Some(args) = maybe_args {
-                     apply_macro(s, *args, env)
+                     apply_macro(s, args, env)
                   } else { Sexps::Err("bad args".to_string()) }
                }
             }
