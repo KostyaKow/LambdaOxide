@@ -56,16 +56,7 @@ pub fn slice_str(s: &str, start: usize, end: usize) -> String {
    &sub*/
    (&s[start..end+1]).to_string()
 }
-//syntax_err, syntax_err_lex, internal_err
-pub fn syntax_err(s: &str, char_loc: u32) {
-   println!("error at charachter {}: {}", char_loc, s);
-}
-pub fn syntax_err_lex(s: &str, lex_num: u32) {
-   println!("error at lexeme {}: {}", lex_num, s);
-}
-pub fn internal_err(s: &str) {
-   println!("internal error: {}", s);
-}
+
 pub fn print_space(n: u8) {
    let mut i = 0;
    while i < n { print!(" "); i += 1; }
