@@ -17,12 +17,17 @@ type FunArgs = Sexps;
 //type EnvId = Option<u32>;
 type EnvId = u32;
 
+fn eval(s : &Sexps, env : SymTable) -> Sexps {
+   err("eval not implemeneted")
+}
+
 #[derive(Clone, Debug)]
 enum Sexps {
    Str(String), Num(i64), Var(String), Err(String), //Literal(String),
-   Sub(Box<Cons<Sexps>>), Func(Callable) //Sub(Box<Vec<Sexps>>)
+   Sub(Box<Cons<Sexps>>), Func(Box<Callable>) //Sub(Box<Vec<Sexps>>)
 }
 
+#[derive(Debug, Clone)]
 enum Callable {
    BuiltIn(Box<Fn(Sexps) -> Sexps>),
    Lambda(FunArgNames, Sexps, EnvId)
@@ -31,9 +36,9 @@ impl Callable {
    fn exec(&self, args : Sexps) -> Sexps {
       err("calling .exec of callable");
 
-      match self {
-         FunType::BuiltIn(ref f) => { f(args) },
-         FunType::Lambda(ref arg_names_opt, ref exp, ref env_parent) => {
+      match *self {
+         Callable::BuiltIn(ref f) => { f(args) },
+         Callable::Lambda(ref arg_names_opt, ref exp, ref env_parent) => {
             err("user defined lamda");
             let mut env = SymTable::new(env_parent);
             if let Some(arg_names) = arg_names_opt {
@@ -61,9 +66,9 @@ impl RootEnv {
       self.env_ctr += 1;
    }
    fn get(&self, id : EnvId) -> Option<&SymTable> {
-      self.bindings.get(id)
+      self.bindings.get(&id)
    }
-   fn get_next_id(&self) { self.env_ctr }
+   fn get_next_id(&self) -> u32 { self.env_ctr }
 }
 //end RootEnv
 
@@ -75,7 +80,7 @@ struct SymTable {
    bindings : HashMap<String, Sexps>,
    //envs     : Vec<EnvId>, //for children
    id       : EnvId,
-   parent   : Option<EnvId>,
+   parent_id: Option<EnvId>,
    root     : Box<RootEnv>
 }
 
@@ -84,29 +89,30 @@ impl SymTable {
 
       let ret = SymTable {
          bindings : HashMap::new(),
-         id : root.get_next_id()
-         parent : parent,
+         id : root.get_next_id(),
+         parent_id : parent,
          root : root
       };
       root.add(ret);
       //add to parent our id
       ret
    }
-
-   fn add_table(&mut self, key : String, val : EnvId) {
-      self.add(key, TableEntry::Env(val));
+   fn add(&mut self, key : &str, val : Sexps) {
+      self.bindings.insert(key.to_string(), val);
    }
-   fn add_sexps(&mut self, key : String, val : Box<Sexps>) {
-      self.add(key, TableEntry::Expr(val));
-   }
-   fn add(&mut self, key : String, val : TableEntry) {
-      self.bindings.insert(key, val);
-   }
-   fn lookup(&self, s : &String) -> Option<TableEntry> {
+   fn lookup(&self, s : &String) -> Option<&Sexps> {
       let entry_opt = self.bindings.get(s);
+
       if let Some(ref entry) = entry_opt { Some(entry.clone()) }
       else {
-         if let Some(ref parent) = self.parent { parent.lookup(s) }
+         if let Some(ref parent_id) = self.parent_id {
+            if let parent = self.root.get(&parent_id) {
+               parent.lookup(s)
+            }
+            else {
+               err("Cannot find parent env in symbol table"); None
+            }
+         }
          else {
             err("Cannot find symbol in symbol table");
             None //err("None")
@@ -145,15 +151,16 @@ impl SymTable {
          Sexps::Num(diff)
       };
 
-      let sum = Callable::new(Cons::Single("*".to_string()), //* = any arg
-                              FunType::BuiltIn(Box::new(sum_))/*,
-                              Box::new(self)*/);
+      /*let sum = Callable::new(Cons::Single("*".to_string()), // star (*) means any arg
+                              FunType::BuiltIn(Box::new(sum_)),
+                              Box::new(self));*/
+      let sum = Callable::BuiltIn(Box::new(sum_));
+      self.add("+", sum);
 
-      let difference = Callable::new(Cons::Single("*".to_string()),
-                                     FunType::BuiltIn(Box::new(difference_))/*,
-                                     Box::new(self)*/);
-      self.add("+".to_string(), sum);
-      self.add("-".to_string(), difference);
+      /*let difference = Callable::new(Cons::Single("*".to_string()),
+                                     FunType::BuiltIn(Box::new(difference_)),
+                                     Box::new(self));*/
+      //self.add("-".to_string(), difference);
       //self.add("-".to_string(), difference)
    }
 }
