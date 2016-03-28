@@ -1,8 +1,7 @@
 //import/use header
 #![feature(box_syntax, box_patterns, slice_patterns)]
-
-#![allow(dead_code)] //kk removme
-#![allow(unused_variables)] //kk removeme
+#![allow(dead_code)] //TODO: kk removme
+#![allow(unused_variables)] //TODO: kk removeme
 
 //#![feature(slice_patterns)]
 //replaced with custom char_at #![feature(str_char)]
@@ -15,8 +14,15 @@ use list::{Cons, cons, cons_map, cons_reverse, car, cdr};
 //use list::{cons_len, List};
 
 extern crate utils;
-use utils::{get_char_ranges, slice_str, syntax_err, syntax_err_lex, print_space, print_nest, char_at, is_numeric};
-//use utils::internal_err;
+use utils::{get_char_ranges, slice_str, print_space, print_nest, char_at, is_numeric};
+
+//default development debug = 5, shipping = 0 or 1
+static DEBUG: u8 = 5; //0 = None, 1 = minimum, 10 = max
+//syntax_err, syntax_err_lex, internal_err >=1
+//macro or not macro >=2
+//beginning/end paren >=6
+//dropping Sexps err debug only for >=3
+//dropping Sexps all debug >=7
 
 //lex and parse
 fn lex(code : &str) -> Vec<Lexeme> {
@@ -111,7 +117,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sex
       if child_start {
          let child = parse_range(lexemes, c_start+1, c_end-1);
          if let Some(c) = child { sub = cons(c, sub); }
-         else { println!("Couldn't parse child"); return None; }
+         else { err("Couldn't parse child"); return None; }
          c_it += 1;
          i = c_end + 1;
          continue;
@@ -155,9 +161,9 @@ fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
    let mut start = 0;
    let mut end = 0;
 
-   if let Some(x) = start_paren { start = x; println!("start paren: {}", x) }
+   if let Some(x) = start_paren { start = x; debug_p(6, &format!("start paren: {}", x)) }
    else { good_range = false; syntax_err_lex("No start paren", 0) }
-   if let Some(x) = end_paren { end = x; println!("got end paren: {}", x) }
+   if let Some(x) = end_paren { end = x; debug_p(6, &format!("got end paren: {}", x)) }
    else { good_range = false; syntax_err_lex("No end paren", 0) }
 
    if good_range { return parse_range(lexemes, start+1, end-1) }
@@ -166,20 +172,13 @@ fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
 //end parsing
 //end lex and parse
 
+#[derive(Debug)]
 enum Lexeme { OpenParen, CloseParen, Str(String), Sym(String), Num(i64) }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum Sexps {
    Str(String), Num(i64), Var(String), Err(String), //Literal(String),
    Sub(Box<Cons<Sexps>>), //Sub(Box<Vec<Sexps>>)
-}
-impl Drop for Sexps {
-   fn drop(&mut self) {
-      match *self {
-         Sexps::Err(ref s) => println!("err dropping: {}", s),
-         _ => {} //println!("Sexps going out of scope")
-      }
-   }
 }
 
 enum FunType {
@@ -192,12 +191,12 @@ impl<'a> Callable<'a> {
       Callable { env: SymTable::new(/*Some(parent_env)*/None), f: f, arg_names: arg_names }
    }
    fn exec(&self, args : Box<Cons<Sexps>>) -> Sexps {
-      Sexps::Err("calling .exec of callable".to_string());
+      err("calling .exec of callable");
       match self.f {
          FunType::BuiltIn(ref f) => {
             f(args)
          },
-         FunType::Lambda(ref s) => { Sexps::Err("user defined lamda".to_string()) }
+         FunType::Lambda(ref s) => { err("user defined lamda") }
       }
    }
 }
@@ -287,7 +286,7 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, env : &/*mut*/ SymTable) -> Sex
          //Callable::new(args, env)
          err("new lambda")
       }
-      _ => { Sexps::Err("Cannot execute symbolic expression which isn't func or macro".to_string()) }
+      _ => { err("Cannot find symbol in envrionment") }
    }
 }
 
@@ -300,14 +299,11 @@ fn eval(exp : &Sexps, env : &mut SymTable) -> Sexps {
          let lookup_res = env.lookup(&s.clone());
          match lookup_res {
             Some(v)     => v.exec(Box::new(Cons::Nil)),
-            None        => Sexps::Err("Undefined variable lookup".to_string())
+            None        => err("Undefined variable lookup")
          }
       }
    }
 }
-
-
-fn err(s : &str) -> Sexps { Sexps::Err(s.to_string()) } //or String::from(s)
 
 fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
    match *exp {
@@ -318,7 +314,7 @@ fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
          if let Some(f) = maybe_f {
             if let Sexps::Var(ref s) = *f { //kk left here
                if let Some(f) = env.lookup(s) {
-                  println!("Not macro!");
+                  debug_p(2, "Not macro!");
                   if let Some(args) = maybe_args {
                      //kk left here
                      //f.exec(helper(args))
@@ -331,7 +327,7 @@ fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
                   else { f.exec(Box::new(Cons::Nil)) }
                }
                else { //if can't find symbol assume it's macro
-                  println!("Macro!");
+                  debug_p(2, "Macro!");
                   if let Some(args) = maybe_args {
                      apply_macro(s, args, env)
                   } else { err("bad args") }
@@ -369,29 +365,66 @@ fn main() {
 
    //lex_test();
    //parse_test();
-   display_sexps(&run(code));
+   //display_sexps(&run(code));
+   //print_tree(&run(code), 0);
+
+   interpreter();
 }
 
-fn helper(a : &list::Cons<Sexps>) -> Box<list::Cons<Sexps>> {
-   Box::new(a.clone())
+fn interpreter() {
+   use std::io::{self, BufRead};
+   let stdin = io::stdin();
+   loop {
+      let line = stdin.lock().lines().next().unwrap().unwrap();
+      let out = run(&line);
+      display_sexps(&out)
+   }
 }
 
+fn helper(a : &list::Cons<Sexps>) -> Box<list::Cons<Sexps>> { Box::new(a.clone()) }
+fn err(s : &str) -> Sexps { Sexps::Err(s.to_string()) } //or String::from(s)
+
+//quick way to debug
+fn debug_p(min_lvl: u8, s : &str) {
+   if DEBUG >= min_lvl { println!("{}", s) }
+}
+//syntax_err, syntax_err_lex, internal_err
+pub fn syntax_err(s: &str, char_loc: u32) {
+   if DEBUG > 0 { println!("error at charachter {}: {}", char_loc, s); }
+}
+pub fn syntax_err_lex(s: &str, lex_num: u32) {
+   if DEBUG > 0 { println!("error at lexeme {}: {}", lex_num, s); }
+}
+pub fn internal_err(s: &str) {
+   if DEBUG > 0 { println!("internal error: {}", s); }
+}
+impl Drop for Sexps {
+   fn drop(&mut self) {
+      match *self {
+         Sexps::Err(ref s) if DEBUG >= 3 => println!("err dropping: {}", s),
+         _ if DEBUG >= 7 => println!("sexps going out of scope: {:?}", self),
+         _ => {}
+      }
+   }
+}
+
+//parse_test()
 #[allow(dead_code)]
 fn parse_test() {
    let code : &str = "'((6 +) () (+ (test) 5))";
    let lexemes = lex(code);
    let tree_maybe = parse(&lexemes);
    if let Some(tree) = tree_maybe {
-      print_tree(&tree, 0);
+      //print_tree(&tree, 0); //println!("{:?}", tree);
    }
    else { syntax_err_lex("Parsing failed", 0); }
 }
-
+//lex_test()
 #[allow(dead_code)]
 fn lex_test() {
    let code : &str = "'(hello (\"world\"\"test1\" + 69 test 42) 47 \"another \\\"string\")";
    let lexemes = lex(code);
-   print_lexemes(&lexemes);
+   println!("{:?}", lexemes); //print_lexemes(&lexemes);
 }
 
 fn display_sexps(exp: &Sexps) {
@@ -405,28 +438,13 @@ fn display_sexps(exp: &Sexps) {
 }
 fn print_tree(t: &Sexps, deepness: u8) {
    match *t {
-      Sexps::Str(ref s) => { print_nest(&s, deepness, Some("str")) },
-      Sexps::Var(ref s) => { print_space(deepness); println!("var: {}", s) },
-      Sexps::Num(ref n) => { print_space(deepness); println!("num: {}", n) },
       Sexps::Sub(box ref sub) => { //box ref sexps
          print_nest("(", deepness, None);
          //kk for x in sub { print_tree(&x, deepness+4); }
          cons_map(sub, |x| print_tree(x, deepness+4));
          print_nest(")", deepness, None);
       },
-      Sexps::Err(ref s) => { println!("error: {}", s) }
-   }
-}
-fn print_lexemes(lexemes: &Vec<Lexeme>) {
-   for l in lexemes.iter() {
-      match *l {
-         /*_ => {} empty match */
-         Lexeme::OpenParen => println!("open paren"),
-         Lexeme::CloseParen => println!("close paren"),
-         Lexeme::Str(ref s) => println!("string {}", s),
-         Lexeme::Sym(ref s) => println!("sym {}", s),
-         Lexeme::Num(ref n) => println!("number {}", n),
-      }
+      _ => { print_space(deepness); println!("{:?}", t) }
    }
 }
 

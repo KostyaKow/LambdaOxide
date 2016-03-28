@@ -1,3 +1,36 @@
+//works well, but we have derive(Debug) on lexemes so we can just debug print them
+fn print_lexemes(lexemes: &Vec<Lexeme>) {
+   for l in lexemes.iter() {
+      match *l {
+         /*_ => {} empty match */
+         Lexeme::OpenParen => println!("open paren"),
+         Lexeme::CloseParen => println!("close paren"),
+         Lexeme::Str(ref s) => println!("string {}", s),
+         Lexeme::Sym(ref s) => println!("sym {}", s),
+         Lexeme::Num(ref n) => println!("number {}", n),
+      }
+   }
+}
+
+
+//this is old version
+//everything except Sexps::Sub replaced with
+//_ => { print_space(deepness); println!("{:?}", t) }
+fn print_tree(t: &Sexps, deepness: u8) {
+   match *t {
+      Sexps::Str(ref s) => { print_nest(&s, deepness, Some("str")) },
+      Sexps::Var(ref s) => { print_space(deepness); println!("var: {}", s) },
+      Sexps::Num(ref n) => { print_space(deepness); println!("num: {}", n) },
+      Sexps::Err(ref s) => { print_space(deepness); println!("error: {}", s) },
+      Sexps::Sub(box ref sub) => { //box ref sexps
+         print_nest("(", deepness, None);
+         //kk for x in sub { print_tree(&x, deepness+4); }
+         cons_map(sub, |x| print_tree(x, deepness+4));
+         print_nest(")", deepness, None);
+      },
+   }
+}
+
 #[allow(dead_code)]
 //#[derive(Copy, Clone)]
 enum Sexps {

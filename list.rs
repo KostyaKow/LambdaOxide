@@ -1,7 +1,7 @@
 #![feature(box_syntax, box_patterns)]
 
 //doesn't have silly pair
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Cons<T> {
    Cons(T, Box<Cons<T>>),
    Single(T),
