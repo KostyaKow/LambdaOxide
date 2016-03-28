@@ -1,3 +1,4 @@
+//import/use header
 #![feature(box_syntax, box_patterns, slice_patterns)]
 
 #![allow(dead_code)] //kk removme
@@ -10,26 +11,14 @@ use std::collections::HashMap;
 use std::boxed::Box;
 
 extern crate list;
-use list::Cons;
-use list::cons;
-use list::cons_map;
-use list::cons_reverse;
-use list::car;
-use list::cdr;
-//use list::cons_len;
-//use list::List;
+use list::{Cons, cons, cons_map, cons_reverse, car, cdr};
+//use list::{cons_len, List};
 
 extern crate utils;
-use utils::get_char_ranges;
-use utils::slice_str;
-use utils::syntax_err;
-use utils::syntax_err_lex;
+use utils::{get_char_ranges, slice_str, syntax_err, syntax_err_lex, print_space, print_nest, char_at, is_numeric};
 //use utils::internal_err;
-use utils::print_space;
-use utils::print_nest;
-use utils::char_at;
-use utils::is_numeric;
 
+//lex and parse
 fn lex(code : &str) -> Vec<Lexeme> {
    let mut lexemes : Vec<Lexeme> = Vec::new();
 
@@ -134,7 +123,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sex
          &Lexeme::Str(ref s) => { sub = cons(Sexps::Str(s.to_string()), sub) },
          &Lexeme::Sym(ref s) => { sub = cons(Sexps::Var(s.to_string()), sub) },
          &Lexeme::Num(ref n) => { sub = cons(Sexps::Num(*n), sub) },
-         _ => { sub = cons(Sexps::Err("Parsing failed: bad lexeme".to_string()), sub) }
+         _ => { sub = cons(err("Parsing failed: bad lexeme"), sub) }
       }
       i += 1;
    }
@@ -175,121 +164,9 @@ fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
    return None
 }
 //end parsing
+//end lex and parse
 
-enum Lexeme {
-   OpenParen, CloseParen, Str(String), Sym(String), Num(i64)
-}
-
-/*
-#[allow(dead_code)]
-//#[derive(Copy, Clone)]
-enum Sexps {
-   Str(String), Num(f64), Sym(String), Err(String),
-   Sub(Box<Vec<Sexps>>),
-}
-
-
-enum Binding { Normal(Sexps), Special(Sexps) }
-struct SymTable {
-   bindings : HashMap<String, Binding>,
-   //unused children : Box<List<SymTable>>,
-   //maybe needed children: Box<Vec<SymTable>>,
-   parent : Option<Box<SymTable>>
-}
-
-impl SymTable {
-   fn new(parent : Option<Box<SymTable>>) -> SymTable {
-      SymTable {
-         bindings : HashMap::new(),
-         parent   : parent,
-         //maybe needed later children : Box::new(Vec::new()), //(List::Nil),
-         //sexps    : Sexp::Err("".to_string())
-      }
-   }
-
-   fn lookup(&self, s : &String) -> Box<Binding> {
-      //Sexps::Err("none".to_string())
-      //if !self.bindings.contains_key(s)
-      let b = self.bindings.get(s);
-      match b {
-         Some(&x) => box x,
-         None => {
-            match self.parent {
-               None => {
-                  syntax_err("Cannot find symbol", 0);
-                  box Binding::Normal(Sexps::Err("None".to_string()))
-               },
-               Some(ref parent) => parent.lookup(s)
-            }
-         }
-      }
-   }
-
-   fn eval(&mut self, sexps : &Sexps) -> Sexps {
-      match sexps {
-         e @ &Sexps::Str(_) => { *e },
-         e @ &Sexps::Num(_) => { *e },
-         e @ &Sexps::Var(_) => { *e },
-         e @ &Sexps::Err(_) => { *e },
-         e @ &Sexps::Sub(_) => {
-            self.apply(&e)
-          kk*/ /*
-            //let mut children = Vec::new();
-            //let mut first_child : Option<SymTable> = None;
-
-            for subsexp in (*subsexps).iter() {
-               let t = SymTable::new(Some(box *self));
-               t.eval(subsexp);
-               if let None = first_child { first_child = Some(t); }
-               else { children.push(t); }
-            }
-            self.children = Box::new(children);
-
-            if let Some(first) = first_child {
-               self.apply(first, self.children)
-            } //kk left here
-            else {
-               Sexps::Err("Cannot eval empty".to_string())
-            }*/ /*kk
-         },
-      }
-      //if let Sexps::Sub(box v) = *sexps
-   }
-   fn apply(&mut self, args: &Sexps) -> Sexps {
-      if let Sexps::Sub(args) = *args {
-         let first : Sexps = args[0];
-         if let Sexps::Var(op) = first {
-            if op == "+" { println!("detected +") }
-            Sexps::Num(1.3)
-         }
-         else { syntax_err("first element needs to be symbol", 0); Sexps::Err("non".to_string()) }
-      }
-      else { syntax_err("apply needs Sub", 0); Sexps::Err("non".to_string()) }
-   }
-   //fn apply(&mut self, func : &Sexps, args: Option<&Sexps>) -> Sexps {Sexps::Num(5.4)}
-
-   fn run(&mut self, code : &str) -> Sexps {
-      let lexemes = lex(code);
-      let sexps_opt = parse(&lexemes);
-
-      if let Some(sexps) = sexps_opt {
-         self.eval(&sexps)
-      }
-      else { Sexps::Err(String::from("Couldn't parse code")) }
-   }
-}
-//Sexps::Num(0.3)
-*/
-
-fn display_sexps(exp: &Sexps) {
-   match *exp {
-      Sexps::Str(ref s) => println!("{}", s),
-      Sexps::Num(ref n) => println!("{}", n),
-      Sexps::Var(ref s) => println!("{}", s),
-      Sexps::Err(ref s) => println!("{}", s),
-      _                 => println!("bad sexps, cant print")
-   }
-}
+enum Lexeme { OpenParen, CloseParen, Str(String), Sym(String), Num(i64) }
 
 #[derive(Clone)]
 enum Sexps {
@@ -345,9 +222,9 @@ impl<'a> SymTable<'a> {
          loop {
             match *args {
                Cons::Cons(Sexps::Num(n), y) => { sum += n; args = y; },
-               Cons::Cons(_, _) => { Sexps::Err("bad arguments".to_string()); break },
+               Cons::Cons(_, _) => { err("bad arguments"); break },
                Cons::Nil   => break,
-               _ => return Sexps::Err("bad arguments to sum".to_string())
+               _ => return err("bad arguments to sum")
             };
          }
          Sexps::Num(sum)
@@ -362,9 +239,9 @@ impl<'a> SymTable<'a> {
                   diff = if first { first = false; n } else { diff-n };
                   args = y;
                },
-               Cons::Cons(_, _) => { Sexps::Err("bad argument".to_string()); break },
+               Cons::Cons(_, _) => { err("bad argument"); break },
                Cons::Nil   => break,
-               _ => return Sexps::Err("bad arguments to sum".to_string())
+               _ => return err("bad arguments to sum")
             };
          }
          Sexps::Num(diff)
@@ -390,7 +267,7 @@ impl<'a> SymTable<'a> {
          if let Some(ref parent) = self.parent { parent.lookup(s) }
          else {
             syntax_err("Cannot find symbol in symbol table", 0);
-            None //Sexps::Err("None".to_string())
+            None //err("None")
          }
       }
    }
@@ -402,13 +279,13 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, env : &/*mut*/ SymTable) -> Sex
       "define" => {
          //match args { Cons::Cons(name, Cons::Cons::(binding, Nil)) }
          //env.add(name.to_string(), );
-         Sexps::Err("new define".to_string())
+         err("new define")
       }
       "lambda" => {
 
          //if let Cons::Cons(x, xs) = *args {}
          //Callable::new(args, env)
-         Sexps::Err("new lambda".to_string())
+         err("new lambda")
       }
       _ => { Sexps::Err("Cannot execute symbolic expression which isn't func or macro".to_string()) }
    }
@@ -420,28 +297,26 @@ fn eval(exp : &Sexps, env : &mut SymTable) -> Sexps {
       Sexps::Sub(_)                 => apply(exp, env),
       Sexps::Err(ref s)             => Sexps::Err(s.clone()),
       Sexps::Var(ref s)             => {
-         let v = env.lookup(&s.clone());
-         match v {
-            Some(l)     => l.exec(Box::new(Cons::Nil)),
-            None        => Sexps::Err("Undefined variable".to_string())
+         let lookup_res = env.lookup(&s.clone());
+         match lookup_res {
+            Some(v)     => v.exec(Box::new(Cons::Nil)),
+            None        => Sexps::Err("Undefined variable lookup".to_string())
          }
       }
-
    }
 }
 
-fn helper(a : &list::Cons<Sexps>) -> Box<list::Cons<Sexps>> {
-   Box::new(a.clone())
-}
+
+fn err(s : &str) -> Sexps { Sexps::Err(s.to_string()) } //or String::from(s)
 
 fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
    match *exp {
       Sexps::Sub(ref e @ box Cons::Cons(_, _)) => {
-         Sexps::Err("Calling function".to_string());
-         let maybe_f = car(e);
-         let maybe_args = cdr(e);
+         err("Calling apply for function");
+         let maybe_f = car(e); //get function name
+         let maybe_args = cdr(e); //arguments
          if let Some(f) = maybe_f {
-            if let Sexps::Var(ref s) = *f {
+            if let Sexps::Var(ref s) = *f { //kk left here
                if let Some(f) = env.lookup(s) {
                   println!("Not macro!");
                   if let Some(args) = maybe_args {
@@ -459,17 +334,15 @@ fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
                   println!("Macro!");
                   if let Some(args) = maybe_args {
                      apply_macro(s, args, env)
-                  } else { Sexps::Err("bad args".to_string()) }
+                  } else { err("bad args") }
                }
             }
-            else { Sexps::Err("function not var".to_string()) }
+            else { err("function not var") }
          }
-         else { Sexps::Err("bad args".to_string()) }
+         else { err("bad args") }
       }
-      Sexps::Sub(box Cons::Nil) => {
-         Sexps::Err("Empty subexpression".to_string())
-      }
-      _ => Sexps::Err("Bad apply call".to_string())
+      Sexps::Sub(box Cons::Nil) => err("Empty subexpression"),
+      _ => err("Bad apply call")
    }
 }
 
@@ -483,13 +356,13 @@ fn run(code : &str) -> Sexps {
    if let Some(exp) = exp_opt {
       eval(&exp, &mut env)
    }
-   else { Sexps::Err(String::from("Couldn't parse code")) }
+   else { err("Couldn't parse code") }
 }
 
 fn main() {
    //let code : &str = "(define (6 +) () (+ (test) 5))";
    //let code : &str = "(+ (- 6 4) (+ 3 5))";
-   let code : &str = "(+  (- 3 3) (+ 1 2) 2 (- 6 6 6))"; //-1
+   let code : &str = "(+  (+ 1 2) 2 (+ 6 2))"; //-1
    //let code : &str = "(hello (+ world) \"string\")";
    //let code : &str = "(hello (world) (yo test) 5)";
    //let code : &str = "(hello (\"world\"\"test1\" + test) \"another \\\"string\")";
@@ -497,6 +370,10 @@ fn main() {
    //lex_test();
    //parse_test();
    display_sexps(&run(code));
+}
+
+fn helper(a : &list::Cons<Sexps>) -> Box<list::Cons<Sexps>> {
+   Box::new(a.clone())
 }
 
 #[allow(dead_code)]
@@ -517,6 +394,15 @@ fn lex_test() {
    print_lexemes(&lexemes);
 }
 
+fn display_sexps(exp: &Sexps) {
+   match *exp {
+      Sexps::Str(ref s) => println!("{}", s),
+      Sexps::Num(ref n) => println!("{}", n),
+      Sexps::Var(ref s) => println!("{}", s),
+      Sexps::Err(ref s) => println!("{}", s),
+      _                 => println!("bad sexps, cant print")
+   }
+}
 fn print_tree(t: &Sexps, deepness: u8) {
    match *t {
       Sexps::Str(ref s) => { print_nest(&s, deepness, Some("str")) },

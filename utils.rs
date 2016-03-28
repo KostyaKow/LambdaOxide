@@ -1,4 +1,6 @@
 
+pub enum Status<S, F> { Success(S), Failure(F) }
+
 pub fn is_numeric(s : &str) -> bool {
    let mut i = 0;
    while i < s.len() {
@@ -9,7 +11,6 @@ pub fn is_numeric(s : &str) -> bool {
    }
    true
 }
-
 pub fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
    let mut ranges : Vec<(usize, usize)> = Vec::new();
 
@@ -38,7 +39,6 @@ pub fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
 
    ranges
 }
-
 //replace with build-in
 //slice_str("hello", 1, 3) => "ell"
 pub fn slice_str(s: &str, start: usize, end: usize) -> String {
@@ -56,7 +56,7 @@ pub fn slice_str(s: &str, start: usize, end: usize) -> String {
    &sub*/
    (&s[start..end+1]).to_string()
 }
-
+//syntax_err, syntax_err_lex, internal_err
 pub fn syntax_err(s: &str, char_loc: u32) {
    println!("error at charachter {}: {}", char_loc, s);
 }

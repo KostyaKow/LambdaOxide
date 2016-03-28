@@ -8,7 +8,11 @@ pub enum Cons<T> {
    Nil
 }
 
-pub enum Status<S, F> { Success(S), Failure(F) }
+pub fn cons_nil<T>() -> Cons<T> { Cons::Nil }
+pub fn cons_single<T>(x : T) -> Cons<T> { Cons::Single(x) }
+pub fn cons<T>(x : T, xs : Cons<T>) -> Cons<T> {
+   Cons::Cons(x, bb::<Cons<T>>(xs))
+}
 pub fn cons_map<I, O, F>(c : &Cons<I>, f : F) -> Cons<O>
    where F : Fn(&I) -> O
 {
@@ -19,11 +23,6 @@ pub fn cons_map<I, O, F>(c : &Cons<I>, f : F) -> Cons<O>
          Cons::Cons(f(x), bb(cons_map(xs, f)))
       }
    }
-}
-pub fn cons_nil<T>() -> Cons<T> { Cons::Nil }
-pub fn cons_single<T>(x : T) -> Cons<T> { Cons::Single(x) }
-pub fn cons<T>(x : T, xs : Cons<T>) -> Cons<T> {
-   Cons::Cons(x, bb::<Cons<T>>(xs))
 }
 pub fn car<T>(cons : &Cons<T>) -> Option<&T> {
    match *cons {
@@ -44,7 +43,9 @@ pub fn cons_len<T>(c : &Cons<T>) -> usize {
       Cons::Cons(_, ref xs)   => 1 + cons_len(xs)
    }
 }
-
+pub fn cons_reverse<T>(c : Cons<T>) -> Cons<T> {
+  cons_reverse_helper(c, Cons::Nil)
+}
 fn cons_reverse_helper<T>(c : Cons<T>, acc: Cons<T>)
    -> Cons<T>
 {
@@ -56,11 +57,8 @@ fn cons_reverse_helper<T>(c : Cons<T>, acc: Cons<T>)
    }
 }
 
-pub fn cons_reverse<T>(c : Cons<T>) -> Cons<T> {
-  cons_reverse_helper(c, Cons::Nil)
-}
 
-/*
+/* attempt of car with Pair(), Cons, and Nil
 compared to other one, this is more cumbersome but
 can have Cons::Pair(x, y) without Second element having to be list
 pub enum Cons<T> {
@@ -97,7 +95,7 @@ pub fn cdr_lst<T>(cons : &Cons<T>) -> Option<&Cons<T>>
 }
 */
 
-//kkkkk
+//old list
 #[derive(Debug)]
 pub enum List<T> {
    Cons(T, Box<List<T>>),
@@ -142,7 +140,6 @@ pub fn lst_len<T>(lst : &List<T>) -> u32 {
         &List::Cons(_, box ref xs) => (1 + lst_len::<T>(xs))
     }
 }
-
 /*example usage:
 fn main() {
    let x : List<u32> = List::Cons(5, bb(List::Cons(3, bb(List::Nil))));
@@ -158,5 +155,3 @@ fn list_len<T>(lst: List<T>) -> i32 {
    }
 }
 println!("{}", list_len::<u32>(x));*/
-
-
