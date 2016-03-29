@@ -27,9 +27,9 @@ enum FunType {
    BuiltIn(Box<Fn(Box<Cons<Sexps>>) -> Sexps>),
    Lambda(Sexps)
 }
-struct Callable<'a> { env : SymTable<'a>, f : FunType, arg_names : Cons<String> }
-impl<'a> Callable<'a> {
-   fn new(arg_names : Cons<String>, f : FunType, parent_env : Box<&'a SymTable<'a>>) -> Callable<'a> {
+struct Callable { env : SymTable, f : FunType, arg_names : Cons<String> }
+impl Callable {
+   fn new(arg_names : Cons<String>, f : FunType, parent_env : Box<& SymTable>) -> Callable {
       Callable { env: SymTable::new(Some(parent_env)), f: f, arg_names: arg_names }
    }
    fn exec(&self, args : Box<Cons<Sexps>>) -> Sexps {
@@ -44,19 +44,19 @@ impl<'a> Callable<'a> {
 }
 
 //symtable
-struct SymTable<'a> {
-   bindings : HashMap<String, Callable<'a>>,
-   parent : Option<RefCell<&'a SymTable<'a>>>
+struct SymTable {
+   bindings : HashMap<String, Callable>,
+   parent : Option<RefCell<SymTable>>
 }
 
-impl<'a> SymTable<'a> {
-   fn new(parent : Option<RefCell<&'a SymTable<'a>>>) -> SymTable<'a> {
+impl SymTable {
+   fn new(parent : Option<RefCell<SymTable>>) -> SymTable {
       SymTable {
          bindings : HashMap::new(),
          parent   : parent,
       }
    }
-   fn add_defaults(&'a mut self) {
+   fn add_defaults(&mut self) {
       let sum_ = |args_ : Box<Cons<Sexps>> | -> Sexps  {
          let mut args = args_;
          let mut sum = 0;
@@ -99,7 +99,7 @@ impl<'a> SymTable<'a> {
       self.add("-".to_string(), difference);
       //self.add("-".to_string(), difference)
    }
-   fn add(&mut self, key : String, f : Callable<'a>) { self.bindings.insert(key, f); }
+   fn add(&mut self, key : String, f : Callable) { self.bindings.insert(key, f); }
    fn lookup(&self, s : &String) -> Option<&Callable> {
       //if !self.bindings.contains_key(s)
       let entry_opt = self.bindings.get(s);
