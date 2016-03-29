@@ -27,7 +27,7 @@ enum Sexps {
    Sub(Box<Cons<Sexps>>), //Func(Box<Callable>) //Sub(Box<Vec<Sexps>>)
 }
 
-enum Callable<'a> {
+enum Callable {
    BuiltIn(Box<Fn(Sexps) -> Sexps>),
    Lambda(FunArgNames, Sexps, Option<EnvId>, Box<RootEnv<'a>>)
 }
@@ -52,6 +52,7 @@ impl<'a> Callable<'a> {
 }
 
 //RootEnv
+#[derive(Clone)]
 struct RootEnv<'a> {
    bindings : Box<HashMap<EnvId, SymTable<'a>>>,
    env_ctr  : EnvId //counts number of environments
@@ -80,7 +81,7 @@ struct SymTable<'a> {
    //envs     : Vec<EnvId>, //for children
    id       : EnvId,
    parent_id: Option<EnvId>,
-   root     : &'a Box<RootEnv<'a>>
+   /*root     : &'a Box<RootEnv<'a>>*/
 }
 
 impl<'a> SymTable<'a> {
@@ -89,7 +90,7 @@ impl<'a> SymTable<'a> {
          bindings : HashMap::new(),
          id : root.get_next_id(),
          parent_id : parent,
-         root : root
+         /*root : root.clone()*/
       };
       root.add(ret);
       //add to parent our id
