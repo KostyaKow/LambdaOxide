@@ -8,6 +8,7 @@
 
 use std::collections::HashMap;
 use std::boxed::Box;
+use std::cell::RefCell;
 
 extern crate list;
 use list::{Cons, cons, cons_map, cons_reverse, car, cdr};
@@ -316,7 +317,7 @@ fn apply(exp : &Sexps, env : &mut SymTable) -> Sexps {
                if let Some(f) = env.lookup(s) {
                   debug_p(2, "Not macro!");
                   if let Some(args) = maybe_args {
-                     //kk left here
+                     //kk left here kkleft
                      //f.exec(helper(args))
                      //(cons_map(args, |arg| eval(arg, env)))
                      //f.exec(Box::new(cons_map(&args.clone(), |arg| eval(arg, env))))

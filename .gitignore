@@ -1,3 +1,5 @@
 lisp
 *.swp
 *.rlib
+table_test
+refcell
