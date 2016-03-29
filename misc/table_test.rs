@@ -28,20 +28,20 @@ enum Sexps {
    Sub(Box<Cons<Sexps>>), //Func(Box<Callable>) //Sub(Box<Vec<Sexps>>)
 }
 
-enum Callable {
+enum Callable<'a> {
    BuiltIn(Box<Fn(Sexps) -> Sexps>),
-   Lambda(FunArgNames, Sexps, Option<EnvId>, Box<RootEnv>)
+   Lambda(FunArgNames, Sexps, Option<EnvId>, Box<RootEnv<'a>>)
 }
-impl Callable {
-   fn exec(&self, args : Sexps) -> Sexps {
+impl<'a> Callable<'a> {
+   fn exec(&'a self, args : Sexps) -> Sexps {
       err("calling .exec of callable");
 
       match *self {
          Callable::BuiltIn(ref f) => { f(args) },
-         Callable::Lambda(ref arg_names_opt, ref exp, ref env_parent, root) => {
+         Callable::Lambda(ref arg_names_opt, ref exp, ref env_parent, ref root) => {
             err("user defined lamda");
             let mut env = SymTable::new(root, env_parent.clone());
-            if let Some(arg_names) = *arg_names_opt {
+            if let Some(ref arg_names) = *arg_names_opt {
                let mut i = 0;
                //kkleft: for arg in args { env.add(arg_names[i], arg); i+=1; }
             }
@@ -53,19 +53,19 @@ impl Callable {
 }
 
 //RootEnv
-struct RootEnv {
-   bindings : RefCell<HashMap<EnvId, SymTable>>,
+struct RootEnv<'a> {
+   bindings : RefCell<HashMap<EnvId, SymTable<'a>>>,
    env_ctr  : EnvId //counts number of environments
 }
-impl RootEnv {
-   fn new() -> RootEnv {
+impl<'a> RootEnv<'a> {
+   fn new() -> RootEnv<'a> {
       RootEnv { bindings : RefCell::new(HashMap::new()), env_ctr : 0 }
    }
-   fn add(&mut self, env : SymTable) {
+   fn add(&mut self, env : SymTable<'a>) {
       self.bindings.borrow_mut().insert(self.env_ctr, env);
       self.env_ctr += 1;
    }
-   fn get(&self, id : EnvId) -> Option<&SymTable> {
+   fn get(&'a self, id : EnvId) -> Option<&'a SymTable<'a>> {
       self.bindings.borrow().get(&id)
    }
    fn get_next_id(&self) -> u32 { self.env_ctr }
@@ -76,16 +76,16 @@ impl RootEnv {
 //enum TableEntry { Func(Callable), Expr(Sexps), Env(Box<SymTable>) }
 //enum TableEntry { Expr(Box<Sexps>), Env(EnvId) }
 
-struct SymTable {
-   bindings : HashMap<String, Callable>,
+struct SymTable<'a> {
+   bindings : HashMap<String, Callable<'a>>,
    //envs     : Vec<EnvId>, //for children
    id       : EnvId,
    parent_id: Option<EnvId>,
-   root     : Box<RootEnv>
+   root     : &'a Box<RootEnv<'a>>
 }
 
-impl SymTable {
-   fn new(root : Box<RootEnv>, parent : Option<EnvId>) -> SymTable {
+impl<'a> SymTable<'a> {
+   fn new(root : &'a Box<RootEnv<'a>>, parent : Option<EnvId>) -> SymTable<'a> {
       let ret = SymTable {
          bindings : HashMap::new(),
          id : root.get_next_id(),
@@ -97,10 +97,10 @@ impl SymTable {
       ret
    }
    //fn add(&mut self, key : &str, val : Sexps) {
-   fn add(&mut self, key : &str, val : Callable) {
+   fn add(&mut self, key : &str, val : Callable<'a>) {
       self.bindings.insert(key.to_string(), val);
    }
-   fn lookup(&self, s : &String) -> Option<&Callable> {
+   fn lookup(&self, s : &String) -> Option<&Callable<'a>> {
       let entry_opt = self.bindings.get(s);
 
       if let Some(ref entry) = entry_opt { Some(entry.clone()) }
