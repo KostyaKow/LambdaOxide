@@ -3,7 +3,6 @@
 #![allow(unused_imports)]
 use std::collections::HashMap;
 use std::boxed::Box;
-use std::cell::RefCell;
 
 extern crate list;
 use list::{Cons, cons, cons_reverse, car, cdr};
@@ -33,12 +32,12 @@ enum Callable<'a> {
    Lambda(FunArgNames, Sexps, Option<EnvId>, Box<RootEnv<'a>>)
 }
 impl<'a> Callable<'a> {
-   fn exec(&'a self, args : Sexps) -> Sexps {
+   fn exec(&'a mut self, args : Sexps) -> Sexps {
       err("calling .exec of callable");
 
       match *self {
          Callable::BuiltIn(ref f) => { f(args) },
-         Callable::Lambda(ref arg_names_opt, ref exp, ref env_parent, ref root) => {
+         Callable::Lambda(ref arg_names_opt, ref exp, ref env_parent, ref mut root) => {
             err("user defined lamda");
             let mut env = SymTable::new(root, env_parent.clone());
             if let Some(ref arg_names) = *arg_names_opt {
@@ -54,19 +53,19 @@ impl<'a> Callable<'a> {
 
 //RootEnv
 struct RootEnv<'a> {
-   bindings : RefCell<HashMap<EnvId, SymTable<'a>>>,
+   bindings : Box<HashMap<EnvId, SymTable<'a>>>,
    env_ctr  : EnvId //counts number of environments
 }
 impl<'a> RootEnv<'a> {
    fn new() -> RootEnv<'a> {
-      RootEnv { bindings : RefCell::new(HashMap::new()), env_ctr : 0 }
+      RootEnv { bindings : Box::new(HashMap::new()), env_ctr : 0 }
    }
    fn add(&mut self, env : SymTable<'a>) {
-      self.bindings.borrow_mut().insert(self.env_ctr, env);
+      self.bindings.insert(self.env_ctr, env);
       self.env_ctr += 1;
    }
    fn get(&'a self, id : EnvId) -> Option<&'a SymTable<'a>> {
-      self.bindings.borrow().get(&id)
+      self.bindings.get(&id)
    }
    fn get_next_id(&self) -> u32 { self.env_ctr }
 }
@@ -85,7 +84,7 @@ struct SymTable<'a> {
 }
 
 impl<'a> SymTable<'a> {
-   fn new(root : &'a Box<RootEnv<'a>>, parent : Option<EnvId>) -> SymTable<'a> {
+   fn new(root : &'a mut Box<RootEnv<'a>>, parent : Option<EnvId>) -> SymTable<'a> {
       let ret = SymTable {
          bindings : HashMap::new(),
          id : root.get_next_id(),
