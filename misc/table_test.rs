@@ -24,28 +24,27 @@ fn eval(s : &Sexps, env : SymTable) -> Sexps {
 #[derive(Clone, Debug)]
 enum Sexps {
    Str(String), Num(i64), Var(String), Err(String), //Literal(String),
-   Sub(Box<Cons<Sexps>>), Func(Box<Callable>) //Sub(Box<Vec<Sexps>>)
+   Sub(Box<Cons<Sexps>>), //Func(Box<Callable>) //Sub(Box<Vec<Sexps>>)
 }
 
-#[derive(Debug, Clone)]
 enum Callable {
    BuiltIn(Box<Fn(Sexps) -> Sexps>),
-   Lambda(FunArgNames, Sexps, EnvId)
+   Lambda(FunArgNames, Sexps, Option<EnvId>, RootEnv)
 }
 impl Callable {
-   fn exec(&self, args : Sexps) -> Sexps {
+   fn exec(&mut self, args : Sexps) -> Sexps {
       err("calling .exec of callable");
 
       match *self {
          Callable::BuiltIn(ref f) => { f(args) },
-         Callable::Lambda(ref arg_names_opt, ref exp, ref env_parent) => {
+         Callable::Lambda(ref arg_names_opt, ref exp, ref env_parent, ref mut root) => {
             err("user defined lamda");
-            let mut env = SymTable::new(env_parent);
-            if let Some(arg_names) = arg_names_opt {
+            let mut env = SymTable::new(root, env_parent.clone());
+            if let Some(arg_names) = *arg_names_opt {
                let mut i = 0;
-               for arg in args { env.add(arg_names[i], arg); i+=1; }
+               //kkleft: for arg in args { env.add(arg_names[i], arg); i+=1; }
             }
-            else { env.add("*", args); }
+            else { /*kkleft: env.add("*", args);*/ }
             eval(exp, env)
          }
       }
@@ -77,7 +76,7 @@ impl RootEnv {
 //enum TableEntry { Expr(Box<Sexps>), Env(EnvId) }
 
 struct SymTable {
-   bindings : HashMap<String, Sexps>,
+   bindings : HashMap<String, Callable>,
    //envs     : Vec<EnvId>, //for children
    id       : EnvId,
    parent_id: Option<EnvId>,
@@ -85,8 +84,7 @@ struct SymTable {
 }
 
 impl SymTable {
-   fn new(root : &mut RootEnv, parent : Option<EnvId>) -> SymTable {
-
+   fn new(root : Box<RootEnv>, parent : Option<EnvId>) -> SymTable {
       let ret = SymTable {
          bindings : HashMap::new(),
          id : root.get_next_id(),
@@ -97,16 +95,17 @@ impl SymTable {
       //add to parent our id
       ret
    }
-   fn add(&mut self, key : &str, val : Sexps) {
+   //fn add(&mut self, key : &str, val : Sexps) {
+   fn add(&mut self, key : &str, val : Callable) {
       self.bindings.insert(key.to_string(), val);
    }
-   fn lookup(&self, s : &String) -> Option<&Sexps> {
+   fn lookup(&self, s : &String) -> Option<&Callable> {
       let entry_opt = self.bindings.get(s);
 
       if let Some(ref entry) = entry_opt { Some(entry.clone()) }
       else {
          if let Some(ref parent_id) = self.parent_id {
-            if let parent = self.root.get(&parent_id) {
+            if let parent = self.root.get(parent_id.clone()) {
                parent.lookup(s)
             }
             else {
