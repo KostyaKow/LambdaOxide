@@ -1,4 +1,4 @@
-#![feature(box_syntax, box_patterns)]
+#![feature(box_syntax, box_patterns, type_ascription)]
 
 //doesn't have silly pair
 #[derive(Clone, Debug)]
@@ -6,6 +6,33 @@ pub enum Cons<T> {
    Cons(T, Box<Cons<T>>),
    Single(T),
    Nil
+}
+//http://stackoverflow.com/questions/30218886/how-to-implement-iterator-and-intoiterator-for-a-simple-struct
+impl<T> Iterator for Cons<T> {
+   type Item = T;
+   type IntoIter = /*Iterator<Item=Self::Item>;*/ConsIntoIterator<T>;
+   fn into_iter(self) -> Self::IntoIter {
+      item: self, index: 0
+   }
+}
+struct ConsIntoIterator<T> {
+   item: Cons<T>,
+   index: usize
+}
+impl<T> Iterator for ConsIntoIterator {
+   type Item = T;
+   fn next(&mut self) -> Option<T> {
+      self.index += 1;
+      match self.item {
+         Cons::Cons(x, _) => Some(x),
+         Cons::Single(x) => Some(x)
+         Cons::None => None
+      }
+      /*if self.index < cons_len(self.item) {
+         if let
+      }
+      else { None }*/
+   }
 }
 
 pub fn cons_nil<T>() -> Cons<T> { Cons::Nil }
