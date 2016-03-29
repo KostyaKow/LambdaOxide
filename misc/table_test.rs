@@ -17,7 +17,7 @@ type FunArgs = Sexps;
 //type EnvId = Option<u32>;
 type EnvId = u32;
 
-fn eval(s : &Sexps, env : SymTable) -> Sexps {
+fn eval(s : &Sexps, env : Option<&Box<SymTable>>) -> Sexps {
    err("eval not implemeneted")
 }
 
@@ -29,11 +29,11 @@ enum Sexps {
 
 enum Callable {
    BuiltIn(Box<Fn(Sexps) -> Sexps>),
-   Lambda(FunArgNames, Sexps, Option<EnvId>, Box<RootEnv<'a>>)
+   Lambda(FunArgNames, Sexps, Option<EnvId>, Box<RootEnv>)
 }
-impl<'a> Callable<'a> {
-   fn exec(&'a mut self, args : Sexps) -> Sexps {
-      err("calling .exec of callable");
+impl Callable {
+   fn exec(&mut self, args : Sexps) -> Sexps {
+      err("calling .xec of callable");
 
       match *self {
          Callable::BuiltIn(ref f) => { f(args) },
@@ -45,27 +45,26 @@ impl<'a> Callable<'a> {
                //kkleft: for arg in args { env.add(arg_names[i], arg); i+=1; }
             }
             else { /*kkleft: env.add("*", args);*/ }
-            eval(exp, env)
+            eval(exp, root.get(env))
          }
       }
    }
 }
 
 //RootEnv
-#[derive(Clone)]
-struct RootEnv<'a> {
-   bindings : Box<HashMap<EnvId, SymTable<'a>>>,
+struct RootEnv {
+   bindings : HashMap<EnvId, Box<SymTable>>,
    env_ctr  : EnvId //counts number of environments
 }
-impl<'a> RootEnv<'a> {
-   fn new() -> RootEnv<'a> {
-      RootEnv { bindings : Box::new(HashMap::new()), env_ctr : 0 }
+impl RootEnv {
+   fn new() -> RootEnv {
+      RootEnv { bindings : HashMap::new(), env_ctr : 0 }
    }
-   fn add(&mut self, env : SymTable<'a>) {
+   fn add(&mut self, env : Box<SymTable>) {
       self.bindings.insert(self.env_ctr, env);
       self.env_ctr += 1;
    }
-   fn get(&'a self, id : EnvId) -> Option<&'a SymTable<'a>> {
+   fn get(&self, id : EnvId) -> Option<&Box<SymTable>> {
       self.bindings.get(&id)
    }
    fn get_next_id(&self) -> u32 { self.env_ctr }
@@ -76,38 +75,40 @@ impl<'a> RootEnv<'a> {
 //enum TableEntry { Func(Callable), Expr(Sexps), Env(Box<SymTable>) }
 //enum TableEntry { Expr(Box<Sexps>), Env(EnvId) }
 
-struct SymTable<'a> {
-   bindings : HashMap<String, Callable<'a>>,
+struct SymTable {
+   bindings : HashMap<String, Callable>,
    //envs     : Vec<EnvId>, //for children
    id       : EnvId,
    parent_id: Option<EnvId>,
-   /*root     : &'a Box<RootEnv<'a>>*/
+   /*root     : &Box<RootEnv>*/
 }
 
-impl<'a> SymTable<'a> {
-   fn new(root : &'a mut Box<RootEnv<'a>>, parent : Option<EnvId>) -> SymTable<'a> {
+impl SymTable {
+   fn new(root : &mut Box<RootEnv>, parent : Option<EnvId>) -> EnvId {
+      let id = root.get_next_id();
       let ret = SymTable {
          bindings : HashMap::new(),
-         id : root.get_next_id(),
+         id : id,
          parent_id : parent,
          /*root : root.clone()*/
       };
-      root.add(ret);
+      root.add(Box::new(ret));
       //add to parent our id
-      ret
+      //ret
+      id
    }
    //fn add(&mut self, key : &str, val : Sexps) {
-   fn add(&mut self, key : &str, val : Callable<'a>) {
+   fn add(&mut self, key : &str, val : Callable) {
       self.bindings.insert(key.to_string(), val);
    }
-   fn lookup(&self, s : &String) -> Option<&Callable<'a>> {
+   fn lookup<'a>(&'a self, s : &String, root: &'a Box<RootEnv>) -> Option<&Callable> {
       let entry_opt = self.bindings.get(s);
 
       if let Some(ref entry) = entry_opt { Some(entry.clone()) }
       else {
          if let Some(ref parent_id) = self.parent_id {
-            if let Some(parent) = self.root.get(parent_id.clone()) {
-               parent.lookup(s)
+            if let Some(parent) = root.get(parent_id.clone()) {
+               parent.lookup(s, root)
             }
             else {
                err("Cannot find parent env in symbol table"); None
