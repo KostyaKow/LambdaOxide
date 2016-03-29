@@ -3,6 +3,7 @@
 #![allow(unused_imports)]
 use std::collections::HashMap;
 use std::boxed::Box;
+use std::cell::RefCell;
 
 extern crate list;
 use list::{Cons, cons, cons_reverse, car, cdr};
@@ -29,15 +30,15 @@ enum Sexps {
 
 enum Callable {
    BuiltIn(Box<Fn(Sexps) -> Sexps>),
-   Lambda(FunArgNames, Sexps, Option<EnvId>, RootEnv)
+   Lambda(FunArgNames, Sexps, Option<EnvId>, Box<RootEnv>)
 }
 impl Callable {
-   fn exec(&mut self, args : Sexps) -> Sexps {
+   fn exec(&self, args : Sexps) -> Sexps {
       err("calling .exec of callable");
 
       match *self {
          Callable::BuiltIn(ref f) => { f(args) },
-         Callable::Lambda(ref arg_names_opt, ref exp, ref env_parent, ref mut root) => {
+         Callable::Lambda(ref arg_names_opt, ref exp, ref env_parent, root) => {
             err("user defined lamda");
             let mut env = SymTable::new(root, env_parent.clone());
             if let Some(arg_names) = *arg_names_opt {
@@ -53,19 +54,19 @@ impl Callable {
 
 //RootEnv
 struct RootEnv {
-   bindings : HashMap<EnvId, SymTable>,
+   bindings : RefCell<HashMap<EnvId, SymTable>>,
    env_ctr  : EnvId //counts number of environments
 }
 impl RootEnv {
    fn new() -> RootEnv {
-      RootEnv { bindings : HashMap::new(), env_ctr : 0 }
+      RootEnv { bindings : RefCell::new(HashMap::new()), env_ctr : 0 }
    }
    fn add(&mut self, env : SymTable) {
-      self.bindings.insert(self.env_ctr, env);
+      self.bindings.borrow_mut().insert(self.env_ctr, env);
       self.env_ctr += 1;
    }
    fn get(&self, id : EnvId) -> Option<&SymTable> {
-      self.bindings.get(&id)
+      self.bindings.borrow().get(&id)
    }
    fn get_next_id(&self) -> u32 { self.env_ctr }
 }
@@ -105,7 +106,7 @@ impl SymTable {
       if let Some(ref entry) = entry_opt { Some(entry.clone()) }
       else {
          if let Some(ref parent_id) = self.parent_id {
-            if let parent = self.root.get(parent_id.clone()) {
+            if let Some(parent) = self.root.get(parent_id.clone()) {
                parent.lookup(s)
             }
             else {
@@ -119,8 +120,8 @@ impl SymTable {
       }
    }
    fn add_defaults(&mut self) {
-      let sum_ = |args_ : Box<Cons<Sexps>> | -> Sexps  {
-         let mut args = args_;
+      let sum_ = |args_ : /*Box<Cons<Sexps>>*/ Sexps | -> Sexps  {
+         /*let mut args = args_;
          let mut sum = 0;
          loop {
             match *args {
@@ -130,10 +131,10 @@ impl SymTable {
                _ => return err("bad arguments to sum")
             };
          }
-         Sexps::Num(sum)
+         Sexps::Num(sum)*/ Sexps::Num(-10)
       };
-      let difference_ = |args_ : Box<Cons<Sexps>> | -> Sexps {
-         let mut args = args_;
+      let difference_ = |args_ : /*Box<Cons<Sexps>>*/ Sexps | -> Sexps {
+         /*let mut args = args_;
          let mut diff = 0;
          let mut first = true;
          loop {
@@ -147,7 +148,7 @@ impl SymTable {
                _ => return err("bad arguments to sum")
             };
          }
-         Sexps::Num(diff)
+         Sexps::Num(diff)*/ Sexps::Num(-5)
       };
 
       /*let sum = Callable::new(Cons::Single("*".to_string()), // star (*) means any arg
