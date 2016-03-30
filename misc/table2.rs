@@ -30,19 +30,19 @@ type EnvId = usize;
 
 //callable
 enum Callable {
-   BuiltIn(EnvId, Box<Fn(Sexps, &mut Env, EnvId) -> Sexps>), //args, root, our env
+   BuiltIn(EnvId, Box<Fn(Sexps, RefCell<Env>, EnvId) -> Sexps>), //args, root, our env
    Lambda(EnvId, FunArgNames, Sexps)
 }
 impl Callable {
-   fn exec(&self, args : Sexps, root : &mut Env) -> Sexps {
+   fn exec(&self, args : Sexps, root : RefCell<Env>) -> Sexps {
       err("calling .exec of callable");
 
       match *self {
          Callable::BuiltIn(parent, ref f) => { f(args, root, parent) },
          Callable::Lambda(ref parent, ref arg_names_opt, ref exp) => {
-            let new_table = root.table_new(parent.clone());
+            let new_table = root.borrow_mut().table_new(parent.clone());
 
-            root.table_add(new_table, "~", make_sym_table_val(args));
+            root.borrow_mut().table_add(new_table, "~", make_sym_table_val(args));
             //let mut env = SymTable::new(root, env_parent.clone());
             /*if let Some(ref arg_names) = *arg_names_opt {
                //let mut i = 0;
@@ -56,7 +56,7 @@ impl Callable {
 
 fn make_sym_table_val(exp : Sexps) -> Callable {
    //let root = Env::new();
-   let ret : Box<Fn(Sexps, &mut Env, EnvId) -> Sexps> = Box::new(move |args, root, env| -> Sexps {
+   let ret : Box<Fn(Sexps, RefCell<Env>, EnvId) -> Sexps> = Box::new(move |args, root, env| -> Sexps {
       exp.clone()
    });
    Callable::BuiltIn(0, ret)
@@ -64,7 +64,7 @@ fn make_sym_table_val(exp : Sexps) -> Callable {
 fn get_sym_table_val(v : Option<&Callable>) -> Sexps {
    match v {
       None => err("Not found"),
-      Some(f) => f.exec(err(""), &mut Env::new())
+      Some(f) => f.exec(err(""), RefCell::new(Env::new()))
    }
 }
 //end callable
@@ -111,19 +111,20 @@ impl Env {
    }
 }
 
-fn eval(exp : &Sexps, root : &mut Env, table : EnvId) -> Sexps {
+fn eval(exp : &Sexps, root : RefCell<Env>, table : EnvId) -> Sexps {
    match *exp {
       Sexps::Str(_) | Sexps::Num(_) => exp.clone(), //self evaluation
       Sexps::Sub(_)                 => apply(exp, root, table),
       Sexps::Err(ref s)             => Sexps::Err(s.clone()),
       Sexps::Var(ref s)             => {
-         let lookup_opt = root.lookup(table, &s.clone());
+         let borrowed = root.borrow();
+         let lookup_opt = borrowed.lookup(table, &s.clone());
          get_sym_table_val(lookup_opt)
       }
    }
 }
 
-fn apply_macro(name : &str, args : &Cons<Sexps>, root : &mut Env, t : EnvId) -> Sexps {
+fn apply_macro(name : &str, args : &Cons<Sexps>, root : RefCell<Env>, t : EnvId) -> Sexps {
    err("hi")
    /*match &name[..] {
       "define" => {
@@ -141,16 +142,17 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : &mut Env, t : EnvId) -> 
    }*/
 }
 
-fn apply(exp : &Sexps, root : &mut Env, table : EnvId) -> Sexps {
-   match *exp {
-      Sexps::Sub(/*ref e @*/ box Cons::Cons(f, args)) => {
+fn apply(exp : &Sexps, root : RefCell<Env>, table : EnvId) -> Sexps {
+   err("hello")
+   /*match *exp {
+      Sexps::Sub(ref e @ box Cons::Cons(f, args)) => { //Sexps::Sub(ref e @ box Cons::Cons(f, args)
          err("Calling apply for function");
 
          if let Sexps::Var(ref s) = f { //if first element is variable look it up
-            if let Some(f) = root.lookup(table, s) { //if function look up successful
+            if let Some(f) = root.borrow().lookup(table, s) { //if function look up successful
                debug_p(2, "Found symbol, executing function");
                let evaled_args = cons_map(&args.clone(), |arg| {
-                  eval(arg, root, root.table_new(table))
+                  eval(arg, root, root.borrow().table_new(table))
                });
                f.exec(Sexps::Sub(Box::new(evaled_args)), root)
 
@@ -162,7 +164,7 @@ fn apply(exp : &Sexps, root : &mut Env, table : EnvId) -> Sexps {
 
          }
          else { err("(x y z) <- x has to be macro or function") }
-
+*/
          /*let maybe_f = car(e); //get function name
          let maybe_args = cdr(e); //arguments
 
@@ -191,21 +193,21 @@ fn apply(exp : &Sexps, root : &mut Env, table : EnvId) -> Sexps {
             else { err("function not var") }
          }
          else { err("bad args") } */
-      }
+/*    } good, uncomment this section
       Sexps::Sub(box Cons::Nil) => err("Empty subexpression"),
       _ => err("Bad apply call")
-   }
+   } */
 }
 
 fn run(code : &str) -> Sexps {
    let lexemes = lex(code);
    let exp_opt = parse(&lexemes);
 
-   let mut root = Env::new(); //RefCell::new(Env::new());
-   root.add_defaults();
+   let mut root = RefCell::new(Env::new());
+   root.borrow_mut().add_defaults();
 
    if let Some(exp) = exp_opt {
-      eval(&exp, root, 0)
+      eval(&exp, root, 0) //was &mut root
    }
    else { err("Couldn't parse code") }
 }
