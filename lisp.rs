@@ -12,7 +12,6 @@ use std::boxed::Box;
 
 extern crate list; use list::{Cons, cons_map, car, cdr};
 //use list::{cons_len, List};
-extern crate utils; use utils::{print_space, print_nest};
 extern crate err; use err::{debug_p, internal_err};
 extern crate types; use types::{Sexps, err};
 extern crate lexer; use lexer::lex;
@@ -237,27 +236,6 @@ fn lex_test() {
    let code : &str = "'(hello (\"world\"\"test1\" + 69 test 42) 47 \"another \\\"string\")";
    let lexemes = lex(code);
    println!("{:?}", lexemes); //print_lexemes(&lexemes);
-}
-
-fn display_sexps(exp: &Sexps) {
-   match *exp {
-      Sexps::Str(ref s) => println!("{}", s),
-      Sexps::Num(ref n) => println!("{}", n),
-      Sexps::Var(ref s) => println!("{}", s),
-      Sexps::Err(ref s) => println!("{}", s),
-      _                 => println!("bad sexps, cant print")
-   }
-}
-fn print_tree(t: &Sexps, deepness: u8) {
-   match *t {
-      Sexps::Sub(box ref sub) => { //box ref sexps
-         print_nest("(", deepness, None);
-         //kk for x in sub { print_tree(&x, deepness+4); }
-         cons_map(sub, |x| print_tree(x, deepness+4));
-         print_nest(")", deepness, None);
-      },
-      _ => { print_space(deepness); println!("{:?}", t) }
-   }
 }
 
 
