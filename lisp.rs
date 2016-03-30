@@ -15,64 +15,16 @@ use list::{Cons, cons, cons_map, cons_reverse, car, cdr};
 //use list::{cons_len, List};
 
 extern crate utils;
-use utils::{get_char_ranges, slice_str, print_space, print_nest, char_at, is_numeric};
+use utils::{print_space, print_nest};
 
-//default development debug = 5, shipping = 0 or 1
-static DEBUG: u8 = 5; //0 = None, 1 = minimum, 10 = max
-//syntax_err, syntax_err_lex, internal_err >=1
-//macro or not macro >=2
-//beginning/end paren >=6
-//dropping Sexps err debug only for >=3
-//dropping Sexps all debug >=7
+extern crate err;
+use err::{debug_p, internal_err};
 
-//lex and parse
-fn lex(code : &str) -> Vec<Lexeme> {
-   let mut lexemes : Vec<Lexeme> = Vec::new();
+extern crate types;
+use types::{Lexeme, Sexps, err};
 
-   let mut col = String::new(); //symbol collector
-   let ranges = get_char_ranges(code); //range of strings
-   let mut r_it = 0; //current string range
-   let mut i = 0;
-   let code_len = code.len();
-
-   while i < code_len {
-      let str_start = r_it < ranges.len() && ranges[r_it].0 == i;
-      let (start, end) = if str_start { ranges[r_it] } else { (0, 0) };
-
-      //if current character c is string or
-      //special character push previously collected
-      if let Some(c) = char_at(code, i) {
-         //should we collect symbols
-         let collect = str_start || c == '(' || c == ')' || c == ' ';
-
-         if collect && !col.is_empty() {
-            lexemes.push(
-               if is_numeric(&col) { Lexeme::Num(col.parse::<i64>().unwrap()) }
-               else { Lexeme::Sym(col) });
-
-            col = String::new();
-         }
-      }
-      if str_start {
-         let l = Lexeme::Str(slice_str(code, start, end));
-         lexemes.push(l);
-         i = end + 1;
-         r_it += 1;
-      }
-      if let Some(c) = char_at(code, i) {
-         match c {
-            '(' => lexemes.push(Lexeme::OpenParen),
-            ')' => lexemes.push(Lexeme::CloseParen),
-            ' ' => {},
-            '"' => i-=1, //"string""s2"
-            _   => col.push(c)
-         }
-      }
-      i += 1;
-   }
-
-   lexemes
-}
+extern crate lexer;
+use lexer::lex;
 
 //parsing
 //inclusive let i = start; while (i <= end)
@@ -155,7 +107,7 @@ fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
          },
          _ => {}
       }
-      if nestedness < 0 { syntax_err_lex("Extra close parenthesis", 0) }
+      if nestedness < 0 { internal_err("Extra close parenthesis") }
    }
 
    let mut good_range = true;
@@ -163,9 +115,9 @@ fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
    let mut end = 0;
 
    if let Some(x) = start_paren { start = x; debug_p(6, &format!("start paren: {}", x)) }
-   else { good_range = false; syntax_err_lex("No start paren", 0) }
+   else { good_range = false; internal_err("No start paren") }
    if let Some(x) = end_paren { end = x; debug_p(6, &format!("got end paren: {}", x)) }
-   else { good_range = false; syntax_err_lex("No end paren", 0) }
+   else { good_range = false; internal_err("No end paren") }
 
    if good_range { return parse_range(lexemes, start+1, end-1) }
    return None
@@ -173,14 +125,6 @@ fn parse(lexemes : &Vec<Lexeme>) -> Option<Sexps> {
 //end parsing
 //end lex and parse
 
-#[derive(Debug)]
-enum Lexeme { OpenParen, CloseParen, Str(String), Sym(String), Num(i64) }
-
-#[derive(Clone, Debug)]
-enum Sexps {
-   Str(String), Num(i64), Var(String), Err(String), //Literal(String),
-   Sub(Box<Cons<Sexps>>), //Sub(Box<Vec<Sexps>>)
-}
 
 enum FunType {
    BuiltIn(Box<Fn(Box<Cons<Sexps>>) -> Sexps>),
@@ -266,7 +210,7 @@ impl<'a> SymTable<'a> {
       else {
          if let Some(ref parent) = self.parent { parent.lookup(s) }
          else {
-            syntax_err("Cannot find symbol in symbol table", 0);
+            internal_err("Cannot find symbol in symbol table");
             None //err("None")
          }
       }
@@ -383,31 +327,6 @@ fn interpreter() {
 }
 
 fn helper(a : &list::Cons<Sexps>) -> Box<list::Cons<Sexps>> { Box::new(a.clone()) }
-fn err(s : &str) -> Sexps { Sexps::Err(s.to_string()) } //or String::from(s)
-
-//quick way to debug
-fn debug_p(min_lvl: u8, s : &str) {
-   if DEBUG >= min_lvl { println!("{}", s) }
-}
-//syntax_err, syntax_err_lex, internal_err
-pub fn syntax_err(s: &str, char_loc: u32) {
-   if DEBUG > 0 { println!("error at charachter {}: {}", char_loc, s); }
-}
-pub fn syntax_err_lex(s: &str, lex_num: u32) {
-   if DEBUG > 0 { println!("error at lexeme {}: {}", lex_num, s); }
-}
-pub fn internal_err(s: &str) {
-   if DEBUG > 0 { println!("internal error: {}", s); }
-}
-impl Drop for Sexps {
-   fn drop(&mut self) {
-      match *self {
-         Sexps::Err(ref s) if DEBUG >= 3 => println!("err dropping: {}", s),
-         _ if DEBUG >= 7 => println!("sexps going out of scope: {:?}", self),
-         _ => {}
-      }
-   }
-}
 
 //parse_test()
 #[allow(dead_code)]
@@ -418,7 +337,7 @@ fn parse_test() {
    if let Some(tree) = tree_maybe {
       //print_tree(&tree, 0); //println!("{:?}", tree);
    }
-   else { syntax_err_lex("Parsing failed", 0); }
+   else { internal_err("Parsing failed"); }
 }
 //lex_test()
 #[allow(dead_code)]
