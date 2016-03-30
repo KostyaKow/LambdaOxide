@@ -1,9 +1,12 @@
 #![allow(dead_code, unused_variables)]
+#![feature(box_syntax, box_patterns)]
 
 //#![allow(unused_variables)]
 //#![allow(unused_imports)]
 use std::collections::HashMap;
 use std::boxed::Box;
+
+use std::cell::RefCell;
 
 //extern crate list; use list::{Cons, cons, cons_reverse, car, cdr};
 //extern crate utils; use utils::{print_space, print_nest, char_at, is_numeric};
@@ -12,9 +15,10 @@ extern crate types; use types::{Sexps, err, display_sexps};
 
 //tmp TODO kkleft: move main interpreter to separate file
 //and only use this one for tables
+extern crate err; use err::debug_p;
 extern crate lexer; use lexer::lex;
 extern crate parser; use parser::parse;
-extern crate list; use list::{Cons};
+extern crate list; use list::{Cons, car, cdr, cons_map};
 //end tmp
 
 type FunArgNames = Option<Vec<String>>;
@@ -63,7 +67,7 @@ fn get_sym_table_val(v : Option<&Callable>) -> Sexps {
       Some(f) => f.exec(err(""), &mut Env::new())
    }
 }
-//callable
+//end callable
 
 struct Table { bindings: HashMap<String, Callable>, parent: EnvId }
 struct Env { tables : Vec<Table>, }
@@ -119,7 +123,7 @@ fn eval(exp : &Sexps, root : &mut Env, table : EnvId) -> Sexps {
    }
 }
 
-fn apply_macro(name : &str, args : &Cons<Sexps>, env : &mut Env) -> Sexps {
+fn apply_macro(name : &str, args : &Cons<Sexps>, root : &mut Env, t : EnvId) -> Sexps {
    err("hi")
    /*match &name[..] {
       "define" => {
@@ -137,24 +141,42 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, env : &mut Env) -> Sexps {
    }*/
 }
 
-fn apply(exp : &Sexps, env : &mut Env, table : EnvId) -> Sexps {
-   err("yo")
-   /*match *exp {
-      Sexps::Sub(ref e @ box Cons::Cons(_, _)) => {
+fn apply(exp : &Sexps, root : &mut Env, table : EnvId) -> Sexps {
+   match *exp {
+      Sexps::Sub(/*ref e @*/ box Cons::Cons(f, args)) => {
          err("Calling apply for function");
-         let maybe_f = car(e); //get function name
+
+         if let Sexps::Var(ref s) = f { //if first element is variable look it up
+            if let Some(f) = root.lookup(table, s) { //if function look up successful
+               debug_p(2, "Found symbol, executing function");
+               let evaled_args = cons_map(&args.clone(), |arg| {
+                  eval(arg, root, root.table_new(table))
+               });
+               f.exec(Sexps::Sub(Box::new(evaled_args)), root)
+
+            }
+            else { //if can't find symbol assume it's macro
+               debug_p(2, "Macro!");
+               apply_macro(s, &args, root, table)
+            }
+
+         }
+         else { err("(x y z) <- x has to be macro or function") }
+
+         /*let maybe_f = car(e); //get function name
          let maybe_args = cdr(e); //arguments
-         if let Some(f) = maybe_f {
-            if let Sexps::Var(ref s) = *f { //kk left here
-               if let Some(f) = env.lookup(s) {
+
+         if let Some(f) = maybe_f { //first element of sexps
+            if let Sexps::Var(ref s) = *f { //if first element is variable look it up
+               if let Some(f) = root.lookup(table, s) { //if look up successful
                   debug_p(2, "Not macro!");
-                  if let Some(args) = maybe_args {
-                     //kk left here kkleft
+                  if let Some(args) = maybe_args { //if we have rest of arguments
                      //f.exec(helper(args))
                      //(cons_map(args, |arg| eval(arg, env)))
                      //f.exec(Box::new(cons_map(&args.clone(), |arg| eval(arg, env))))
                      f.exec(Box::new(cons_map(&args.clone(), |arg| {
-                        eval(arg, &mut SymTable::new(Some(Box::new(env))))
+                        //eval(arg, &mut SymTable::new(Some(Box::new(env))))
+                        eval(arg, root, root.table_new(table))
                      })))
                   }
                   else { f.exec(Box::new(Cons::Nil)) }
@@ -162,28 +184,28 @@ fn apply(exp : &Sexps, env : &mut Env, table : EnvId) -> Sexps {
                else { //if can't find symbol assume it's macro
                   debug_p(2, "Macro!");
                   if let Some(args) = maybe_args {
-                     apply_macro(s, args, env)
+                     apply_macro(s, args, root, table)
                   } else { err("bad args") }
                }
             }
             else { err("function not var") }
          }
-         else { err("bad args") }
+         else { err("bad args") } */
       }
       Sexps::Sub(box Cons::Nil) => err("Empty subexpression"),
       _ => err("Bad apply call")
-   }*/
+   }
 }
 
 fn run(code : &str) -> Sexps {
    let lexemes = lex(code);
    let exp_opt = parse(&lexemes);
 
-   let mut env = Env::new();
-   env.add_defaults();
+   let mut root = Env::new(); //RefCell::new(Env::new());
+   root.add_defaults();
 
    if let Some(exp) = exp_opt {
-      eval(&exp, &mut env, 0)
+      eval(&exp, root, 0)
    }
    else { err("Couldn't parse code") }
 }
