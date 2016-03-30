@@ -43,6 +43,7 @@ other old stuff:
 #rustc -L . --crate-name err --crate-type lib err.rs
 #rustc -L . --crate-name types --crate-type lib types.rs
 #rustc -L . --crate-name lexer --crate-type lib lexer.rs
+#rustc -L . --crate-name parser --crate-type lib parser.rs
 #rustc -L . lisp.rs
 
 
