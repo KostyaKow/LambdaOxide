@@ -7,8 +7,6 @@ use types::{Sexps, Lexeme, err};
 extern crate err;
 use err::{internal_err, debug_p};
 
-
-
 //inclusive let i = start; while (i <= end)
 fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Vec<(usize, usize)>
 {

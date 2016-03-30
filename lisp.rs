@@ -10,24 +10,13 @@ use std::collections::HashMap;
 use std::boxed::Box;
 //use std::cell::RefCell;
 
-extern crate list;
-use list::{Cons, cons_map, car, cdr};
+extern crate list; use list::{Cons, cons_map, car, cdr};
 //use list::{cons_len, List};
-
-extern crate utils;
-use utils::{print_space, print_nest};
-
-extern crate err;
-use err::{debug_p, internal_err};
-
-extern crate types;
-use types::{Sexps, err};
-
-extern crate lexer;
-use lexer::lex;
-
-extern crate parser;
-use parser::parse;
+extern crate utils; use utils::{print_space, print_nest};
+extern crate err; use err::{debug_p, internal_err};
+extern crate types; use types::{Sexps, err};
+extern crate lexer; use lexer::lex;
+extern crate parser; use parser::parse;
 
 enum FunType {
    BuiltIn(Box<Fn(Box<Cons<Sexps>>) -> Sexps>),
