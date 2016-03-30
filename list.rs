@@ -7,33 +7,34 @@ pub enum Cons<T> {
    Single(T),
    Nil
 }
-//http://stackoverflow.com/questions/30218886/how-to-implement-iterator-and-intoiterator-for-a-simple-struct
-impl<T> Iterator for Cons<T> {
-   type Item = T;
-   type IntoIter = /*Iterator<Item=Self::Item>;*/ConsIntoIterator<T>;
-   fn into_iter(self) -> Self::IntoIter {
-      item: self, index: 0
+//kkleft: impkement cons to vec
+/*impl<T> Cons<T> {
+   fn iterator<'a>(self) -> Vec<&'a T> {
+      let mut c = Box::new(self);
+      let mut v : Vec<T>= Vec::new();
+      while let Cons::Cons(ref x, xs) = *c {
+         v.push(x);
+         c = Box::new(*xs);
+      }
+      v
    }
-}
-struct ConsIntoIterator<T> {
-   item: Cons<T>,
-   index: usize
-}
-impl<T> Iterator for ConsIntoIterator {
+}*/
+
+/*impl<T> Iterator for ConsIntoIterator {
    type Item = T;
    fn next(&mut self) -> Option<T> {
       self.index += 1;
       match self.item {
          Cons::Cons(x, _) => Some(x),
          Cons::Single(x) => Some(x)
-         Cons::None => None
+         Cons::Nil => None
       }
-      /*if self.index < cons_len(self.item) {
+      if self.index < cons_len(self.item) {
          if let
       }
-      else { None }*/
+      else { None }
    }
-}
+}*/
 
 pub fn cons_nil<T>() -> Cons<T> { Cons::Nil }
 pub fn cons_single<T>(x : T) -> Cons<T> { Cons::Single(x) }

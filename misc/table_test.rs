@@ -43,7 +43,6 @@ impl Callable {
             if let Some(ref arg_names) = *arg_names_opt {
                let mut i = 0;
                //for arg in args { env.add(arg_names[i], arg); i+=1; }
-
             }
             else { /*kkleft: env.add("*", args);*/ }
             eval(exp, root.get(env))
