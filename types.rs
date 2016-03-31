@@ -42,6 +42,21 @@ pub fn display_sexps(exp: &Sexps) {
    }
 }
 
+fn print_compact_tree_helper(t: &Sexps) {
+   match *t {
+      Sexps::Sub(box ref sub) => { //box ref sexps
+         print!("(");
+         //kk for x in sub { print_tree(&x, deepness+4); }
+         cons_map(sub, |x| print_compact_tree_helper(x));
+         print!(")");
+      },
+      _ => { print!("{:?} ", t) }
+   }
+}
+pub fn print_compact_tree(t: &Sexps) {
+   print_compact_tree_helper(t);
+   println!("");
+}
 pub fn print_tree(t: &Sexps, deepness: u8) {
    match *t {
       Sexps::Sub(box ref sub) => { //box ref sexps

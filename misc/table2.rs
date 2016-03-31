@@ -10,17 +10,17 @@ use std::boxed::Box;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-//extern crate list; use list::{Cons, cons, cons_reverse, car, cdr};
 //extern crate utils; use utils::{print_space, print_nest, char_at, is_numeric};
 
-extern crate types; use types::{Sexps, err, display_sexps, print_tree, EnvId};
+extern crate types; use types::{Sexps, err, display_sexps, print_tree, print_compact_tree, EnvId};
 
 //tmp TODO kkleft: move main interpreter to separate file
 //and only use this one for tables
-extern crate err; use err::debug_p;
+extern crate utils; use utils::{print_space, print_nest};
+extern crate err; use err::{debug_p, DEBUG};
 extern crate lexer; use lexer::lex;
 extern crate parser; use parser::parse;
-extern crate list; use list::{Cons, car, cdr, cons_map};
+extern crate list; use list::{Cons, car, cdr, cons_map, cons}; //cons_reverse
 //end tmp
 
 type FunArgNames = Sexps; //Option<Vec<String>>;
@@ -37,7 +37,7 @@ enum Callable {
 }
 impl Callable {
    fn exec(&self, args_exp : Sexps, root : Root) -> Sexps {
-      err("calling .exec of callable");
+      debug_p(2, "calling .exec of callable");
 
       match *self {
          Callable::BuiltIn(parent, ref f) => { f(args_exp, root, parent) },
@@ -73,18 +73,33 @@ impl Callable {
    }
 }
 
+fn cons_to_sexps(c : Cons<Sexps>) -> Sexps {
+   Sexps::Sub(Box::new(c))
+}
+
 fn make_sym_table_val(exp : Sexps) -> Callable {
    //let root = Env::new();
    let ret : Box<Fn(Sexps, Root, EnvId) -> Sexps> = Box::new(move |args, root, env| -> Sexps {
-      exp.clone()
+      cons_to_sexps(cons(err("__var"), cons(exp.clone(), Cons::Nil)))
    });
    Callable::BuiltIn(0, ret)
 }
+fn sym_table_is_var(v : Option<&Callable>) -> bool {
+   if let Some(f) = v {
+      match f.exec(err("__sym"), &(RefCell::new(Env::new()))) {
+         Sexps::Sub(box Cons::Cons(Sexps::Err(ref s), _)) if s == "__var" => true,
+         _ => false
+      }
+   } else { false }
+}
 fn get_sym_table_val(v : Option<&Callable>) -> Sexps {
-   match v {
-      None => err("Not found"),
-      Some(f) => f.exec(err(""), &(RefCell::new(Env::new())))
-   }
+   if let Some(f) = v {
+      match f.exec(err("__sym"), &(RefCell::new(Env::new()))) {
+         Sexps::Sub(box Cons::Cons(Sexps::Err(ref s), box Cons::Cons(ref exp, _))) if s == "__var"
+            => exp.clone(),
+         _ => err("Bad value")
+      }
+   } else { err("Not found") }
 }
 //end callable
 
@@ -180,8 +195,9 @@ fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    //root.borrow_mut().table_add(0, "hello", make_sym_table_val(err("test")));
    //print_tree(&get_sym_table_val(root.borrow_mut().lookup(0, "hello")), 0);
    //root.borrow_mut().table_add(0, "hello", make_sym_table_val(Sexps::Num(5)));
-   println!("evalualting: ");
-   print_tree(exp, 2);
+   print!("==evalualting: ");
+   print_compact_tree(exp);
+
 
    match *exp {
       Sexps::Str(_) | Sexps::Num(_) => exp.clone(), //self evaluation
@@ -192,27 +208,29 @@ fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
       Sexps::Var(ref s)             => {
          let borrowed = root.borrow();
          let lookup_opt = borrowed.lookup(table, &s.clone());
-         //comment start
-         let x = get_sym_table_val(lookup_opt);
-         println!("eval variable {}", s);
-         print_tree(&x, 0);
-         x
-         //comment end
+         //if let Some(&Callable::BuiltIn(..)) = lookup_opt { Sexps::Var(s.clone()) }
+         //else { get_sym_table_val(lookup_opt) }
+         if sym_table_is_var(lookup_opt) {
+            let x = get_sym_table_val(lookup_opt);
+            if DEBUG >=3 { print!("eval variable {}: ", s); print_tree(&x, 0); }
+            x
+         }
+         else { Sexps::Var(s.clone()) }
          //get_sym_table_val(lookup_opt)
       }
    }
 }
 
 fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexps {
+   debug_p(2, "==applying macro!");
    match &name[..] {
       "define" => {
-         err("new define");
+         debug_p(3, "macro define");
          if let Cons::Cons(Sexps::Var(ref name), ref binding) = *args {
             //let eval_result = eval(&Sexps::Sub(binding.clone()), root, t);
             //print_tree(&Sexps::Sub(binding.clone()), 0);
             let eval_result = if let Some(x) = car(binding) {
-               println!("defining: {}", &*name);
-               print_tree(x, 2);
+               if DEBUG >= 3 { print_space(3); print!("defining {}: ", &*name); print_compact_tree(x); }
                make_sym_table_val(eval(x, root, t))
             }
             else { make_sym_table_val(err("bad define")) };
@@ -223,11 +241,14 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
          else { err("bad define syntax") }
       }
       "lambda" => {
+         debug_p(3, "macro lambda");
          if let Cons::Cons(ref args@Sexps::Sub(_), box Cons::Cons(ref exp, _)) = *args {
             let borrowed = unsafe { root.as_unsafe_cell().get() };
 
-            println!("args and exp:");
-            print_tree(args, 2); print_tree(exp, 4);
+            if DEBUG >= 3 {
+               print_space(3); print!("args: "); print_compact_tree(args);
+               print_space(5); print!("exp: "); print_compact_tree(exp);
+            }
 
             let lambda = Callable::Lambda(t, args.clone(), exp.clone());
             let lambda_table = unsafe { (*borrowed).table_new(t) };
@@ -240,6 +261,55 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
       }
       _ => { err(&*format!("Cannot find symbol in envrionment and not macro {}", name.to_string())) }
    }
+}
+
+fn is_macro(exp : &Sexps) -> bool {
+   if let Sexps::Sub(box Cons::Cons(Sexps::Var(ref s), ref args)) = *exp {
+      if s == "lambda" || s == "define" { return true }
+   }
+   false
+}
+
+fn apply2(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
+   debug_p(2, "==apply");
+
+   match *exp {
+      Sexps::Sub(box /*e@*/Cons::Cons(ref f, box ref args)) => {
+         if is_macro(exp) {
+            if let Sexps::Var(ref s) = *f { apply_macro(s, &args, root, table) }
+            else { err("bad macro (unreachable)") }
+         }
+         else {
+            debug_p(2, "Calling apply for function");
+            //let e = Cons::Cons(f.clone(), args.clone());
+            //let evaled = cons_map(&e, |exp| { eval(exp, root, table) });
+            let ref evaled_f = eval(&f.clone(), root, table);
+            let evaled_args = eval(&Sexps::Sub(Box::new(args.clone())), root, table);
+
+            if let Sexps::Var(ref s) = *evaled_f {
+               debug_p(2, &format!("applying: {}", s));
+               let borrowed = unsafe { root.as_unsafe_cell().get() };
+               let func_lookup = unsafe { (*borrowed).lookup(table, s) };
+
+               if let Some(f) = func_lookup { //if function look up successful
+                  debug_p(2, "Found symbol, executing function");
+                  /*let evaled_args = cons_map(&args.clone(), |arg| {
+                     //let new_env = borrowed.table_new(table);
+                     let new_table = unsafe { (*borrowed).table_new(table) };
+                     eval(arg, root, new_table)
+                     //eval(arg, root, root.borrow().table_new(table))
+                  });*/
+                  f.exec(evaled_args, root)
+               }
+               else { err(&format!("symbol not found: {}", s)) }
+            }
+            else { err("lambda or error") }
+         }
+      },
+      Sexps::Sub(box Cons::Nil) => err("Empty subexpression"),
+      _ => err("Bad apply call")
+   }
+
 }
 
 fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
@@ -282,34 +352,6 @@ fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
             } else { err("lambda not found") }
          }*/
          else { err("(x y z) <- x has to be macro or function") }
-         /*let maybe_f = car(e); //get function name
-         let maybe_args = cdr(e); //arguments
-
-         if let Some(f) = maybe_f { //first element of sexps
-            if let Sexps::Var(ref s) = *f { //if first element is variable look it up
-               if let Some(f) = root.lookup(table, s) { //if look up successful
-                  debug_p(2, "Not macro!");
-                  if let Some(args) = maybe_args { //if we have rest of arguments
-                     //f.exec(helper(args))
-                     //(cons_map(args, |arg| eval(arg, env)))
-                     //f.exec(Box::new(cons_map(&args.clone(), |arg| eval(arg, env))))
-                     f.exec(Box::new(cons_map(&args.clone(), |arg| {
-                        //eval(arg, &mut SymTable::new(Some(Box::new(env))))
-                        eval(arg, root, root.table_new(table))
-                     })))
-                  }
-                  else { f.exec(Box::new(Cons::Nil)) }
-               }
-               else { //if can't find symbol assume it's macro
-                  debug_p(2, "Macro!");
-                  if let Some(args) = maybe_args {
-                     apply_macro(s, args, root, table)
-                  } else { err("bad args") }
-               }
-            }
-            else { err("function not var") }
-         }
-         else { err("bad args") } */
     }
       Sexps::Sub(box Cons::Nil) => err("Empty subexpression"),
       _ => err("Bad apply call")
@@ -335,14 +377,14 @@ fn interpreter() {
 
    let mut cmd;
    cmd = "(define f (lambda (x) (+ x x)))";
-   println!("> {}", cmd);
+   println!("**> {}", cmd);
    display_sexps(&run(&root, cmd));
    cmd = "(f 5)";
-   println!("> {}", cmd);
+   println!("**> {}", cmd);
    display_sexps(&run(&root, "(f 5)"));
 
    loop {
-      print!(">");
+      print!("**>");
       use std::io::{self, Write};
       io::stdout().flush().unwrap();
       let line = stdin.lock().lines().next().unwrap().unwrap();
@@ -354,6 +396,7 @@ fn interpreter() {
 
 fn main() {
    interpreter();
+   //table_test();
 }
 
 fn table_test() {

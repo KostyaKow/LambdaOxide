@@ -19,7 +19,6 @@ pub enum Cons<T> {
       v
    }
 }*/
-
 /*impl<T> Iterator for ConsIntoIterator {
    type Item = T;
    fn next(&mut self) -> Option<T> {
