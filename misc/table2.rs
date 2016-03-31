@@ -29,7 +29,7 @@ type FunArgs = Sexps;
 //type EnvId = Option<u32>; type EnvId = u32;
 type EnvId = usize;
 
-type Root = Rc<RefCell<Env>>;
+type Root<'a> = &'a RefCell<Env>;
 
 //callable
 enum Callable {
@@ -67,7 +67,7 @@ fn make_sym_table_val(exp : Sexps) -> Callable {
 fn get_sym_table_val(v : Option<&Callable>) -> Sexps {
    match v {
       None => err("Not found"),
-      Some(f) => f.exec(err(""), Rc::new(RefCell::new(Env::new())))
+      Some(f) => f.exec(err(""), &(RefCell::new(Env::new())))
    }
 }
 //end callable
@@ -161,6 +161,10 @@ impl Env {
 }
 
 fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
+   //root.borrow_mut().table_add(0, "hello", make_sym_table_val(err("test")));
+   //print_tree(&get_sym_table_val(root.borrow_mut().lookup(0, "hello")), 0);
+   //root.borrow_mut().table_add(0, "hello", make_sym_table_val(Sexps::Num(5)));
+
    match *exp {
       Sexps::Str(_) | Sexps::Num(_) => exp.clone(), //self evaluation
       Sexps::Sub(_)                 => apply(exp, root, table),
@@ -194,7 +198,7 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
             let eval_result = if let Some(x) = car(binding) {
                println!("defining: {}", &*name);
                print_tree(x, 2);
-               make_sym_table_val(eval(x, root.clone(), t))
+               make_sym_table_val(eval(x, /*&root.clone()*/root, t))
             }
             else { make_sym_table_val(err("bad define")) };
 
@@ -203,7 +207,7 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
 
             //let borrowed = unsafe { root.as_unsafe_cell().get() };
             //unsafe { (*borrowed).table_add(0, &*name, eval_result); } //table_add(t, ...)
-            root.borrow_mut().table_add(0, &*name, eval_result);
+            root.borrow_mut().table_add(t, name, eval_result);
 
             Sexps::Var("success".to_string())
          }
@@ -233,10 +237,8 @@ fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
                debug_p(2, "Found symbol, executing function");
                let evaled_args = cons_map(&args.clone(), |arg| {
                   //let new_env = borrowed.table_new(table);
-                  //eval(arg, root, new_env)
                   let new_table = unsafe { (*borrowed).table_new(table) };
-                  eval(arg, root.clone(), new_table)
-                  //eval(arg, root, new_table)
+                  eval(arg, root, new_table)
                   //eval(arg, root, root.borrow().table_new(table))
                });
                f.exec(Sexps::Sub(Box::new(evaled_args)), root)
@@ -283,12 +285,9 @@ fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    }
 }
 
-fn run(code : &str) -> Sexps {
+fn run(root : Root, code : &str) -> Sexps {
    let lexemes = lex(code);
    let exp_opt = parse(&lexemes);
-
-   let mut root = Rc::new(RefCell::new(Env::new()));
-   root.borrow_mut().add_defaults();
 
    if let Some(exp) = exp_opt {
       eval(&exp, root, 0) //was &mut root
@@ -299,9 +298,13 @@ fn run(code : &str) -> Sexps {
 fn interpreter() {
    use std::io::{self, BufRead};
    let stdin = io::stdin();
+
+   let mut root = RefCell::new(Env::new());
+   root.borrow_mut().add_defaults();
+
    loop {
       let line = stdin.lock().lines().next().unwrap().unwrap();
-      let out = run(&line);
+      let out = run(&root, &line);
       display_sexps(&out)
    }
 }
