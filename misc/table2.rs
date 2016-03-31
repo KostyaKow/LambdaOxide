@@ -235,12 +235,12 @@ fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
                   //let new_env = borrowed.table_new(table);
                   //eval(arg, root, new_env)
                   let new_table = unsafe { (*borrowed).table_new(table) };
-                  //eval(arg, root.clone(), new_table)
                   eval(arg, root.clone(), new_table)
+                  //eval(arg, root, new_table)
                   //eval(arg, root, root.borrow().table_new(table))
                });
                f.exec(Sexps::Sub(Box::new(evaled_args)), root)
-
+               //err("yo")
             }
             else { //if can't find symbol assume it's macro
                debug_p(2, "Macro!");
