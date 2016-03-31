@@ -35,6 +35,14 @@ pub enum Cons<T> {
    }
 }*/
 
+pub fn cons_get<T>(c : &Cons<T>, n : usize) -> Option<&T> {
+   match *c {
+      Cons::Cons(ref x, box ref xs) if n==0 => Some(x),
+      Cons::Cons(ref x, box ref xs) => cons_get(&xs, n-1),
+      _ => None
+   }
+}
+
 pub fn cons_nil<T>() -> Cons<T> { Cons::Nil }
 pub fn cons_single<T>(x : T) -> Cons<T> { Cons::Single(x) }
 pub fn cons<T>(x : T, xs : Cons<T>) -> Cons<T> {

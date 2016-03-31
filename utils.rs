@@ -1,4 +1,8 @@
 
+fn syntax_err(s : &str, n : u32) {
+   println!("error at {}: {}", n, s);
+}
+
 pub enum Status<S, F> { Success(S), Failure(F) }
 
 pub fn is_numeric(s : &str) -> bool {

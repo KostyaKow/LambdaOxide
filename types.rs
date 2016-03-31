@@ -21,7 +21,7 @@ pub enum Sexps {
 impl Drop for Sexps {
    fn drop(&mut self) {
       match *self {
-         Sexps::Err(ref s) if DEBUG >= 3 => println!("err dropping: {}", s),
+         Sexps::Err(ref s) if DEBUG >= 5 => println!("err dropping: {}", s),
          _ if DEBUG >= 7 => println!("sexps going out of scope: {:?}", self),
          _ => {}
       }
@@ -42,7 +42,6 @@ pub fn display_sexps(exp: &Sexps) {
       /*_                 => println!("bad sexps, cant print")*/
    }
 }
-
 fn print_compact_tree_helper(t: &Sexps) {
    match *t {
       Sexps::Sub(box ref sub) => { //box ref sexps
@@ -69,6 +68,7 @@ pub fn print_tree(t: &Sexps, deepness: u8) {
       _ => { print_space(deepness); println!("{:?}", t) }
    }
 }
-
-
+pub fn cons_to_sexps(c : Cons<Sexps>) -> Sexps {
+   Sexps::Sub(Box::new(c))
+}
 
