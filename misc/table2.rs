@@ -143,16 +143,23 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : RefCell<Env>, t : EnvId)
 }
 
 fn apply(exp : &Sexps, root : RefCell<Env>, table : EnvId) -> Sexps {
-   err("hello")
-   /*match *exp {
-      Sexps::Sub(ref e @ box Cons::Cons(f, args)) => { //Sexps::Sub(ref e @ box Cons::Cons(f, args)
+   match *exp {
+      Sexps::Sub(/*ref e @*/ box Cons::Cons(ref f, ref args)) => {
          err("Calling apply for function");
 
-         if let Sexps::Var(ref s) = f { //if first element is variable look it up
-            if let Some(f) = root.borrow().lookup(table, s) { //if function look up successful
+         if let Sexps::Var(ref s) = *f { //if first element is variable look it up
+            //let func_lookup = root.borrow().lookup(table, s);
+            let borrowed = unsafe { root.as_unsafe_cell().get() };
+            let func_lookup = unsafe { (*borrowed).lookup(table, s) };
+
+            if let Some(f) = func_lookup { //if function look up successful
                debug_p(2, "Found symbol, executing function");
-               let evaled_args = cons_map(&args.clone(), |arg| {
-                  eval(arg, root, root.borrow().table_new(table))
+               let evaled_args = cons_map(&args.clone(), move |arg| {
+                  //let new_env = borrowed.table_new(table);
+                  //eval(arg, root, new_env)
+                  let new_table = unsafe { (*borrowed).table_new(table) };
+                  eval(arg, root, new_table)
+                  //eval(arg, root, root.borrow().table_new(table))
                });
                f.exec(Sexps::Sub(Box::new(evaled_args)), root)
 
@@ -164,7 +171,6 @@ fn apply(exp : &Sexps, root : RefCell<Env>, table : EnvId) -> Sexps {
 
          }
          else { err("(x y z) <- x has to be macro or function") }
-*/
          /*let maybe_f = car(e); //get function name
          let maybe_args = cdr(e); //arguments
 
@@ -193,10 +199,10 @@ fn apply(exp : &Sexps, root : RefCell<Env>, table : EnvId) -> Sexps {
             else { err("function not var") }
          }
          else { err("bad args") } */
-/*    } good, uncomment this section
+    }
       Sexps::Sub(box Cons::Nil) => err("Empty subexpression"),
       _ => err("Bad apply call")
-   } */
+   }
 }
 
 fn run(code : &str) -> Sexps {
