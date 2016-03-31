@@ -38,7 +38,8 @@ pub fn display_sexps(exp: &Sexps) {
       Sexps::Var(ref s) => println!("{}", s),
       Sexps::Err(ref s) => println!("{}", s),
       Sexps::Lambda(..) => println!("<lambda>"),
-      _                 => println!("bad sexps, cant print")
+      Sexps::Sub(..)    => print_compact_tree(exp),
+      /*_                 => println!("bad sexps, cant print")*/
    }
 }
 

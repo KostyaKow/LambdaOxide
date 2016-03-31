@@ -27,9 +27,11 @@ type FunArgNames = Sexps; //Option<Vec<String>>;
 type FunArgs = Sexps;
 //type EnvId = Option<u32>; type EnvId = u32;
 
-
 type Root<'a> = &'a RefCell<Env>;
 
+fn cons_to_sexps(c : Cons<Sexps>) -> Sexps {
+   Sexps::Sub(Box::new(c))
+}
 //callable
 enum Callable {
    BuiltIn(EnvId, Box<Fn(Sexps, Root, EnvId) -> Sexps>), //args, root, our env
@@ -47,7 +49,7 @@ impl Callable {
                //if let Sexps::Sub(box = ) arg_names
                let mut arg_names : &Cons<Sexps> = arg_names_;
                while let Cons::Cons(Sexps::Var(ref arg_name), box ref rest) = *arg_names {
-                  root.borrow_mut().table_add(t.clone(), &*arg_name, make_sym_table_val(Sexps::Num(5)));
+                  root.borrow_mut().table_add(t.clone(), &*arg_name, make_sym_table_val(Sexps::Num(55555)));
                   arg_names = &rest;
                }
             };
@@ -67,14 +69,10 @@ impl Callable {
                //let mut i = 0;
                //for arg in args { env.add(arg_names[i], arg); i+=1; }
             } else { kkleft: env.add("*", args); } */
-            apply(exp, root, t.clone())
+            eval(exp, root, t.clone()) //kkleft: eval or apply
          }
       }
    }
-}
-
-fn cons_to_sexps(c : Cons<Sexps>) -> Sexps {
-   Sexps::Sub(Box::new(c))
 }
 
 fn make_sym_table_val(exp : Sexps) -> Callable {
@@ -270,7 +268,7 @@ fn is_macro(exp : &Sexps) -> bool {
    false
 }
 
-fn apply2(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
+fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    debug_p(2, "==apply");
 
    match *exp {
@@ -286,11 +284,14 @@ fn apply2(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
             let ref evaled_f = eval(&f.clone(), root, table);
             let evaled_args = eval(&Sexps::Sub(Box::new(args.clone())), root, table);
 
+            print!("zzzzzzzzzzz");
+            print_compact_tree(evaled_f);
+
             if let Sexps::Var(ref s) = *evaled_f {
                debug_p(2, &format!("applying: {}", s));
                let borrowed = unsafe { root.as_unsafe_cell().get() };
                let func_lookup = unsafe { (*borrowed).lookup(table, s) };
-
+               print!("iiiiiiiiiiiiiiiiiiiiiii {}", sym_table_is_var(func_lookup));
                if let Some(f) = func_lookup { //if function look up successful
                   debug_p(2, "Found symbol, executing function");
                   /*let evaled_args = cons_map(&args.clone(), |arg| {
@@ -312,7 +313,7 @@ fn apply2(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
 
 }
 
-fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
+fn apply2(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    match *exp {
       Sexps::Sub(/*ref e @*/ box Cons::Cons(ref f, ref args)) => {
          debug_p(2, "Calling apply for function");
