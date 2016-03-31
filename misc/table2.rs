@@ -213,19 +213,7 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
             let eval_result = if let Some(x) = car(binding) {
                println!("defining: {}", &*name);
                print_tree(x, 2);
-               match *x {
-                  Sexps::Lambda(ref table, ref name) => {
-                     if let Some(z) = root.borrow().lookup(*table, &name) {
-                        match *z {
-                           Callable::Lambda(ref env, ref args, ref exp) =>
-                              Callable::Lambda(env.clone(), args.clone(), exp.clone()),
-                           _ =>  make_sym_table_val(err("Should be lambda but found BuiltIn"))
-                        }
-                     }
-                     else { make_sym_table_val(err("Couldn't find lambda while applying define")) }
-                  }
-                  _ => make_sym_table_val(eval(x, root, t))
-               }
+               make_sym_table_val(eval(x, root, t))
             }
             else { make_sym_table_val(err("bad define")) };
             root.borrow_mut().table_add(t, name, eval_result);
