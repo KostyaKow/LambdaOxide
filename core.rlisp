@@ -1,0 +1,7 @@
+;(define (cons a b) (lambda (f) (f a b)))
+;(define (car x) (x (lambda (a b) a)))
+;(define (cdr x) (x (lambda (a b) b)))
+
+(define cons (lambda (a b) (lambda (f) (f a b))))
+(define car  (lambda (x) (x (lambda (a b) a))))
+(define cdr  (lambda (x) (x (lambda (a b) b))))

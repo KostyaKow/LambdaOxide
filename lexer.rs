@@ -32,7 +32,7 @@ pub fn lex(code : &str) -> Vec<Lexeme> {
          }
       }
       if str_start {
-         let l = Lexeme::Str(slice_str(code, start, end));
+         let l = Lexeme::Str(slice_str(code, start+1, end-1));
          lexemes.push(l);
          i = end + 1;
          r_it += 1;

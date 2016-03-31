@@ -17,7 +17,7 @@ use types::{Sexps, err, display_sexps, print_tree, print_compact_tree, EnvId, co
 
 //tmp TODO kkleft: move main interpreter to separate file
 //and only use this one for tables
-extern crate utils; use utils::{print_space, print_nest};
+extern crate utils; use utils::{print_space, print_nest, char_at};
 extern crate err; use err::{debug_p, DEBUG};
 extern crate lexer; use lexer::lex;
 extern crate parser; use parser::parse;
@@ -29,11 +29,11 @@ type FunArgs = Sexps;
 //type EnvId = Option<u32>; type EnvId = u32;
 
 type Root<'a> = &'a RefCell<Env>;
-
+type BuiltInFunc = Fn(Sexps, Root, EnvId) -> Sexps;
 
 //callable
 enum Callable {
-   BuiltIn(EnvId, Box<Fn(Sexps, Root, EnvId) -> Sexps>), //args, root, our env
+   BuiltIn(EnvId, Box<BuiltInFunc>), //args, root, our env
    Lambda(EnvId, FunArgNames, Sexps)
 }
 impl Callable {
@@ -193,6 +193,45 @@ impl Env {
       let diff = Callable::BuiltIn(0, Box::new(diff_));
       self.table_add(0, "-", diff);
 
+      let load_ = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
+         //TODO: kkleft assert rest = Null
+         use std::io::prelude::*;
+         use std::fs::File;
+         use std::path::Path;
+         use std::error::Error;
+
+         if let Sexps::Sub(box Cons::Cons(Sexps::Str(ref path_str), ref rest)) = args_sexps {
+            println!("loading file {}", path_str); //err("file")
+            /*let mut f = try!(File::open(s));
+            try!(f.read_to_string(&mut file_content));*/
+            let path = Path::new(path_str); //path_str);
+            match File::open(&path) {
+               Ok(mut file) => {
+                  let mut file_content = String::new();
+                  match file.read_to_string(&mut file_content) {
+                     Ok(_) => {
+                        let lines = file_content.split("\n").collect::<Vec<&str>>();
+
+                        let mut x : Sexps = err("empty file");
+                        for line in lines.iter() {
+                           if let Some(first) = char_at(line, 0) {
+                              if first != ';' {
+                                 x = run(root, line)
+                              }
+                           }
+                        }
+                        x
+                     }
+                     Err(why) => { panic!("{}", Error::description(&why)); err("failed to read file") }
+                  }
+               }
+               Err(why) => { panic!("{}", Error::description(&why)); err("failed to open file") }
+            }
+         }
+         else { err("cannot load file: bad name") }
+      };
+      let load = Callable::BuiltIn(0, Box::new(load_));
+      self.table_add(0, "load", load);
    }
 }
 
@@ -381,13 +420,13 @@ fn interpreter() {
    let mut root = RefCell::new(Env::new());
    root.borrow_mut().add_defaults();
 
-   let mut cmd;
+   /*let mut cmd;
    cmd = "(define f (lambda (x) (+ x x)))";
    println!("**> {}", cmd);
    display_sexps(&run(&root, cmd));
    cmd = "(f 5)";
    println!("**> {}", cmd);
-   display_sexps(&run(&root, "(f 5)"));
+   display_sexps(&run(&root, "(f 5)"));*/
 
    loop {
       print!("**>");
