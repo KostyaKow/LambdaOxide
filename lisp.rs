@@ -117,6 +117,22 @@ impl Env {
       env.table_new(0);
       env
    }
+   fn print(&self) {
+      for table in &self.tables {
+         println!("table...parent: {}", table.parent);
+         for (ref key, ref binding) in &table.bindings {
+            //println!("key: {}, binding: {}", key, binding);
+            print_space(3); println!("key: {}", key);
+            let b = Some(*binding);
+            let is_var = sym_table_is_var(b);
+            print_space(6); println!("is_var: {}", is_var);
+            if is_var {
+               print_space(6); print!("val: ");
+               display_sexps(&get_sym_table_val(b));
+            }
+         };
+      }
+   }
    fn table_new(&mut self, parent : EnvId) -> EnvId {
       self.tables.push(Table { bindings : HashMap::new(), parent: parent });
       self.tables.len()-1
@@ -442,7 +458,8 @@ fn interpreter() {
       io::stdout().flush().unwrap();
       let line = stdin.lock().lines().next().unwrap().unwrap();
       let out = run(&root, &line);
-      display_sexps(&out)
+      display_sexps(&out);
+      root.borrow().print();
    }
 }
 
