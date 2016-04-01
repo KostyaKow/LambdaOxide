@@ -239,7 +239,7 @@ fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    //root.borrow_mut().table_add(0, "hello", make_sym_table_val(err("test")));
    //print_tree(&get_sym_table_val(root.borrow_mut().lookup(0, "hello")), 0);
    //root.borrow_mut().table_add(0, "hello", make_sym_table_val(Sexps::Num(5)));
-   print!("==evalualting: ");
+   print!("==evaluating: ");
    print_compact_tree(exp);
 
 
@@ -344,10 +344,13 @@ fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
                   let borrowed = unsafe { root.as_unsafe_cell().get() };
                   let func_lookup = unsafe { (*borrowed).lookup(*table, &*name) };
                   if let Some(lambda) = func_lookup {
-                     lambda.exec(Sexps::Sub(Box::new(args.clone())), root)
+                     lambda.exec(Sexps::Sub(evaled_args.clone()), root)
                   } else { err("lambda not found") }
                }
-               else { err("(x y z) <- x has to be macro or function") }
+               else {
+                  display_sexps(evaled_f);
+                  err("(x y z) <- x has to be macro or function")
+               }
             }
             else { err("bad match") }
          }
@@ -420,6 +423,10 @@ fn interpreter() {
    let mut root = RefCell::new(Env::new());
    root.borrow_mut().add_defaults();
 
+   let mut cmd;
+   cmd = "(load \"core.lam\")";
+   println!("**> {}", cmd);
+   display_sexps(&run(&root, cmd));
    /*let mut cmd;
    cmd = "(define f (lambda (x) (+ x x)))";
    println!("**> {}", cmd);
