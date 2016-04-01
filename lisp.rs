@@ -239,9 +239,10 @@ fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    //root.borrow_mut().table_add(0, "hello", make_sym_table_val(err("test")));
    //print_tree(&get_sym_table_val(root.borrow_mut().lookup(0, "hello")), 0);
    //root.borrow_mut().table_add(0, "hello", make_sym_table_val(Sexps::Num(5)));
-   print!("==evaluating: ");
-   print_compact_tree(exp);
-
+   if DEBUG >= 2 {
+      print!("==evaluating: ");
+      print_compact_tree(exp);
+   }
 
    match *exp {
       Sexps::Str(_) | Sexps::Num(_) => exp.clone(), //self evaluation
@@ -446,7 +447,11 @@ fn interpreter() {
 }
 
 fn main() {
-   interpreter();
+   use std::thread;
+   let child = thread::Builder::new().stack_size(8*32*1024*1024).spawn(move || {
+      interpreter();
+   }).unwrap();
+   let test = child.join().unwrap();
    //table_test();
 }
 

@@ -6,6 +6,31 @@
 (define car  (lambda (x) (x (lambda (a b) a))))
 (define cdr  (lambda (x) (x (lambda (a b) b))))
 
-(define f (lambda (x) (x 5)))
-(f (lambda (z) z))
+;TODO: THIS IS BROKEN !! kkleft
+;(car (cdr (cons 1 (cons 2 3))))
 
+;(define list
+
+;(define (ycomb f) ((lambda (x) (f x x)) (lambda (x) (f x x))))
+;f(a, b)
+(define ycomb (lambda (f) ((lambda (x) (f x x)) (lambda (x) (f x x)))))
+
+;(define f (lambda (x) (x 5)))
+;(f (lambda (z) z))
+
+
+;(define true (lambda (a b) a)
+;(define false (lambda (a b) b)
+
+;church numerals
+(define zero (lambda (f) (lambda (x) x)))
+(define one (lambda (f) (lambda (x) (f x))))
+(define two (lambda (f) (lambda (x) (f (f x)))))
+
+(define add (lambda (a b) (lambda (f) (lambda (x) ((a f) ((b f) x))))))
+(define mul (lambda (a b) (lambda (f) (lambda (x) ((a (b f)) x)))))
+;church-to-int
+(define fromc (lambda (n) ((n (lambda (x) (+ x 1))) 0)))
+
+;TODO: kkleft. why does this overflow stack????
+; (fromc (add one (add one one)))
