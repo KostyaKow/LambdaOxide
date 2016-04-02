@@ -62,7 +62,7 @@ impl Callable {
                   }
                } else { return err("Bad argument names in lambda") }
             }
-            else { return err("bad args to lambda") }
+            else { err("bad args to lambda"); }
             /*if let Sexps::Sub(box args_@Cons::Cons(Sexps::Var(_), _) = args_exp {
                //if let Sexps::Sub(box = ) arg_names
                let mut args : Cons<Sexps> = args_;
@@ -275,6 +275,18 @@ impl Env {
       };
       let print_root = Callable::BuiltIn(0, Box::new(print_root_));
       self.table_add(0, "print_env", print_root);
+
+      self.table_add(0, "nil", make_sym_table_val(err("")));
+
+      let is_nil_ = |args : Sexps, root : Root, table : EnvId| -> Sexps {
+         if let Sexps::Sub(box Cons::Cons(Sexps::Err(_), _)) = args {
+            Sexps::Bool(true)
+         }
+         else { Sexps::Bool(false) }
+      };
+      let is_nil = Callable::BuiltIn(0, Box::new(is_nil_));
+      self.table_add(0, "null?", is_nil);
+
    }
 }
 
@@ -288,7 +300,8 @@ fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    }
 
    match *exp {
-      Sexps::Str(_) | Sexps::Num(_) => exp.clone(), //self evaluation
+      Sexps::Str(_) | Sexps::Num(_)
+                    | Sexps::Bool(_)=> exp.clone(), //self evaluation
       Sexps::Sub(_)                 => apply(exp, root, table),
       //Sexps::Lambda(..)           => apply(exp, root, table),
       ref l@Sexps::Lambda(..)       => l.clone(),
@@ -339,7 +352,7 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
             let borrowed = unsafe { root.as_unsafe_cell().get() };
             let lambda_table = unsafe { (*borrowed).table_new(t) };
 
-            println!("new lambda table number {}", lambda_table);
+            debug_p(2, &format!("new lambda table number {}", lambda_table));
             let lambda = Callable::Lambda(lambda_table, args.clone(), exp.clone());
             root.borrow_mut().table_add(lambda_table, "self", lambda);
             Sexps::Lambda(lambda_table, "self".to_string())
@@ -347,6 +360,19 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
             //if let Cons::Cons(x, xs) = *args {}
             //Callable::new(args, env)
          } else { err("bad arguments to lambda") }
+      },
+      "if" => {
+         debug_p(3, "if statement");
+         //if let Cons::Cons(cond, box Sexps::Sub(box Cons::Cons(if_t, box Sexps::Sub(box Cons::Cons(if_f, _))))) = *args {
+         if let Cons::Cons(ref cond, box Cons::Cons(ref if_t, box Cons::Cons(ref if_f, _))) = *args
+         {
+            match eval(cond, root, t) {
+               Sexps::Bool(true)  => eval(if_t, root, t),
+               Sexps::Bool(false) => eval(if_f, root, t),
+               _                  => err("if x y z <-- x needs to return boolean")
+            }
+         }
+         else { err("bad argument format to if") }
       }
       _ => { err(&*format!("Cannot find symbol in envrionment and not macro {}", name.to_string())) }
    }
@@ -354,7 +380,7 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
 
 fn is_macro(exp : &Sexps) -> bool {
    if let Sexps::Sub(box Cons::Cons(Sexps::Var(ref s), ref args)) = *exp {
-      if s == "lambda" || s == "define" { return true }
+      if s == "if" || s == "lambda" || s == "define" { return true }
    }
    false
 }

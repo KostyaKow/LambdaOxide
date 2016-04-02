@@ -6,7 +6,6 @@ extern crate err; use err::DEBUG;
 extern crate list; use list::{Cons, cons_map};
 extern crate utils; use utils::{print_space, print_nest};
 
-
 #[derive(Debug)]
 pub enum Lexeme { OpenParen, CloseParen, Str(String), Sym(String), Num(i64) }
 
@@ -15,7 +14,8 @@ pub type EnvId = usize;
 #[derive(Clone, Debug)] //Try to implement copy
 pub enum Sexps {
    Str(String), Num(i64), Var(String), Err(String), //Literal(String),
-   Sub(Box<Cons<Sexps>>), Lambda(EnvId, String) //Quote(Box<Cons<Sexps>>) //Sub(Box<Vec<Sexps>>)
+   Sub(Box<Cons<Sexps>>), Lambda(EnvId, String),
+   Bool(bool) //Quote(Box<Cons<Sexps>>) //Sub(Box<Vec<Sexps>>)
 }
 
 impl Drop for Sexps {
@@ -38,6 +38,7 @@ pub fn display_sexps(exp: &Sexps) {
       Sexps::Var(ref s) => println!("{}", s),
       Sexps::Err(ref s) => println!("{}", s),
       Sexps::Lambda(..) => println!("<lambda>"),
+      Sexps::Bool(x)    => println!("{}", x),
       Sexps::Sub(..)    => print_compact_tree(exp),
       /*_                 => println!("bad sexps, cant print")*/
    }
