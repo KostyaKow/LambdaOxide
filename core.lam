@@ -1,0 +1,22 @@
+
+(define cons (lambda (a b) (lambda (f) (f a b))))
+(define car  (lambda (o1) (o1 (lambda (x y) x))))
+(define cdr  (lambda (o2) (o2 (lambda (j i) i))))
+
+;(cdr (cons 1 (cons 2 3)))
+;(cons 1 (cons 2 3))
+
+;(car (cdr (cons 1 (cons 2 3))))
+;(cons 1 (cons 2 3)) = table 1
+;(cdr table_1) = table 3
+;(car table_3) = table 2
+;(f ) = table 4
+;(f ) = table 5
+;(i ) = table 6
+;(y, x) = table 7
+
+(define x (cons (cons 1 2) 5))
+;error: (car (car x)) should print 1
+;but instead (car x) returns x itself
+
+;(((lambda (x) (lambda (y) x)) 5) 10)

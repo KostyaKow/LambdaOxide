@@ -1,13 +1,13 @@
 ;(define (cons a b) (lambda (f) (f a b)))
 ;(define (car x) (x (lambda (a b) a)))
 ;(define (cdr x) (x (lambda (a b) b)))
-
 (define cons (lambda (a b) (lambda (f) (f a b))))
 (define car  (lambda (x) (x (lambda (a b) a))))
 (define cdr  (lambda (x) (x (lambda (a b) b))))
 
 ;TODO: THIS IS BROKEN !! kkleft
 ;(car (cdr (cons 1 (cons 2 3))))
+;prints 1 instead of 2
 
 ;(define list
 
@@ -17,7 +17,6 @@
 
 ;(define f (lambda (x) (x 5)))
 ;(f (lambda (z) z))
-
 
 ;(define true (lambda (a b) a)
 ;(define false (lambda (a b) b)
