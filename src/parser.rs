@@ -1,10 +1,10 @@
-extern crate list;
+//extern crate list;
 use list::{Cons, cons, cons_reverse};
 
-extern crate types;
+//extern crate types;
 use types::{Sexps, Lexeme, err};
 
-extern crate err;
+//extern crate err;
 use err::{internal_err, debug_p};
 
 //inclusive let i = start; while (i <= end)

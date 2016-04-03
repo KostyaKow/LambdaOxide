@@ -1,8 +1,11 @@
-extern crate types;
+//extern crate types;
 use types::Lexeme;
 
-extern crate utils;
+//extern crate utils;
 use utils::{get_char_ranges, char_at, is_numeric, slice_str};
+
+//mod utils;
+//mod types;
 
 pub fn lex(code : &str) -> Vec<Lexeme> {
    let mut lexemes : Vec<Lexeme> = Vec::new();

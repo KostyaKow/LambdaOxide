@@ -1,10 +1,14 @@
 #![feature(box_syntax, box_patterns)]
 
-use std::boxed::Box;
 
-extern crate err; use err::DEBUG;
-extern crate list; use list::{Cons, cons_map};
-extern crate utils; use utils::{print_space, print_nest};
+//extern crate err;use err::DEBUG;
+//extern crate list; use list::{Cons, cons_map};
+//extern crate utils; use utils::{print_space, print_nest};
+
+use err::DEBUG;
+use std::boxed::Box;
+use list::{Cons, cons_map};
+use utils::{print_space, print_nest};
 
 #[derive(Debug)]
 pub enum Lexeme { OpenParen, CloseParen, Str(String), Sym(String), Num(i64) }

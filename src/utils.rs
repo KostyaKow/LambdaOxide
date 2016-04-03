@@ -1,5 +1,4 @@
-
-fn syntax_err(s : &str, n : u32) {
+pub fn syntax_err(s : &str, n : u32) {
    println!("error at {}: {}", n, s);
 }
 
@@ -76,4 +75,3 @@ pub fn char_at(code : &str, n : usize) -> Option<char> {
     }
     return None
 }
-
