@@ -31,6 +31,21 @@ impl Drop for Sexps {
 //or String::from(s)
 pub fn err(s : &str) -> Sexps { Sexps::Err(s.to_string()) }
 
+
+//works well, but we have derive(Debug) on lexemes so we can just debug print them
+fn print_lexemes(lexemes: &Vec<Lexeme>) {
+   for l in lexemes.iter() {
+      match *l {
+         /*_ => {} empty match */
+         Lexeme::OpenParen => println!("open paren"),
+         Lexeme::CloseParen => println!("close paren"),
+         Lexeme::Str(ref s) => println!("string {}", s),
+         Lexeme::Sym(ref s) => println!("sym {}", s),
+         Lexeme::Num(ref n) => println!("number {}", n),
+      }
+   }
+}
+
 pub fn display_sexps(exp: &Sexps) {
    match *exp {
       Sexps::Str(ref s) => println!("{}", s),
