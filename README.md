@@ -10,14 +10,22 @@ $ cargo run
 success
 **> (f 3 5)
 -7
-**> (define c (cons 1 (cons 2 nil)))
+**> (define l (cons 1 (cons 2 nil)))
 success
-**>(car c)
+**>(car l)
 1
-**>(cadr c)
+**>(cadr l)
 2
-**>(if (null? c) "empty" "non-empty")
+**>(define l2 (map (lambda (x) (+ x 20)) l))
+success
+**>(car l2)
+21
+**>(define check (lambda (lst) (if (null? lst) "empty" "non-empty")))
+success
+**>(check l)
 non-empty
+**>(check (cdr (cdr l)))
+empty
 ```
 
 TODO:
