@@ -1,0 +1,21 @@
+servo notes:
+
+https://github.com/servo/mozjs/
+https://github.com/servo/rust-mozjs/
+   src/
+      rust.js
+   examples/
+      callback.rs
+
+
+components/
+   scripts/
+      script_thread.js
+         use js::jsapi::{..., JS_GetRuntime, JSRuntime}
+         struct ScriptThread
+            page: DOMRefCell<Option<Rc<Page>>>
+            port: Receiver<MainThreadScriptMsg>
+            js_runtime: Rc<Runtime>
+   servo/
+      lib.rs
+
