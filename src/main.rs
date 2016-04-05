@@ -333,7 +333,8 @@ fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    }
 }
 
-fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexps {
+fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexps
+{
    debug_p(2, "==applying macro!");
    match &name[..] {
       "define" => {

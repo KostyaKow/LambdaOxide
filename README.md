@@ -29,6 +29,11 @@ empty
 ```
 
 TODO:
-   add env to print_sexps
-
+   -implement c-types-like ffi
+   -implement macro system
+   -comparison
+   -floats
+   -quote
+   -add env to print_sexps
+   -unit tests with cargo
 
