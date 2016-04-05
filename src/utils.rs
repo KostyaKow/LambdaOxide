@@ -11,7 +11,7 @@ pub fn contains<T : PartialEq>(item : T, vec : Vec<T>) -> bool {
 pub fn vec_eq<T: PartialEq>(v1 : &Vec<T>, v2 : &Vec<T>) -> bool {
    if v1.len() != v2.len() { return false; }
    for (x, y) in v1.iter().zip(v2.iter()) {
-      if x != y { return false; }
+      if *x != *y { return false; }
    }
    true
 }
