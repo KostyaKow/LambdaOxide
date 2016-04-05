@@ -10,22 +10,12 @@ use std::boxed::Box;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-
-//tmp TODO kkleft: move main interpreter to separate file
-//and only use this one for tables
-//extern crate utils;
 use utils::{print_space, print_nest, char_at, is_numeric};
-//extern crate types;
 use types::{Sexps, err, display_sexps, print_tree, print_compact_tree, EnvId, cons_to_sexps};
-//extern crate err;
 use err::{debug_p, DEBUG};
-//extern crate lexer;
 use lexer::lex;
-//extern crate parser;
 use parser::parse;
-//extern crate list;
 use list::{Cons, car, cdr, cons_map, cons, cons_get}; //cons_reverse
-//end tmp
 
 mod utils;
 mod types;

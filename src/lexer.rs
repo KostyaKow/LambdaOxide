@@ -1,7 +1,5 @@
-//extern crate types;
 use types::Lexeme;
 
-//extern crate utils;
 use utils::{get_char_ranges, char_at, is_numeric, slice_str};
 
 //mod utils;
