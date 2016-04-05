@@ -36,4 +36,11 @@ TODO:
    -quote
    -add env to print_sexps
    -unit tests with cargo
-
+   -evaluating naked expression like 8 or "blah" doesn't work with intepreter
+   -loading multiline statements
+   -move built-in functions to separate file
+   -make matching arguments easier for build-ins
+   -build-in cons
+   -convert sexps to use vec (??? maybe)
+   -implement variable-number arguments with *
+   -multiple expressions in lambda, etc.

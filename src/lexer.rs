@@ -1,9 +1,6 @@
 use types::Lexeme;
 
 use utils::{get_char_ranges, char_at, is_float, is_int, slice_str, to_float, to_int, contains};
-//use types::{LexFail, LexResult};
-//mod utils;
-//mod types;
 
 fn collect_sym(col : &str) -> Lexeme {
    if is_int(&col) {
@@ -31,7 +28,6 @@ pub fn lex(code : &str) -> Vec<Lexeme> {
       let c = char_at(code, i).unwrap();
       //should we collect symbols
       let collect = str_start || contains(c, vec!['(', ')', '\'', '`', ',', ' ']);
-      //c == '(' || c == ')' c == '\'' || c == '`' || c == ',' || c == ' ';
 
       if collect && !col.is_empty() {
          lexemes.push(collect_sym(&col));

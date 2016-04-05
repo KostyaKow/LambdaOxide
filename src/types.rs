@@ -30,6 +30,18 @@ pub enum Sexps {
    Bool(bool) //Quote(Box<Cons<Sexps>>) //Sub(Box<Vec<Sexps>>)
 }
 
+impl PartialEq for Sexps {
+   fn eq(&self, other: &Sexps) -> bool {
+      use self::Sexps::*;
+      match (self, other) {
+         (&Str(ref s1), &Str(ref s2))     => s1 == s2,
+         (&Num(ref n1), &Num(ref n2))     => n1 == n2,
+         (&Bool(ref b1), &Bool(ref b2))   => b1 == b2,
+         _                                => false
+      }
+   }
+}
+
 impl Drop for Sexps {
    fn drop(&mut self) {
       match *self {
@@ -40,8 +52,10 @@ impl Drop for Sexps {
    }
 }
 
+use self::Sexps::*;
+
 //or String::from(s)
-pub fn err(s : &str) -> Sexps { Sexps::Err(s.to_string()) }
+pub fn err(s : &str) -> Sexps { Err(s.to_string()) }
 
 //works well, but we have derive(Debug) on lexemes so we can just debug print them
 pub fn print_lexemes(lexemes: &Vec<Lexeme>) {
@@ -61,19 +75,19 @@ pub fn print_lexemes(lexemes: &Vec<Lexeme>) {
 
 pub fn display_sexps(exp: &Sexps) {
    match *exp {
-      Sexps::Str(ref s) => println!("{}", s),
-      Sexps::Num(ref n) => println!("{}", n),
-      Sexps::Var(ref s) => println!("{}", s),
-      Sexps::Err(ref s) => println!("{}", s),
-      Sexps::Lambda(..) => println!("<lambda>"),
-      Sexps::Bool(x)    => println!("{}", x),
-      Sexps::Sub(..)    => print_compact_tree(exp),
+      Str(ref s) => println!("{}", s),
+      Num(ref n) => println!("{}", n),
+      Var(ref s) => println!("{}", s),
+      Err(ref s) => println!("{}", s),
+      Lambda(..) => println!("<lambda>"),
+      Bool(x)    => println!("{}", x),
+      Sub(..)    => print_compact_tree(exp),
       /*_                 => println!("bad sexps, cant print")*/
    }
 }
 fn print_compact_tree_helper(t: &Sexps) {
    match *t {
-      Sexps::Sub(box ref sub) => { //box ref sexps
+      Sub(box ref sub) => { //box ref sexps
          print!("(");
          //kk for x in sub { print_tree(&x, deepness+4); }
          cons_map(sub, |x| print_compact_tree_helper(x));
@@ -88,7 +102,7 @@ pub fn print_compact_tree(t: &Sexps) {
 }
 pub fn print_tree(t: &Sexps, deepness: u8) {
    match *t {
-      Sexps::Sub(box ref sub) => { //box ref sexps
+      Sub(box ref sub) => { //box ref sexps
          print_nest("(", deepness, None);
          //kk for x in sub { print_tree(&x, deepness+4); }
          cons_map(sub, |x| print_tree(x, deepness+4));
@@ -98,6 +112,6 @@ pub fn print_tree(t: &Sexps, deepness: u8) {
    }
 }
 pub fn cons_to_sexps(c : Cons<Sexps>) -> Sexps {
-   Sexps::Sub(Box::new(c))
+   Sub(Box::new(c))
 }
 

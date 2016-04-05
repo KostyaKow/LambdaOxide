@@ -15,7 +15,6 @@ pub fn vec_eq<T: PartialEq>(v1 : &Vec<T>, v2 : &Vec<T>) -> bool {
    }
    true
 }
-//pub enum Status<S, F> { Success(S), Failure(F) }
 
 pub fn is_int(s : &str) -> bool {
    let mut i = 0;
