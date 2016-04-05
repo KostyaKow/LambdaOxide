@@ -2,18 +2,28 @@ pub fn syntax_err(s : &str, n : u32) {
    println!("error at {}: {}", n, s);
 }
 
-pub enum Status<S, F> { Success(S), Failure(F) }
+//pub enum Status<S, F> { Success(S), Failure(F) }
 
 pub fn is_numeric(s : &str) -> bool {
    let mut i = 0;
    while i < s.len() {
       if let Some(c) = char_at(s, i) {
-         if !c.is_digit(10) { return false; }
+         if (!c.is_digit(10) && c != '-' && c != '.') { return false; }
       }
       i += 1;
    }
    true
 }
+pub fn is_float(s : &str) -> bool {
+
+}
+pub fn to_float(s : &str) -> bool {
+   s.parse::<f64>().unwrap()
+}
+pub fn to_int(s : &str) -> i64 {
+   s.parse::<i64>().unwrap()
+}
+
 pub fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
    let mut ranges : Vec<(usize, usize)> = Vec::new();
 

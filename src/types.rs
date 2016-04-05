@@ -10,8 +10,16 @@ use std::boxed::Box;
 use list::{Cons, cons_map};
 use utils::{print_space, print_nest};
 
+pub enum LexFail {
+   BadCollect, Unmatched
+}
+//either lexemes, or code with location
+pub type LexResult = Result<Vec<Lexeme>, (LexFail, u32)>;
+
 #[derive(Debug)]
-pub enum Lexeme { OpenParen, CloseParen, Str(String), Sym(String), Num(i64) }
+pub enum Lexeme {
+   OpenParen, CloseParen, Str(String), Sym(String), Num(i64), Float(i64), Quote(char)
+}
 
 pub type EnvId = usize;
 
