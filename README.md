@@ -29,7 +29,7 @@ empty
 ```
 
 TODO:
-   -implement c-types-like ffi
+   -implement c-types-like ffi (using libffi?)
    -implement macro system
    -comparison
    -floats
@@ -44,3 +44,4 @@ TODO:
    -convert sexps to use vec (??? maybe)
    -implement variable-number arguments with *
    -multiple expressions in lambda, etc.
+   -switch form list::Cons to list::List
