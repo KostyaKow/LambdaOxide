@@ -2,22 +2,44 @@ pub fn syntax_err(s : &str, n : u32) {
    println!("error at {}: {}", n, s);
 }
 
+pub fn contains<T : PartialEq>(item : T, vec : Vec<T>) -> bool {
+   for x in vec {
+      if x == item { return true; }
+   }
+   false
+}
+pub fn vec_eq<T: PartialEq>(v1 : &Vec<T>, v2 : &Vec<T>) -> bool {
+   if v1.len() != v2.len() { return false; }
+   for (x, y) in v1.iter().zip(v2.iter()) {
+      if x != y { return false; }
+   }
+   true
+}
 //pub enum Status<S, F> { Success(S), Failure(F) }
 
-pub fn is_numeric(s : &str) -> bool {
+pub fn is_int(s : &str) -> bool {
    let mut i = 0;
    while i < s.len() {
-      if let Some(c) = char_at(s, i) {
-         if (!c.is_digit(10) && c != '-' && c != '.') { return false; }
-      }
+      let c = char_at(s, i).unwrap();
+      if !c.is_digit(10) && !(i == 0 && c == '-') { return false; }
       i += 1;
    }
    true
 }
 pub fn is_float(s : &str) -> bool {
-
+   let mut i = 0;
+   let mut have_dot = false;
+   while i < s.len() {
+      let c = char_at(s, i).unwrap();
+      if !c.is_digit(10) && !(i == 0 && c == '-') {
+         if c == '.' && have_dot == false { have_dot = true; }
+         else { return false; }
+      }
+      i += 1;
+   }
+   true
 }
-pub fn to_float(s : &str) -> bool {
+pub fn to_float(s : &str) -> f64 {
    s.parse::<f64>().unwrap()
 }
 pub fn to_int(s : &str) -> i64 {

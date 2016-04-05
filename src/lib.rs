@@ -6,4 +6,4 @@ mod list;
 mod types;
 mod lexer;
 mod parser;
-
+mod unit_tests;

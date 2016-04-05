@@ -10,15 +10,15 @@ use std::boxed::Box;
 use list::{Cons, cons_map};
 use utils::{print_space, print_nest};
 
-pub enum LexFail {
+/*pub enum LexFail {
    BadCollect, Unmatched
 }
 //either lexemes, or code with location
-pub type LexResult = Result<Vec<Lexeme>, (LexFail, u32)>;
+pub type LexResult = Result<Vec<Lexeme>, (LexFail, u32)>;*/
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Lexeme {
-   OpenParen, CloseParen, Str(String), Sym(String), Num(i64), Float(i64), Quote(char)
+   OpenParen, CloseParen, Str(String), Sym(String), Int(i64), Float(f64), Quote(char)
 }
 
 pub type EnvId = usize;
@@ -43,17 +43,18 @@ impl Drop for Sexps {
 //or String::from(s)
 pub fn err(s : &str) -> Sexps { Sexps::Err(s.to_string()) }
 
-
 //works well, but we have derive(Debug) on lexemes so we can just debug print them
-fn print_lexemes(lexemes: &Vec<Lexeme>) {
+pub fn print_lexemes(lexemes: &Vec<Lexeme>) {
    for l in lexemes.iter() {
       match *l {
          /*_ => {} empty match */
-         Lexeme::OpenParen => println!("open paren"),
-         Lexeme::CloseParen => println!("close paren"),
-         Lexeme::Str(ref s) => println!("string {}", s),
-         Lexeme::Sym(ref s) => println!("sym {}", s),
-         Lexeme::Num(ref n) => println!("number {}", n),
+         Lexeme::OpenParen    => println!("open paren"),
+         Lexeme::CloseParen   => println!("close paren"),
+         Lexeme::Str(ref s)   => println!("string {}", s),
+         Lexeme::Sym(ref s)   => println!("sym {}", s),
+         Lexeme::Int(ref n)   => println!("integer {}", n),
+         Lexeme::Float(ref n) => println!("float {}", n),
+         Lexeme::Quote(ref c) => println!("quote {}", c)
       }
    }
 }

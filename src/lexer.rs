@@ -1,15 +1,11 @@
 use types::Lexeme;
 
-use utils::{get_char_ranges, char_at, is_numeric, slice_str};
-use types::{LexFail, LexResult}
+use utils::{get_char_ranges, char_at, is_float, is_int, slice_str, to_float, to_int, contains};
+//use types::{LexFail, LexResult};
 //mod utils;
 //mod types;
 
-enum LexType {
-   Num, Float, Sym
-}
-
-pub fn lex(code : &str) -> LexResult {
+pub fn lex(code : &str) -> Vec<Lexeme> {
    let mut lexemes : Vec<Lexeme> = Vec::new();
 
    let mut col = String::new(); //symbol collector
@@ -26,25 +22,17 @@ pub fn lex(code : &str) -> LexResult {
       //special character push previously collected
       let c = char_at(code, i).unwrap();
       //should we collect symbols
-      let collect = str_start || c == '(' || c == ')' || c == ' ';
+      let collect = str_start || contains(c, vec!['(', ')', '\'', '`', ',', ' ']);
+      //c == '(' || c == ')' c == '\'' || c == '`' || c == ',' || c == ' ';
 
-      if collect {
-         if col.is_empty() { return Err((LexFail::BadCollect, i)); }
+      if collect && !col.is_empty() {
+         let lexeme = if is_int(&col) {
+            Lexeme::Int(to_int(&col))
+         } else if is_float(&col) {
+            Lexeme::Float(to_float(&col))
+         } else { Lexeme::Sym(col) };
 
-         if is_int(&col)
-         let lex_type = if is_numeric(&col) {
-            if is_float(&col) { LexType::Float } else { LexType::Num }
-         } else { LexType::Sym }
-
-         let lexeme = match lex_type {
-            LexType::Num   => Lexeme::Num(to_int(col)),
-            LexType::Float => Lexeme::Float(to_float(col)),
-            LexType::Sym   => Lexeme::Sym(col)
-         }
-         lexemes.push(
-            if is_numeric(&col) { Lexeme::Num(col.parse::<i64>().unwrap()) }
-            else { Lexeme::Sym(col) });
-
+         lexemes.push(lexeme);
          col = String::new();
       }
       if str_start {
@@ -57,13 +45,14 @@ pub fn lex(code : &str) -> LexResult {
          match c {
             '(' => lexemes.push(Lexeme::OpenParen),
             ')' => lexemes.push(Lexeme::CloseParen),
-            ' ' => {},
+            ',' => lexemes.push(Lexeme::Quote(c)),
             '"' => i-=1, //"string""s2"
+            ' ' => {},
             _   => col.push(c)
          }
       }
       i += 1;
    }
-
    lexemes
 }
+

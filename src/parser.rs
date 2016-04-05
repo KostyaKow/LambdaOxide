@@ -61,7 +61,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Option<Sex
       match l {
          &Lexeme::Str(ref s) => { sub = cons(Sexps::Str(s.to_string()), sub) },
          &Lexeme::Sym(ref s) => { sub = cons(Sexps::Var(s.to_string()), sub) },
-         &Lexeme::Num(ref n) => { sub = cons(Sexps::Num(*n), sub) },
+         &Lexeme::Int(ref n) => { sub = cons(Sexps::Num(*n), sub) },
          _ => { sub = cons(err("Parsing failed: bad lexeme"), sub) }
       }
       i += 1;

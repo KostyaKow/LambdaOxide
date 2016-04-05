@@ -10,7 +10,7 @@ use std::boxed::Box;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use utils::{print_space, print_nest, char_at, is_numeric};
+use utils::{print_space, print_nest, char_at};
 use types::{Sexps, err, display_sexps, print_tree, print_compact_tree, EnvId, cons_to_sexps};
 use err::{debug_p, DEBUG};
 use lexer::lex;
