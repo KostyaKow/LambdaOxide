@@ -1,6 +1,5 @@
 #![feature(box_syntax, box_patterns)]
 
-
 //extern crate err;use err::DEBUG;
 //extern crate list; use list::{Cons, cons_map};
 //extern crate utils; use utils::{print_space, print_nest};
@@ -46,26 +45,19 @@ impl Drop for Sexps {
    }
 }
 
-
-//or String::from(s)
-pub fn err(s : &str) -> Sexps { Err(s.to_string()) }
-
-//works well, but we have derive(Debug) on lexemes so we can just debug print them
-pub fn print_lexemes(lexemes: &Vec<Lexeme>) {
-   for l in lexemes.iter() {
-      match *l {
-         /*_ => {} empty match */
-         Lexeme::OpenParen    => println!("open paren"),
-         Lexeme::CloseParen   => println!("close paren"),
-         Lexeme::Str(ref s)   => println!("string {}", s),
-         Lexeme::Sym(ref s)   => println!("sym {}", s),
-         Lexeme::Int(ref n)   => println!("integer {}", n),
-         Lexeme::Float(ref n) => println!("float {}", n),
-         Lexeme::Quote(ref c) => println!("quote {}", c)
-      }
+pub fn same_type(exp1 : &Sexps, exp2 : &Sexps) -> bool {
+   let mut same = false;
+   match *exp1 {
+      Sexps::Str(..)     => if let Sexps::Str(..) = *exp2 { same = true; },
+      Sexps::Num(..)     => if let Sexps::Num(..) = *exp2 { same = true; },
+      Sexps::Var(..)     => if let Sexps::Var(..) = *exp2 { same = true; },
+      Sexps::Err(..)     => if let Sexps::Err(..) = *exp2 { same = true; },
+      Sexps::Sub(..)     => if let Sexps::Sub(..) = *exp2 { same = true; },
+      Sexps::Lambda(..)  => if let Sexps::Lambda(..) = *exp2 { same = true; },
+      Sexps::Bool(..)    => if let Sexps::Bool(..) = *exp2 { same = true; }
    }
+   same
 }
-
 pub fn arg_extractor(exp : &Sexps) -> Option<Vec<Sexps>> {
    let mut ret = Vec::new();
 
@@ -86,6 +78,21 @@ pub fn arg_extractor(exp : &Sexps) -> Option<Vec<Sexps>> {
    else { None }
 }
 
+//works well, but we have derive(Debug) on lexemes so we can just debug print them
+pub fn print_lexemes(lexemes: &Vec<Lexeme>) {
+   for l in lexemes.iter() {
+      match *l {
+         /*_ => {} empty match */
+         Lexeme::OpenParen    => println!("open paren"),
+         Lexeme::CloseParen   => println!("close paren"),
+         Lexeme::Str(ref s)   => println!("string {}", s),
+         Lexeme::Sym(ref s)   => println!("sym {}", s),
+         Lexeme::Int(ref n)   => println!("integer {}", n),
+         Lexeme::Float(ref n) => println!("float {}", n),
+         Lexeme::Quote(ref c) => println!("quote {}", c)
+      }
+   }
+}
 pub fn display_sexps(exp: &Sexps) {
    match *exp {
       Str(ref s) => println!("{}", s),
@@ -125,4 +132,4 @@ pub fn print_tree(t: &Sexps, deepness: u8) {
    }
 }
 pub fn cons_to_sexps(c : Cons<Sexps>) -> Sexps { Sub(Box::new(c)) }
-
+pub fn err(s : &str) -> Sexps { Err(s.to_string()) } //or String::from(s)
