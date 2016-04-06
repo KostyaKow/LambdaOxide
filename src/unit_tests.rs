@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 
 use utils::vec_eq;
 use types::{Lexeme, print_lexemes};

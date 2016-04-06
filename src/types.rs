@@ -9,12 +9,7 @@ use err::DEBUG;
 use std::boxed::Box;
 use list::{Cons, cons_map};
 use utils::{print_space, print_nest};
-
-/*pub enum LexFail {
-   BadCollect, Unmatched
-}
-//either lexemes, or code with location
-pub type LexResult = Result<Vec<Lexeme>, (LexFail, u32)>;*/
+use self::Sexps::*;
 
 #[derive(Debug, PartialEq)]
 pub enum Lexeme {
@@ -32,7 +27,6 @@ pub enum Sexps {
 
 impl PartialEq for Sexps {
    fn eq(&self, other: &Sexps) -> bool {
-      use self::Sexps::*;
       match (self, other) {
          (&Str(ref s1), &Str(ref s2))     => s1 == s2,
          (&Num(ref n1), &Num(ref n2))     => n1 == n2,
@@ -52,7 +46,6 @@ impl Drop for Sexps {
    }
 }
 
-use self::Sexps::*;
 
 //or String::from(s)
 pub fn err(s : &str) -> Sexps { Err(s.to_string()) }
@@ -71,6 +64,26 @@ pub fn print_lexemes(lexemes: &Vec<Lexeme>) {
          Lexeme::Quote(ref c) => println!("quote {}", c)
       }
    }
+}
+
+pub fn arg_extractor(exp : &Sexps) -> Option<Vec<Sexps>> {
+   let mut ret = Vec::new();
+
+   if let Sexps::Sub(box ref args_) = *exp {
+      let mut args =  args_;
+      loop {
+         if let Cons::Cons(ref arg, ref rest) = *args {
+            if let Sexps::Sub(_) = *arg { return None; }
+            else {
+               ret.push(arg.clone());
+               args = rest;
+            }
+         } else { break; }
+
+      }
+      Some(ret)
+   }
+   else { None }
 }
 
 pub fn display_sexps(exp: &Sexps) {
@@ -111,7 +124,5 @@ pub fn print_tree(t: &Sexps, deepness: u8) {
       _ => { print_space(deepness); println!("{:?}", t) }
    }
 }
-pub fn cons_to_sexps(c : Cons<Sexps>) -> Sexps {
-   Sub(Box::new(c))
-}
+pub fn cons_to_sexps(c : Cons<Sexps>) -> Sexps { Sub(Box::new(c)) }
 

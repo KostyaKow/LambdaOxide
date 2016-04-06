@@ -189,3 +189,6 @@ fn list_len<T>(lst: List<T>) -> i32 {
    }
 }
 println!("{}", list_len::<u32>(x));*/
+
+
+

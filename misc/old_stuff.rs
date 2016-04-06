@@ -1,3 +1,8 @@
+fn new_builtin<F>(f : F) -> Callable
+   where F : Fn(Sexps, Root, EnvId) -> Sexps
+{ Callable::BuiltIn(0, Box::new(f)) }
+
+
 //works well, but we have derive(Debug) on lexemes so we can just debug print them
 fn print_lexemes(lexemes: &Vec<Lexeme>) {
    for l in lexemes.iter() {
