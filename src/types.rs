@@ -19,7 +19,7 @@ pub type EnvId = usize;
 
 #[derive(Clone, Debug)] //Try to implement copy
 pub enum Sexps {
-   Str(String), Num(i64), Var(String), Err(String), //Literal(String),
+   Str(String), Num(i64), /*Int(i64), Float(f64),*/ Var(String), Err(String), //Literal(String),
    Sub(Box<Cons<Sexps>>), Lambda(EnvId, String),
    Bool(bool) //Quote(Box<Cons<Sexps>>) //Sub(Box<Vec<Sexps>>)
 }

@@ -116,20 +116,6 @@ struct Table { bindings: HashMap<String, Callable>, parent: EnvId }
 struct Env { tables : Vec<Table>, }
 
 
-fn same_type(exp1 : &Sexps, exp2 : &Sexps) -> bool {
-   let mut same = false;
-   match *exp1 {
-      Sexps::Str(..)     => if let Sexps::Str(..) = *exp2 { same = true; },
-      Sexps::Num(..)     => if let Sexps::Num(..) = *exp2 { same = true; },
-      Sexps::Var(..)     => if let Sexps::Var(..) = *exp2 { same = true; },
-      Sexps::Err(..)     => if let Sexps::Err(..) = *exp2 { same = true; },
-      Sexps::Sub(..)     => if let Sexps::Sub(..) = *exp2 { same = true; },
-      Sexps::Lambda(..)  => if let Sexps::Lambda(..) = *exp2 { same = true; },
-      Sexps::Bool(..)    => if let Sexps::Bool(..) = *exp2 { same = true; }
-   }
-   same
-}
-
 impl Env {
    fn new() -> Env {
       let mut env = Env { tables : Vec::new() };
@@ -396,13 +382,16 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
          }
          else { err("bad argument format to if") }
       }
+      "defmacro" => {
+         err("not yet supported")
+      }
       _ => { err(&*format!("Cannot find symbol in envrionment and not macro {}", name.to_string())) }
    }
 }
 
 fn is_macro(exp : &Sexps) -> bool {
    if let Sub(box Cons::Cons(Var(ref s), ref args)) = *exp {
-      if s == "if" || s == "lambda" || s == "define" { return true }
+      if s == "if" || s == "lambda" || s == "define" || s == "defmacro" { return true }
    }
    false
 }
