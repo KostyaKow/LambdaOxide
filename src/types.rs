@@ -19,7 +19,7 @@ pub type EnvId = usize;
 
 #[derive(Clone, Debug)] //Try to implement copy
 pub enum Sexps {
-   Str(String), Num(i64), /*Int(i64), Float(f64),*/ Var(String), Err(String), //Literal(String),
+   Str(String), Int(i64), Float(f64), Var(String), Err(String), //Literal(String),
    Sub(Box<Cons<Sexps>>), Lambda(EnvId, String),
    Bool(bool) //Quote(Box<Cons<Sexps>>) //Sub(Box<Vec<Sexps>>)
 }
@@ -33,7 +33,8 @@ impl PartialEq for Sexps {
    fn eq(&self, other: &Sexps) -> bool {
       match (self, other) {
          (&Str(ref s1), &Str(ref s2))     => s1 == s2,
-         (&Num(ref n1), &Num(ref n2))     => n1 == n2,
+         (&Int(ref n1), &Int(ref n2))     => n1 == n2,
+         (&Float(ref n1), &Float(ref n2)) => n1 == n2,
          (&Bool(ref b1), &Bool(ref b2))   => b1 == b2,
          _                                => false
       }
@@ -54,7 +55,8 @@ pub fn same_type(exp1 : &Sexps, exp2 : &Sexps) -> bool {
    let mut same = false;
    match *exp1 {
       Sexps::Str(..)     => if let Sexps::Str(..) = *exp2 { same = true; },
-      Sexps::Num(..)     => if let Sexps::Num(..) = *exp2 { same = true; },
+      Sexps::Int(..)     => if let Sexps::Int(..) = *exp2 { same = true; },
+      Sexps::Float(..)   => if let Sexps::Float(..) = *exp2 { same = true; },
       Sexps::Var(..)     => if let Sexps::Var(..) = *exp2 { same = true; },
       Sexps::Err(..)     => if let Sexps::Err(..) = *exp2 { same = true; },
       Sexps::Sub(..)     => if let Sexps::Sub(..) = *exp2 { same = true; },
@@ -93,20 +95,21 @@ pub fn print_lexemes(lexemes: &Vec<Lexeme>) {
          Lexeme::Str(ref s)   => println!("string {}", s),
          Lexeme::Sym(ref s)   => println!("sym {}", s),
          Lexeme::Int(ref n)   => println!("integer {}", n),
-         Lexeme::Float(ref n) => println!("float {}", n),
+         Lexeme::Float(ref n)  => println!("float {}", n),
          Lexeme::Quote(ref c) => println!("quote {}", c)
       }
    }
 }
 pub fn display_sexps(exp: &Sexps) {
    match *exp {
-      Str(ref s) => println!("{}", s),
-      Num(ref n) => println!("{}", n),
-      Var(ref s) => println!("{}", s),
-      Err(ref s) => println!("{}", s),
-      Lambda(..) => println!("<lambda>"),
-      Bool(x)    => println!("{}", x),
-      Sub(..)    => print_compact_tree(exp),
+      Str(ref s)  => println!("{}", s),
+      Int(ref n)  => println!("{}", n),
+      Float(ref n)=> println!("{}", n),
+      Var(ref s)  => println!("{}", s),
+      Err(ref s)  => println!("{}", s),
+      Lambda(..)  => println!("<lambda>"),
+      Bool(x)     => println!("{}", x),
+      Sub(..)     => print_compact_tree(exp),
       /*_                 => println!("bad sexps, cant print")*/
    }
 }

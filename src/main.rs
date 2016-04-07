@@ -180,13 +180,13 @@ impl Env {
 
             loop {
                match *args {
-                  Cons::Cons(Num(n), ref ns) => { sum += n; args = ns; },
+                  Cons::Cons(Int(n), ref ns) => { sum += n; args = ns; },
                   Cons::Cons(_, _) => { err("bad arguments"); break },
                   Cons::Nil   => break,
                   _ => return err("bad arguments to sum")
                };
             }
-            Sexps::Num(sum)
+            Sexps::Int(sum)
          }
          else { err("bad arguments") }
       };
@@ -204,7 +204,7 @@ impl Env {
 
             loop {
                match *args {
-                  Cons::Cons(Sexps::Num(n), ref ns) => {
+                  Cons::Cons(Sexps::Int(n), ref ns) => {
                      if first { diff = n; first = false; } else { diff -= n; }
                      args = ns;
                   },
@@ -213,7 +213,7 @@ impl Env {
                   _ => return err("bad arguments to sum")
                };
             }
-            Sexps::Num(diff)
+            Int(diff)
          }
          else { err("bad arguments") }
       };
@@ -311,7 +311,7 @@ fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    }
 
    match *exp {
-      Str(_) | Num(_)
+      Str(_) | Float(_) | Int(_)
              | Bool(_)       => exp.clone(), //self evaluation
       Sub(_)                 => apply(exp, root, table),
       //Sexps::Lambda(..)           => apply(exp, root, table),
