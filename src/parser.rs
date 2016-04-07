@@ -69,7 +69,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResul
    Ok(cons_to_sexps(cons_reverse(sub)))
 }
 
-pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
+fn parse_helper(lexemes : &Vec<Lexeme>) -> ParseResult {
    let mut start_paren : Option<usize> = None;
    let mut end_paren : Option<usize> = None;
    let mut nestedness : i32 = 0;
@@ -103,6 +103,22 @@ pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
 }
 
 
-fn parse2(lexemes : &Vec<Lexeme>) -> ParseResult {
-   Result::Err((ParseFail::BAD_LEXEME, 0))
+pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
+   if lexemes.len() == 1 {
+      use types::Sexps::*;
+      let mut good = true;
+      let ret = match &lexemes[0] {
+         &Lexeme::Str(ref s)  => { Str(s.to_string()) },
+         &Lexeme::Sym(ref s)  => { Var(s.to_string()) },
+         &Lexeme::Int(ref n)  => { Int(*n) },
+         &Lexeme::Float(ref n)=> { Float(*n) },
+         _ => {
+            good = false;
+            err("bad lexeme")
+         }
+      };
+      if good { Ok(ret) }
+      else { Result::Err((ParseFail::BAD_LEXEME, 0)) }
+   }
+   else { parse_helper(lexemes) }
 }
