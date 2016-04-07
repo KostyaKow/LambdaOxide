@@ -472,7 +472,7 @@ fn interpreter() {
    display_sexps(&run(&root, "(f 5)"));*/
 
    loop {
-      print!("**>");
+      print!("**> ");
       use std::io::{self, Write};
       io::stdout().flush().unwrap();
       let line = stdin.lock().lines().next().unwrap().unwrap();

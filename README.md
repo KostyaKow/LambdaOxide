@@ -4,6 +4,8 @@ Requires 1.9 rust nightlies.
 $ cargo build
 
 $ cargo run
+**> 8
+8
 **> (+ 3 5)
 8
 **> (define f (lambda (y z) (- y z z)))
@@ -28,20 +30,21 @@ non-empty
 empty
 ```
 
-TODO:
-   -implement c-types-like ffi (using libffi?)
-   -implement macro system
-   -comparison
-   -floats
-   -quote
-   -add env to print_sexps
-   -unit tests with cargo
-   -evaluating naked expression like 8 or "blah" doesn't work with intepreter
-   -loading multiline statements
-   -move built-in functions to separate file
-   -make matching arguments easier for build-ins
-   -build-in cons
-   -convert sexps to use vec (??? maybe)
-   -implement variable-number arguments with *
-   -multiple expressions in lambda, etc.
-   -switch form list::Cons to list::List
+- TODO
+   - [ ] implement c-types-like ffi (using libffi?)
+   - [ ] implement macro system
+   - [ ] comparison
+   - [x] floats
+   - [ ] quote
+   - [ ] add env to print_sexps
+   - [x] unit tests with cargo
+   - [x] evaluating naked expression like 8 or "blah" doesn't work with intepreter
+   - [ ] loading multiline statements
+   - [ ] move built-in functions to separate file
+   - [x] make matching arguments easier for build-ins
+   - [ ] build-in cons
+   - [ ] convert sexps to use vec (??? maybe)
+   - [ ] switch form list::Cons to list::List
+   - [ ] implement variable-number arguments with * or .
+   - [ ] multiple expressions in lambda, etc.
+   - [ ] convert built-ins to only handle 2 arguments, and make wrappers in lisp

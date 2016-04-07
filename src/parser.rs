@@ -102,7 +102,6 @@ fn parse_helper(lexemes : &Vec<Lexeme>) -> ParseResult {
    parse_range(lexemes, start+1, end-1)
 }
 
-
 pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
    if lexemes.len() == 1 {
       use types::Sexps::*;
