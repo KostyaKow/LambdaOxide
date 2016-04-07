@@ -259,11 +259,20 @@ impl Env {
                         let lines = file_content.split("\n").collect::<Vec<&str>>();
 
                         let mut x : Sexps = err("empty file");
+
+                        let mut line_acc = String::new();
+
                         for line in lines.iter() {
-                           if let Some(first) = char_at(line, 0) {
-                              if first != ';' {
-                                 x = run(root, line)
-                              }
+                           if line.len() < 1 { continue; }
+                           if char_at(line, 0).unwrap() == ';' { continue; }
+                           line_acc = line_acc + line;
+                           let out = run(&root, &line_acc);
+                           if let Result::Err((RunFail::UncompleteExp, _)) = out {
+                              continue;
+                           }
+                           else {
+                              line_acc = String::new();
+                              x = out.unwrap();
                            }
                         }
                         x
@@ -442,14 +451,15 @@ fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    }
 }
 
-fn run(root : Root, code : &str) -> Sexps {
+fn run(root : Root, code : &str) -> RunResult {
    let lexemes = lex(code);
    let exp_res = parse(&lexemes);
 
-   if let Ok(exp) = exp_res {
-      eval(&exp, root, 0) //was &mut root
+   match exp_res {
+      Ok(exp) => Ok(eval(&exp, root, 0)),
+      Result::Err((ParseFail::NO_END_PAREN, n)) => Result::Err((RunFail::UncompleteExp, n)),
+      Result::Err((err_type, n)) => Result::Err((RunFail::FailParse(err_type), n))
    }
-   else { err("Couldn't parse code") }
 }
 
 fn interpreter() {
@@ -462,7 +472,7 @@ fn interpreter() {
    let mut cmd;
    cmd = "(load \"core.lam\")";
    println!("**> {}", cmd);
-   display_sexps(&run(&root, cmd));
+   display_run_result(&run(&root, cmd));
    /*let mut cmd;
    cmd = "(define f (lambda (x) (+ x x)))";
    println!("**> {}", cmd);
@@ -476,18 +486,29 @@ fn interpreter() {
       use std::io::{self, Write};
       io::stdout().flush().unwrap();
       let line = stdin.lock().lines().next().unwrap().unwrap();
-      let out = run(&root, &line);
-      display_sexps(&out);
-      /*root.borrow().print();*/
+
+      let mut acc = line;
+      let mut out = run(&root, &acc);
+      while let Result::Err((RunFail::UncompleteExp, _)) = out {
+         io::stdout().flush().unwrap();
+         let line2 = stdin.lock().lines().next().unwrap().unwrap();
+         acc = acc + &line2;
+         out = run(&root, &acc);
+      }
+
+      display_run_result(&out);
+      //display_sexps(&out);
+      //root.borrow().print();
    }
 }
 
 fn main() {
-   use std::thread;
+   /*use std::thread;
    let child = thread::Builder::new().stack_size(8*32*1024*1024).spawn(move || {
       interpreter();
    }).unwrap();
-   let test = child.join().unwrap();
+   let ret = child.join().unwrap();*/
+   interpreter();
    //table_test();
 }
 

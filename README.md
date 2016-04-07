@@ -1,6 +1,8 @@
 Requires 1.9 rust nightlies.
 
 ```scheme
+$ git clone https://github.com/KostyaKow/RustyParenthesis && cd RustyParenthesis
+
 $ cargo build
 
 $ cargo run
@@ -39,7 +41,7 @@ empty
    - [ ] add env to print_sexps
    - [x] unit tests with cargo
    - [x] evaluating naked expression like 8 or "blah" doesn't work with intepreter
-   - [ ] loading multiline statements
+   - [x] loading multiline statements
    - [ ] move built-in functions to separate file
    - [x] make matching arguments easier for build-ins
    - [ ] build-in cons

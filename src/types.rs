@@ -24,11 +24,6 @@ pub enum Sexps {
    Bool(bool) //Quote(Box<Cons<Sexps>>) //Sub(Box<Vec<Sexps>>)
 }
 
-pub enum ParseFail {
-   NO_START_PAREN, NO_END_PAREN, EXTRA_CLOSE_PAREN, CHILD_PARSE_FAIL, BAD_LEXEME
-}
-pub type ParseResult = Result<Sexps, (ParseFail, usize)>;
-
 impl PartialEq for Sexps {
    fn eq(&self, other: &Sexps) -> bool {
       match (self, other) {
@@ -51,6 +46,28 @@ impl Drop for Sexps {
    }
 }
 
+#[derive(Debug)]
+pub enum LexFail {}
+#[derive(Debug)]
+pub enum EvalFail {}
+#[derive(Debug)]
+pub enum ParseFail {
+   NO_START_PAREN, NO_END_PAREN, EXTRA_CLOSE_PAREN, CHILD_PARSE_FAIL, BAD_LEXEME
+}
+pub type ParseResult = Result<Sexps, (ParseFail, usize)>;
+
+#[derive(Debug)]
+pub enum RunFail {
+   FailParse(ParseFail), FailLex(LexFail), FailEval(EvalFail), UncompleteExp,
+}
+pub type RunResult = Result<Sexps, (RunFail, usize)>;
+
+pub fn display_run_result(res : &RunResult) {
+   match *res {
+      Ok(ref exp) => display_sexps(exp),
+      _           => println!("error: {:?}", res)
+   }
+}
 pub fn same_type(exp1 : &Sexps, exp2 : &Sexps) -> bool {
    let mut same = false;
    match *exp1 {
