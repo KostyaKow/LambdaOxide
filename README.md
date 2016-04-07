@@ -39,7 +39,10 @@ empty
    - [x] floats
    - [ ] quote
    - [ ] add env to print_sexps
-   - [x] unit tests with cargo
+   - [ ] unit tests with cargo
+      - [x] lexer test
+      - [ ] parsing tests
+      - [ ] add church numerals to unit tests
    - [x] evaluating naked expression like 8 or "blah" doesn't work with intepreter
    - [x] loading multiline statements
    - [ ] move built-in functions to separate file
