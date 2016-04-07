@@ -24,6 +24,11 @@ pub enum Sexps {
    Bool(bool) //Quote(Box<Cons<Sexps>>) //Sub(Box<Vec<Sexps>>)
 }
 
+pub enum ParseFail {
+   NO_START_PAREN, NO_END_PAREN, EXTRA_CLOSE_PAREN, CHILD_PARSE_FAIL, BAD_LEXEME
+}
+pub type ParseResult = Result<Sexps, (ParseFail, usize)>;
+
 impl PartialEq for Sexps {
    fn eq(&self, other: &Sexps) -> bool {
       match (self, other) {

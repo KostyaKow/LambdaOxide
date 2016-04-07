@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 
 use utils::vec_eq;
-use types::{Lexeme, print_lexemes};
+use types::{Lexeme, print_lexemes, Sexps};
 use lexer::lex;
+use parser::parse;
 use err::PRINT_TESTS;
 
 type LexTestResult = (String, Vec<Lexeme>);
@@ -63,4 +64,14 @@ fn test_lex_4() -> LexTestResult {
 
    return (input.to_string(), expected);
 }
+
+#[test]
+fn test_parse() {
+   let code = "3";
+   let lexed = lex(code);
+
+   let parsed = parse(&lexed).unwrap();
+   assert_eq!(parsed, Sexps::Num(5));
+}
+
 

@@ -444,9 +444,9 @@ fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
 
 fn run(root : Root, code : &str) -> Sexps {
    let lexemes = lex(code);
-   let exp_opt = parse(&lexemes);
+   let exp_res = parse(&lexemes);
 
-   if let Some(exp) = exp_opt {
+   if let Ok(exp) = exp_res {
       eval(&exp, root, 0) //was &mut root
    }
    else { err("Couldn't parse code") }
