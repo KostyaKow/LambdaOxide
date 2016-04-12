@@ -186,7 +186,7 @@ impl Env {
                   _ => return err("bad arguments to sum")
                };
             }
-            Sexps::Int(sum)
+            Int(sum)
          }
          else { err("bad arguments") }
       };
@@ -204,7 +204,7 @@ impl Env {
 
             loop {
                match *args {
-                  Cons::Cons(Sexps::Int(n), ref ns) => {
+                  Cons::Cons(Int(n), ref ns) => {
                      if first { diff = n; first = false; } else { diff -= n; }
                      args = ns;
                   },
@@ -508,7 +508,9 @@ fn main() {
       interpreter();
    }).unwrap();
    let ret = child.join().unwrap();*/
-   interpreter();
+   //kk latest interpreter();
+
+   print_lexemes(&lex("(- 3 5)"));
    //table_test();
 }
 

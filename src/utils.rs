@@ -20,7 +20,7 @@ pub fn is_int(s : &str) -> bool {
    let mut i = 0;
    while i < s.len() {
       let c = char_at(s, i).unwrap();
-      if !c.is_digit(10) && !(i == 0 && c == '-') { return false; }
+      if !c.is_digit(10) && !(i == 0 && c == '-' && s.len() > 1) { return false; }
       i += 1;
    }
    true
@@ -30,7 +30,7 @@ pub fn is_float(s : &str) -> bool {
    let mut have_dot = false;
    while i < s.len() {
       let c = char_at(s, i).unwrap();
-      if !c.is_digit(10) && !(i == 0 && c == '-') {
+      if !c.is_digit(10) && !(i == 0 && c == '-' && s.len() > 1) {
          if c == '.' && have_dot == false { have_dot = true; }
          else { return false; }
       }
