@@ -508,9 +508,8 @@ fn main() {
       interpreter();
    }).unwrap();
    let ret = child.join().unwrap();*/
-   //kk latest interpreter();
+   interpreter();
 
-   print_lexemes(&lex("(- 3 5)"));
    //table_test();
 }
 
