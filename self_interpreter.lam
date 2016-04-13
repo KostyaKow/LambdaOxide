@@ -1,0 +1,8 @@
+
+;build-in
+; (read-file path) => returns string
+; (s-to-sexps str) => return sexps
+
+(define (eval))
+
+(define (run str)

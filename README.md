@@ -42,7 +42,8 @@ empty
    - [ ] unit tests with cargo
       - [x] lexer test
       - [ ] parsing tests
-      - [ ] add church numerals to unit tests
+      - [ ] church numerals
+      - [ ] standard library
    - [x] evaluating naked expression like 8 or "blah" doesn't work with intepreter
    - [x] loading multiline statements
    - [ ] move built-in functions to separate file
@@ -55,3 +56,15 @@ empty
    - [ ] convert built-ins to only handle 2 arguments, and make wrappers in lisp
    - [ ] investigate why multi-line map definition hangs in core.lam
    - [x] Fib example
+   - [ ] ; comment
+      - [x] ; at beggining of line
+      - [ ] ; after code
+   - [ ] multi-line comments
+   - [ ] if we get err in file while interpreting, abort and report error
+   - [ ] comparison operator other than = (>, <)
+   - [ ] logic operators
+      - [ ] not
+      - [ ] and
+      - [ ] or
+
+

@@ -1,29 +1,36 @@
 
-(define cons (lambda (a b) (lambda (f) (f a b))))
+(define cons(lambda (a b) (lambda (f) (f a b))))
 (define car  (lambda (o1) (o1 (lambda (x y) x))))
 (define cdr  (lambda (o2) (o2 (lambda (j i) i))))
 (define cadr (lambda (x) (car (cdr x))))
 
-;(define (map f lst)
-;   (if (null? list)
-;      nil
-;      (cons (f (car lst)) (map f (cdr lst)))))
+(define map
+   (lambda (f lst)
+      (if (null? lst)
+         nil
+         (cons (f (car lst)) (map f (cdr lst))))))
 
-(define map (lambda (f lst) (if (null? lst) nil (cons (f (car lst)) (map f (cdr lst))))))
+;(define map (lambda (f lst) (if (null? lst) nil (cons (f (car lst)) (map f (cdr lst))))))
 
-(define filter (lambda f lst) (if (null? lst) nil (if (f (car lst)) (cons f (filter f (cdr lst))) (filter f (cdr lst)))))
+(define filter
+   (lambda (f lst)
+      (if (null? lst)
+         nil
+         (if (f (car lst))
+            (cons (car lst) (filter f (cdr lst)))
+            (filter f (cdr lst))))))
 
-;(define identity (lambda (x) x))
-;(define add_5 (lambda (x) (+ x 5)))
-;(define lst (cons 1 (cons 2 (cons 3 nil))))
-;(define lst2 (map add_5 lst))
-
-(define new_row (cons "e" (cons "e" (cons "e" nil))))
-(define new_game (cons (new_row) (cons (new_row) (cons (new_row) nil))))
-
-;(define has-all-hoz (lambda (board player) (
-;(define has_won
+(define fold
+   (lambda (combine init lst)
+         (if (null? (car lst))
+            init
+            (fold f (combine (car lst) init) (cdr lst)))))
 
 
-;(defmacro test (a b c) `(if ,a ,b ,c))
-;`(+ 3 ,x) => (+ 3 5)
+;(define fold
+;   (lambda (combine init lst)
+;      (let ((first (car lst)))
+;         (if (null? first)
+;            init
+;            (fold f (combine first init) (cdr lst))))))
+
