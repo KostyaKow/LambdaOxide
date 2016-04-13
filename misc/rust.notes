@@ -1,0 +1,758 @@
+Left on Crates and Modules
+
+README/MISC:
+   rustc --explain E0507
+   RUST_BACKTRACE=1 cargo run
+
+misc notes:
+   iter
+      let a1 = [1, 2, 3];
+      let mut iter = a1.iter();
+      assert_eq(iter.next(), Some(&1));
+      assert_eq(iter.next(), Some(&2));
+   links:
+      compiler to llvm assembly and runner online
+         https://play.rust-lang.org/
+      book
+         https://doc.rust-lang.org/book/syntax-and-semantics.html
+      another good book
+         http://rustbyexample.com/fn/methods.html
+      reference explanation
+         http://stackoverflow.com/questions/31908636/what-does-the-ampersand-mean-in-a-rust-type
+      boxed
+         https://doc.rust-lang.org/book/box-syntax-and-patterns.html
+         https://doc.rust-lang.org/std/boxed/
+         https://doc.rust-lang.org/std/boxed/struct.Box.html
+      generics & collections (long article)
+         http://cglab.ca/~abeinges/blah/rust-generics-and-collections/
+      cargo
+         http://doc.crates.io/guide.html
+         https://doc.rust-lang.org/nightly/book/getting-started.html
+      pattern matching lists and slices
+         https://doc.rust-lang.org/book/slice-patterns.html
+      ref variable stuff
+         https://www.reddit.com/r/rust/comments/2tq33x/ref_keyword/
+
+   debug print
+      let x = vec!(1, 2, 3);
+      println!("{:?}", x);
+   module
+      use std::io;
+      use std::io::prelude::*;
+   printing
+      println!("{}", arg);
+   preprocessor
+      inline functions
+         #[inline]
+         #[inline(always)]
+      allow dead_code
+         #[allow(dead_code)]
+      box
+         #![feature(box_syntax, box_patterns)]
+   enumerating vectors/string
+      for (i, l) in lexemes.iter().enumerate()
+      for (i, c) in string.chars().enumerate()
+
+misc MUST REMEMBER (strings and function)
+   cargo crates
+      cargo new project
+      cargo new --bin project
+      cargo run
+      cargo test
+      lib/etc
+   ref or &
+      pointer to y which can be changed to point to another variable
+         let mut x = &y;
+      pointer to mutable y which can be used to modify y
+         let ref mut x = y; //same as below
+         let x = &mut y; //same as above
+      fn bar<'a>(x: &'a mut i32) {}
+      fn f(x: &T) {}
+      f(&z)
+      fn ff(x: &mut T) -> i32 {
+         match *t { T::X(ref mut x) => 5, T::Y(ref mut x) => 6 }
+      }
+   functions
+      ex:
+         fn blah(&mut self, &mut blah) {}
+         fn blah(test : &Sexps)
+      ex2:
+         fn blah(v: &Vec<i32>) {}
+         let v = vec![1, 2, 3];
+         let answer = blah(&v);
+      ex3:
+         let mut x = 5;
+         { let y = &mut x; *y += 1; }
+   Str
+      literal (str) to String
+         "blah".to_string()
+         String::from("Hello")
+      borrowing string
+         let s: String = "blah".to_string();
+         let borrowed: &str;
+         borrowed = &string[6..];
+   memory management
+      rules of lifetime inference
+         1. each elided lifetime becomes a distinct lifetime parameter
+         2. if 1 input lifetime (elided or not), it's assigned to all elided out lifetimes
+         3. if multiple input lifetimes, but one of them is &self or &mut self, the
+            lifetime of self is assigned to all elided output lifetimes
+         4. otherwise, error
+      struct with references need explicit lifetime
+         struct Foo<'a> { x: &'a i32 }
+         impl<'a> Foo<'a> { fn x(&self) -> &'a i32 { self.x } }
+         fn main() {
+            let y = &5; //same as let _y = 5; let y = &_y;
+            let f = Foo { x: y };
+            println!("{}", f.x);
+         }
+      match (borrowing without moving)
+         enum T { Leaf(i32), Node(Box<T>, i32, Box<T>) }
+         fn blah(t: &mut T) -> i32 {
+            match *t {
+               T::Leaf(ref mut x) => *x += 1,
+               T::Node(ref mut left, ref mut x, ref mut right) => { blah(left); }
+            }
+         }
+      box
+         struct S { one: i32, two: i32 }
+         fn foo(x: Box<S>) -> Box<S> { Box::new(*x) } //bad practice
+         fn foo(x: Box<S>) -> S { *x } //good
+
+         fn main() {
+            let x = Box::new(S { one: 0, two: 3 });
+            let y = foo(x); //bad
+            let y: Box<S> = box foo(x); //good
+         }
+      loops
+         for loop not efficient
+            let x = vec![1, 2, 3];
+            for z in x { println!("{}", z) }
+         for loop efficient
+            let x = vec![1, 2, 3];
+            for z in &x { println!("{}", *z) }
+
+syntax and semantics
+   universal function call syntax
+      ex for multiple traits:
+         setup:
+            trait Foo { fn f(&self); }
+            trait Bar { fn f(&self); }
+            struct Baz;
+            impl Foo for Baz { fn f(&self) {...} }
+            impl Bar for Baz { fn f(&self) {...} }
+            let b = Baz;
+         bad:
+            b.f();
+         good:
+            Foo::f(&b);
+            Bar::f(&b);
+      angle-bracket form:
+         trait Foo { fn foo() -> i32; }
+         struct Bar;
+         impl Bar { fn foo() -> i32 { 20 } }
+         impl Foo for Bar { fn foo() -> i32 { 10 } }
+         fn main() {
+            <Bar as Foo>::foo();
+            Bar::foo();
+         }
+   closures
+      ex:
+         let plus_one = |x| x + 1;
+      optional type annotation
+         let plus_one = |x: i32| -> i32 {}
+      taking closures as arguments
+         closure has Fn trait
+         static dispatch
+         ex of static dispatch:
+            fn test<F>(closure: F) -> i32
+               where F : Fn(i32) -> i32
+            { closure(1) }
+            let ans = test(|x| x + 2);
+         ex of dynamic dispatch
+            fn test(closure: &Fn(i32) -> i32) -> i32 { closure(1) }
+            let ans = test(&|x| x + 2);
+      returning closures
+         good:
+            fn factory() -> Box<Fn(i32) -> i32> {
+               let n = 5;
+               Box::new(move |x| x + num)
+            }
+         bad (breaks becacuse we dont know size of returned thing)
+            fn factory() -> (Fn(i32) -> i32) {
+               let num = 5; |x| x+num
+            }
+         bad (closure may outlive current function, but it borrows num)
+            fn factory() -> Box<Fn(i32) -> i32> {
+               let n = 5; Box::new(|x| x + num)
+            }
+         bad (take reference so we know size)
+            fn factory() -> &(Fn(i32) -> i32) {
+               let n = 5;
+               |x| x + num
+            }
+            let f = factory();
+            let answer = f(5);
+         bad (lifetime doesn't work)
+            fn factory() -> &'static (Fn(i32) -> i32) {}
+      scope
+         bad example:
+            let mut num = 5;
+            let plus_num = |x: i32| x + num;
+            let y = &mut num; //canot borrow mutable and immutable
+         this works:
+            let mut num = 5;
+            { let plus_num = |x: i32| x + num; }
+            let y = &mut num; //last borrow went out of scope
+      internals
+         closures syntax-sugar for traits
+         function call f(), () overloadable
+         || {} sugar for closure traits
+         rust generates a struct for environment, impl needed closure trait, and use it
+         closure traits:
+            pub trait Fn<Args> : FnMut<Args> {
+               extern "rust-call" fn call(&self, args: Args) -> Self::Output;
+            }
+            pub trait FnMut<Args> : FnOnce<Args> {
+               extern "rust-call" fn call_mut(&mut self, args: Args) -> Self::Output;
+            }
+            pub trait FnOnce<Args> {
+               type Output;
+               extern "rust-call" fn call_mut(self, args: Args) -> Self::Output;
+            }
+      move keyword (force to take ownership of its environment)
+         without move, closure is tied to stack frame that created it
+         with move, closure is self contained
+         generally can't return non-move closure from function
+         mutable reference (usually can't return from functions):
+            let mut num = 5;
+            { let mut add_num = |x: i32| num += x; add_num(5); }
+            assert_eq!(10, num);
+         copy with move (forcefully take ownership):
+            let mut num = 5;
+            { let mut add_num = move |x: i32| num += x; add_num(5); }
+            assert_eq!(5, num);
+   if let/while let
+      ex if let:
+         bad:
+            match option { Some(x) => { foo(x) }, None => {}, }
+         better with if let:
+            if let Some(x) = option { foo(x); }
+            else {}
+      while let:
+         bad:
+            let mut v = vec![1, 3, 5];
+            loop {
+               match v.pop() { Some(x) => println!("{}", x), None => break }
+            }
+         better with while let
+            while let Some(x) = v.pop() { println!("{}", x); }
+   traits
+      either trait or type you're writing the impl for, must be defined by programmer
+      trait objects (dynamic dispatch) vs static dispatch
+         setup:
+            trait Foo { fn method(&self) -> String; }
+            impl Foo for u8 { fn method(&self) -> String { format!("u8: {}", *self); } }
+            impl Foo for String { fn method(&self) -> String { format!("string: {}", *self) } }
+         static dispatch (uses monomorphism kinda like making copy of template func for each type)
+            fn do_something<T: Foo>(x: T) { x.method(); }
+            fn main() {
+               let x = 5u8; let y = "Hello".to_string();
+               do_something(x); do_something(y);
+            }
+         trait objects aka type erasure (dynamic dispatch)
+            known at runtime
+            casting a pointer from concrete type that implements the trait
+            vtable
+               stores record of function pointers for method called on trait object
+            casting = &x as &Foo
+               fn do_something(x: &Foo) { x.method(); }
+               fn main() { let x = 5u8; do_something(&x as &Foo); }
+            coercing = using &x as argument to function that takes &Foo
+               fn main() { let x = "Hello".to_string();
+               do_something(&x);
+            also works for pointers like &mut T to &mut Foo and Box<T> to Box<Foo>
+            only object-safe traits can be made into trait object
+            a trait is object-safe if both:
+               the trait doesn't require that Self: Sized
+               all of its methods are objecet-safe
+            method are object-safe if each method requires that Self: Sized or both:
+               if it doesn't have any type parameters
+               must not use Self
+            good intuition:
+               except in special circumstances, if your trait's method uses Self, it is not object-safe
+      ex (HasArea trait):
+         struct Circle { x: f64, y: f64, radius: f64, }
+         trait HasArea { fn area(&self) -> f64; }
+         impl HasArea for Circle {
+            fn area(&self) -> f64 { std::f64::consts::PI * (self.radius * self.radius) }
+         }
+         fn print_area<T: HasArea>(shape: T) { println!("Area: {}", shape.area()); }
+      HasArea for i32
+         impl HasArea for i32 {
+            fn area(&self) -> f64 { println!("this is silly"); *self as f64 }
+         }
+         5.area();
+      trait bounds on generic structs (using +, ==, etc on struct with generic memebers)
+         struct Rectangle<T> { x: T, y: T, width: T, height: T, }
+         impl<T: PartialEq> Rectangle<T> {
+            fn is_square(&self) -> bool { self.width == self.height }
+         }
+         fn main() {
+            let mut r = Rectangle { x: 0, y: 0, width: 47, height: 47, };
+            assert!(r.is_square()); r.height = 42; assert!(!r.is_square());
+         }
+      where clause and multiple trait bounds using +
+         hard to read:
+            use std::fmt::Debug;
+            fn foo<T: Clone, K: Clone + Debug>(x: T, y: K) {
+               x.clone(); y.clone(); println!("{:?}", y);
+            }
+         makes it easier to read:
+            fn foo<T, K>(x: T, y: K) where T: Clone, K: Clone + Debug {}
+            fn bar<T, K>(x: T, y: K)
+               where T: Clone,
+                     K: Clone + Debug {}
+      another example with where clause
+         trait ConvertTo<Output> { fn convert(&self) -> Output; }
+         impl ConvertTo<i64> for i32 {
+            fn convert(&self) -> i64 { *self as i64 }
+         }
+         fn normal<T: ConvertTo<i64>>(x: &T) -> i64 { x.convert() } //called with T == i32
+         fn inverse<T>() //can be called with T == i64
+               where i32: ConvertTo<T>
+         { 42.convert() }
+      default methods
+         trait Foo {
+            fn is_valid(&self) -> bool;
+            fn is_invalid(&self) -> bool { !self.is_valid() }
+         }
+      inheritance (one trait relying on another)
+         trait Foo { fn foo(&self); }
+         trait FooBar : Foo { fn foobar(&self); }
+         struct Baz;
+         impl Foo for Baz { fn foo(&self) { println!("foo"); } }
+         impl FooBar for Baz { fn foobar(&self) { println!("foobar"); } }
+      deriving
+         limited:
+            Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd
+         ex:
+            #[derive(Debug)]
+            struct Foo;
+            fn main() { println("{:?}", Foo);
+      Drop = run code when a value goes out of scope
+         struct HasDrop { x: i32, };
+         impl Drop for HasDrop {
+            fn drop(&mut self) { println!("Dropping {}", self.x); }
+         }
+         fn main() {
+            let x = HasDrop { x: 0 };
+            let y = HasDrop { x: 1 };
+         }
+         //this will print Dropping 1, Dropping 0
+   generics
+      parametric polymorphism
+      option type
+         enum Option<T> { Some(T), None, }
+         let x: Option<i32> = Some(5);
+      function
+         fn take_anything<T, U>(x: T, y: U) {}
+         take_anything::<T, U>(t, y)
+      generic traits
+         trait Fn<Args> { fn test(args: Args) -> u32; }
+         trait Shape<T> { fn get_area(&self) -> T; }
+         struct Square<T> { height: T, width: T }
+         impl<T> Shape<T> for Square<T> {}
+      struct & impl
+         struct Point<T> { x: T, y: T, }
+         impl<T> Point<T> {
+            fn swap(&mut self) { std::mem::swap(&mut self.x, &mut self.y); }
+         }
+   method calls
+      methods can take self, &self and &mut self but prefer &self
+      ex:
+         struct Circle { x: f64, y: f64, radius: f64, }
+         impl Circle {
+            fn area(&self) -> f64 {
+               std::f64::consts::PI * (self.radius * self.radius)
+            }
+         }
+         fn main() {
+            let c = Circle { x: 0.0, y: 0.0, radius: 2.0 };
+            println!("{}", c.area());
+         }
+      builder pattern
+         struct CircleBuilder { x: f64, y: f64, radius: f64, }
+         impl CircleBuilder {
+            fn new() -> CircleBuilder { CircleBuilder { x: 0.0, y: 0.0, radius: 0.0, } }
+            fn x(&mut self, coordinate: f64) -> &mut CircleBuilder { self.x = coordinate; self }
+            fn y(&mut self, coord: f64) -> &mut CircleBuilder { self.y = coord; self }
+            fn radius(&mut self, radius: f64) -> .....
+            fn finalize(&self) -> Circle { Circle { x: self.x, y: self.y, radius: self.radius } }
+         }
+         fn main() {
+            let c = CircleBuilder::new()
+                        .x(1.0)
+                        .y(2.0)
+                        .finalize();
+         }
+      associated functions aka static methods (such as constructors)
+         impl Circle {
+            fn new(x: f64, y: f64, radius: f64) -> Circle {
+               Circle { x: x, y: y, radius: radius,
+            }
+         }
+         fn main() {
+            let c = Circle::new(0.0, 0.0, 2.0);
+         }
+      good idea to create new structs in returns
+         fn grow(&self, increment: f64) -> Circle {
+            Circle { x: self.x, y: self.y, radius: self.radius + increment }
+         }
+   match/patterns
+      enforces exhaustiveness checking
+      can destructure structs, tuples and enums
+      example
+         let x = 5;
+         let n = match x {
+            1           => "one",
+            2           => "two",
+            e @ 3 ... 5 | e @ 6 ... 8 => "3 thru 8", //works for characters too
+            _           => "somethign else";
+         };
+      match guards
+         when we have multiple patterns, it applies to both sides
+            4 | 5 if x => blah
+         enum OptInt { Value(i32), Missing, }
+         let x = OptInt::Value(5);
+         match x {
+            OptInt::Value(i) if i > 5 => println!("Int bigger than 5"),
+            OptInt::Value(..) => println!("Got different int"),
+            OptInt::Missing => println!("No number"),
+         }
+      matching enums
+         match msg {
+            Message::Quit => quit(),
+            Message::ChangeColor(r, g, b) => change_color(r, g, b),
+            Message::Move { x: x, y: y } => move_cursor(x, y),
+            Message::Write(s) => println!("{}", s),
+            x => println!("x: {}", x),
+         }
+      destructuring 1
+         match point {
+            Point {x: x1, y: y1} => println!("{} {}", x1, y1),
+         }
+      destructuring 2
+         match point {
+            Point { y, .. } => println!("y is {}", y),
+         }
+      ref and ref mut matches
+         let x = 5;
+         match x { ref r => println!("Got reference"), }
+         match x { ref mut r => println!("Got mutable reference"), }
+      ignoring bindings
+         _  = single value
+         .. = multiple values
+         ex1: (match against Result<T, E>)
+            match some_value {
+               Ok(value)   => println!("got a value: {}", value),
+               Err(_)      => println!("an error occured"),
+            }
+         ex2:
+            fn coordinate() -> (i32, i32, i32) {}
+            let (x, _, z) = coordinate();
+         ex3:
+            enum Opt { Value(i32, i32, i32), Missing, }
+            let x = Opt::Value(5, -2, 3);
+            match x {
+               Opt::Value(..) => "tuple",
+               Opt::Missing => "blah",
+            }
+   enums = aka taggled union
+      example
+         enum Message {
+            Quit,
+            ChangeColor(i32, i32, i32),
+            Move { x: i32, y: i32 },
+            Write(String),
+         }
+         let x: Message = Message::Move { x: 3, y: 5 };
+      same
+         let m = Message::Write("Hellom world!".to_string());
+         fn foo(x: String) -> Message { Message::Write() }
+         let x = foo("Hello, world!".to_string());
+      convert vector of string to vector of writes
+         let v = vec!["Hello".to_string(), "World".to_string()];
+         let v1: Vec<Message> = v.into_iter().map(Message::Write).collect();
+   struct
+      example
+         struct Point { x: i32, y: i32, }
+         let mut p = Point { x: 0, y: 0 };
+         p.x = 15;
+         println!("x: {}, y: {}", p.x, p.y);
+         let p = p; //now p is immutable
+      update syntax = works for new bindings as well
+         struct Point3d { x: i32, y: i32, z: i32, }
+         let mut point = Point3d { x: 0, y: 0, z: 0 };
+         point = Point3d { y: 1, .. point };
+      tuple structs
+         example:
+            struct Color(i32, i32, i32);
+            struct Point(i32, i32, i32);
+            let black = Color(0, 0, 0); //black and origin not equal
+            let origin = Point(0, 0, 0);
+         newtype pattern with destructuring
+            struct Inches(i32);
+            let length = Inches(10);
+            let Inches(integer_length) = length;
+            println!("length is {}", integer_length);
+      unit-like structs
+         struct Electron; let x = Electron;
+   memory management
+      ownership
+         only 1 reference to pointer at a time, to prevent races
+         handing back ownership
+            fn foo(v : Vec<i32>) -> Vec<i32> { blah; v }
+         copy trait = all primitive types implement it
+            i32 implements Copy trait
+            legal = let v = 1; let v2 = v; println!("{}", v);
+         move semantics
+            let v = vec![1, 2, 3];
+            modifying after creating another binding is illegal
+               let v2 = v;
+               println!("{}", v[0]); //bad
+            modifying after passing to function also doesn't work
+               f(v);
+               println!("{}", v[0]); //bad because we called function
+      borrowing
+         example
+            let x = 5;
+            let y: &i32;
+            y = &x;
+         reference (can't modify content)
+            fn foo(v1: &Vec<i32>, v2: &Vec<i32>) -> i32 { 42 }
+            let v1 = vec![1, 2, 3]; let v2 = vec![1, 2, 3];
+            let answer = foo(&v1, &v2);
+         mutable reference (need start to access)
+            let mut x = 5;
+            { let y = &mut x; *y += 1; }
+            println!("{}", x);
+         rules (prevents data races)
+            1. must last for a scope no greater than that of the owner
+            2. can have either (but not both) of following:
+               one or more reference (&T) to a resource
+               exactly one mutable reference (&mut T)
+      lifetime
+         implicit = fn foo(x: &i32) {}
+         explicit = fn bar<'a>(x: &'a i32) {}
+         'static = has lifetime of entire program
+            string literals
+               let x: &'static str = "Hello, world!";
+            globals
+               static FOO: i32 = 5;
+               let x: &'static i32 = &FOO;
+         multiple lifetimes
+            multiple = fn bar<'a, 'b>(x: &'a i32, y: &'b i32) {}
+            single = fn bar<'a>(x: &'a str, y: &'a str) -> &'a str {}
+         mutable reference = fn bar<'a>(x: &'a mut i32) {}
+         need explicit lifetime with struct's that contain ref's
+            //ensures refs to Foo cannot outlive the ref to member i32
+            struct Foo<'a> { x: &'a i32, }
+            fn main() {
+               let y = &5; //same as let _y = 5; let y = &_y;
+               let f = Foo { x: y };
+               println!("{}", f.x);
+            }
+         impl block
+            struct Foo<'a> { x: &'a i32, }
+            impl<'a> Foo<'a> {
+               fn x(&self) -> &'a i32 { self.x }
+            }
+         lifetime elision
+            //https://doc.rust-lang.org/book/lifetimes.html#lifetime-elision
+            infers lifetime parameters based on signature
+            input lifetime = parameter of function
+               fn foo<'a>(bar: &'a str)
+            output lifetime = lifetime of return value
+               fn foo<'a>() ->&'a str
+            rules of inference
+               1. each elided lifetime becomes a distinct lifetime parameter
+               2. if 1 input lifetime (elided or not), it's assigned to all elided out lifetimes
+               3. if multiple input lifetimes, but one of them is &self or &mut self, the
+                  lifetime of self is assigned to all elided output lifetimes
+               4. otherwise, error
+            elided:
+               fn print(s: &str);
+               fn debug(lvl: u32, s: &str);
+               fn substr(s: &str, until: u32) -> &str;
+               fn get_mut(&mut self) -> &mut T;
+               fn args<T:ToCStr>(&mut self, args: &[T]) -> &mut Command;
+               fn new(buf: &mut [u8]) -> BufWriter;
+            expanded:
+               fn print<'a>(s: &'a str);
+               fn debug<'a>(lvl: u32, s: &'a str);
+               fn substr<'a>(s: &'a str, until: u32) -> &'a str;
+               fn get_mut<'a>(&'a mut self) -> &'a mut T;
+               fn args<'a, 'b, T:ToCStr>(&'a mut self, args: &'b [T]) -> &'a mut Command;
+               fn new<'a>(buf: &'a mut [u8]) -> BufWriter<'a>;
+            illegal:
+               fn frob(s: &str, t:&str) -> &str; //ILLEGAL, two inputs
+               fn get_str() -> &str; //ILLEGAL, no input
+      mutability = non-default (mut keyword)
+         change binding (binds to different number)
+            let mut x = 5; x = 6;
+         change the value of binding (change value that binding points to)
+            let mut x = 5;
+            let y = &mut x; //immutable binding to mutable reference
+            //y = &mut z; //illegal
+            *y = 5; //legal
+         change the binding to point to something else
+            let mut x = 5;
+            let mut y = &mut x;
+            y = &mut z; //now legal
+         part of pattern
+            let (mut x, y) = (5, 6);
+            fn foo(mut x: i32) {}
+         field-level mutability
+            cannot have single field as mutable
+               struct Point {
+                  x: i32, mut y: i32, //bad
+               }
+            proper way
+               struct Point { x: i32, y: i32, }
+               let mut a = Point { x:5, y: 6 };
+            Cell<T>
+               use std::cell::Cell;
+               struct Point { x: i32, y: Cell<i32>, }
+               let point = Point { x: 5, y: Cell::new(6) };
+               point.y.set(7);
+               println!("y: {:?}", point.y);
+   if
+      if x == 5 { println!("x is 5") }
+      else if { } else { }
+      if are expressions
+         let y = if x == 5 { 10 } else { 15 };
+   types
+      bool, char, str
+      i8, i16, i32, i64, u8 .. u64, isize, usize, f32, f64
+
+      strings = &str and String
+         non null-terminated
+         utf-8
+         &str
+            string slice, fixed size, cannot be mutated
+            string literal
+            let greeting : &'static str = "Hello";
+         String = 24 bytes
+            heap-allocated, growable
+            concatenable
+               ex:
+                  let mut s = "Hello".to_string();
+                  s.push_str("blah");
+               ex2:
+                  let h = "Hello ".to_string();
+                  let w = "world!";
+                  let hw = h + w;
+               ex3:
+                  let h = "Hello ".to_string();
+                  let w = "world!".to_string();
+                  let hw = h + &w;
+
+            coerce into &str with &
+               fn takes_slice(slice: &str) { println!("Got: {}", slice); }
+               fn main() {
+                  let s = "Hello".to_string();
+                  takes_slice(&s);
+            walk as bytes
+               let s = "random unicode";
+               for b in s.as_bytes() { print!("{}, ", b); }
+               for c in s.chars() { ... }
+               s.chars().nth(1); //s[1]
+            slicing
+               let s = "hachiko";
+               let slice = &s[0..5]; //as bytes, not char offsets
+      vector
+         on heap
+         let v: Vec<i32> = vec![1, 2, 3];
+         let v = vec![1, 2, 3];
+         v.push(5);
+         let v = vec![0; 10]; //10 zeroesa
+         length
+            vec.len()
+         access elements with usize type
+            let i: usize = 0;
+            v[i];
+         get element out of bound without panick
+            v.get()
+            match v.get(7) {
+               Some(x) => println("Got element 7 {}", x),
+               None => println!("Out of bound!"),
+            }
+         iterating
+            for i in &v { }
+            for i in &mut v {}
+            for i in v { } //take ownership
+      array
+         let a : [i32; 3] = [0, 1, 2];
+         let a : [i32, 20] = [0; 20]; //all zero
+         a.len()
+         a[0]
+      tuples
+         let x: (i32, &str) = (1, "blah");
+         let (x, y) = (1, 2);
+         (0,); //single-element tuple
+         x.0; x.1;
+         assigning one tuple to another
+            needs to have same type and arity
+            let mut x = (1, 2);
+            let y = (2, 3);
+            x = y;
+   loops
+      loop { }
+      break;
+      continue;
+      nested loops
+         'outer: for x in 0..10 {
+            'inner: for y in 0..10 {
+               if x % 2 == 0 { continue 'outer; }
+               if y % 2 == 0 { continue 'inner; }
+            }
+         }
+      for
+         for i in &vec {}
+         for x in 0..10 { println!("{}", x); } //prints 0 to 9
+         for x in arr { }
+         keeping track
+            for (i, j) in (5..10).enumerate() {
+               println!("i = {} and j = {}", i, j);
+            }
+            i = 0 and j = 5
+            i = 1 and j = 6
+            i = 2 and j = 7
+      while
+         let mut done = false;
+         while !done {}
+   functions
+      fn blah() { }
+      function type
+         fn foo(x: i32) -> i32 { x }
+         let x: fn(i32) -> i32 = foo;
+      last line defixes what function returns (no semi-colon)
+         fn f(x: i32, y: i32) -> i32 { x + 1 }
+      early returns
+         fn f(x: i32) -> i32 { return x; x + 1 }
+      diverging function (do not return)
+         fn diverges() -> ! { panic!("Blah"); }
+   variables
+      let x = 5;
+      let (x, y) = (1, 2);
+      let x: i32 = 5;
+      mutable
+         let mut x = 5;
+         x = 10
+   slices
+      let a = [0, 1, 2, 3, 4];
+      let allA = &a[..]; //all elements of a
+      let middle = &a[1..4]; //1, 2 and 3
+
+
