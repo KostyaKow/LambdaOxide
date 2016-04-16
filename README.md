@@ -41,8 +41,8 @@ empty
    - [ ] add env to print_sexps
    - [ ] unit tests with cargo
       - [x] lexer test
-      - [x] parsing tests
-      - [ ] church numerals
+      - [ ] parsing tests
+      - [x] church numerals
       - [ ] standard library
       - [ ] test for expected failures
    - [ ] switch Sexps to not use Cons and do it manually
