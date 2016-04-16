@@ -1,7 +1,7 @@
 
-extern crate lolib;
+extern crate lambda_oxide;
 
-use lolib::interpreter;
+use lambda_oxide::interpreter;
 
 pub fn main() {
    interpreter();

@@ -1,11 +1,11 @@
 [package]
 
-name = "lambdaoxide"
+name = "LambdaOxide"
 version = "0.0.1"
 authors = [ "Konstantin Kowalski <kostelkow@gmail.com>" ]
 
 [lib]
-name = "lolib"
+name = "lambda_oxide"
 path = "src/lib.rs"
 
 [[bin]]
