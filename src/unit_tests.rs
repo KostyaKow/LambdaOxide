@@ -115,7 +115,15 @@ fn test_run_fib() {
    assert_eq!(result, Sexps::Int(55));
 }
 
-fn test_run_church() {}
+fn test_run_church() {
+   let root = setup_env();
+   let mut cmd = "(load \"examples/church.lo\")";
+   let mut result = run(&root, &cmd).unwrap();
+
+   cmd = "(fromc (mul (add two one) (mul two two)))";
+   result = run(&root, &cmd).unwrap();
+   assert_eq!(result, Sexps::Int(12));
+}
 
 //TODO: finish me
 /*#[test]
