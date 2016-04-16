@@ -1,6 +1,5 @@
 use types::Lexeme;
-
-use utils::{get_char_ranges, char_at, is_float, is_int, slice_str, to_float, to_int, contains};
+use utils::*;
 
 fn collect_sym(col : &str) -> Lexeme {
    if is_int(&col) {

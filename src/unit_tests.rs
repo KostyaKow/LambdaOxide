@@ -67,11 +67,38 @@ fn test_lex_4() -> LexTestResult {
 
 #[test]
 fn test_parse() {
+   test_parse_1();
+   test_parse_2();
+}
+
+fn test_parse_1() {
    let code = "3";
    let lexed = lex(code);
 
    let parsed = parse(&lexed).unwrap();
    assert_eq!(parsed, Sexps::Num(5));
 }
+fn test_parse_2() {
+   let code = "(+ 1 (* 10 5.1))";
+   let lexed = lex(code);
 
+   let parsed = parse(&lexed).unwrap();
 
+   use types::Sexps::*;
+   assert_eq!(parsed, Sub(box Cons(Var("+"), Sub(box Cons(Int(10), Float(5.1))))));
+}
+
+//TODO: finish me
+#[test]
+fn test_table() {
+   let mut x : Env = Env::new();
+   let child = x.table_new(0);
+   let child2 = x.table_new(child);
+
+   x.table_add(child, "hello", make_sym_table_val(err("test")));
+   x.table_add(child2, "test", make_sym_table_val(err("yo")));
+   x.table_add(child, "hello3", make_sym_table_val(err("yo2")));
+
+   display_sexps(&get_sym_table_val(x.lookup(child2, "hello")));
+
+}

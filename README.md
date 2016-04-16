@@ -44,6 +44,7 @@ empty
       - [ ] parsing tests
       - [ ] church numerals
       - [ ] standard library
+   - [ ] switch Sexps to not use Cons and do it manually
    - [x] evaluating naked expression like 8 or "blah" doesn't work with intepreter
    - [x] loading multiline statements
    - [ ] move built-in functions to separate file
@@ -66,5 +67,6 @@ empty
       - [ ] not
       - [ ] and
       - [ ] or
-
+   - [ ] make embeddable library
+      - [x] separate lib and bin
 

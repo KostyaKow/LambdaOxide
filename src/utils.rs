@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub fn syntax_err(s : &str, n : u32) {
    println!("error at {}: {}", n, s);
 }

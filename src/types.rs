@@ -1,5 +1,4 @@
-#![feature(box_syntax, box_patterns)]
-
+#![allow(dead_code)]
 //extern crate err;use err::DEBUG;
 //extern crate list; use list::{Cons, cons_map};
 //extern crate utils; use utils::{print_space, print_nest};
@@ -52,7 +51,7 @@ pub enum LexFail {}
 pub enum EvalFail {}
 #[derive(Debug)]
 pub enum ParseFail {
-   NO_START_PAREN, NO_END_PAREN, EXTRA_CLOSE_PAREN, CHILD_PARSE_FAIL, BAD_LEXEME
+   NoStartParen, NoEndParen, ExtraCloseParen, ChildParseFail, BadLexeme
 }
 pub type ParseResult = Result<Sexps, (ParseFail, usize)>;
 

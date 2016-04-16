@@ -1,4 +1,6 @@
 //#![feature(box_syntax, box_patterns, type_ascription)]
+#![allow(dead_code)]
+
 //doesn't have silly pair
 #[derive(Clone, Debug)]
 pub enum Cons<T> {

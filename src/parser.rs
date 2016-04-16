@@ -1,6 +1,5 @@
 use list::{Cons, cons, cons_reverse};
-use types::*; //{Sexps, ParseFail, ParseResult, Lexeme, err, cons_to_sexps}; //*;
-use err::{internal_err, debug_p};
+use types::*;
 
 //inclusive let i = start; while (i <= end)
 fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Vec<(usize, usize)>
@@ -31,6 +30,19 @@ fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Vec<(u
    children
 }
 
+fn parse_lexeme(l : &Lexeme) -> Option<Sexps> {
+   use types::Sexps::*;
+
+   let exp = match l {
+         &Lexeme::Str(ref s)  => { Str(s.to_string()) },
+         &Lexeme::Sym(ref s)  => { Var(s.to_string()) },
+         &Lexeme::Int(ref n)  => { Int(*n) },
+         &Lexeme::Float(ref n)=> { Float(*n) },
+         _ => { return None; }
+   };
+   Some(exp)
+}
+
 //range without include parenthesis
 fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResult
 {
@@ -46,24 +58,17 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResul
       if child_start {
          let child = parse_range(lexemes, c_start+1, c_end-1);
          if let Ok(c) = child { sub = cons(c, sub); }
-         else { return Result::Err((ParseFail::CHILD_PARSE_FAIL, c_start)); }
+         else { return Result::Err((ParseFail::ChildParseFail, c_start)); }
          c_it += 1;
          i = c_end + 1;
          continue;
       }
       //Sexps::Str(String::from("Test"));
       let ref l = lexemes[i];
-      use types::Sexps::*;
-      match l {
-         &Lexeme::Str(ref s)  => { sub = cons(Str(s.to_string()), sub) },
-         &Lexeme::Sym(ref s)  => { sub = cons(Var(s.to_string()), sub) },
-         &Lexeme::Int(ref n)  => { sub = cons(Int(*n), sub) },
-         &Lexeme::Float(ref n)=> { sub = cons(Float(*n), sub) },
-         _ => {
-            return Result::Err((ParseFail::BAD_LEXEME, i));
-            sub = cons(err("fail"), sub)
-         }
-      }
+      let exp_opt = parse_lexeme(l);
+      if let Some(exp) = exp_opt { sub = cons(exp, sub); }
+      else { return Result::Err((ParseFail::BadLexeme, i)); }
+
       i += 1;
    }
    Ok(cons_to_sexps(cons_reverse(sub)))
@@ -88,36 +93,24 @@ fn parse_helper(lexemes : &Vec<Lexeme>) -> ParseResult {
          },
          _ => {}
       }
-      if nestedness < 0 { return Result::Err((ParseFail::EXTRA_CLOSE_PAREN, i)); }
+      if nestedness < 0 {
+         return Result::Err((ParseFail::ExtraCloseParen, i));
+      }
    }
 
-   let mut start = 0;
-   let mut end = 0;
-
+   let start; let end;
    if let Some(x) = start_paren { start = x; }
-   else { return Result::Err((ParseFail::NO_START_PAREN, 0)) }
+   else { return Result::Err((ParseFail::NoStartParen, 0)) }
    if let Some(x) = end_paren { end = x; }
-   else { return Result::Err((ParseFail::NO_END_PAREN, 0)) }
+   else { return Result::Err((ParseFail::NoEndParen, 0)) }
 
    parse_range(lexemes, start+1, end-1)
 }
 
 pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
    if lexemes.len() == 1 {
-      use types::Sexps::*;
-      let mut good = true;
-      let ret = match &lexemes[0] {
-         &Lexeme::Str(ref s)  => { Str(s.to_string()) },
-         &Lexeme::Sym(ref s)  => { Var(s.to_string()) },
-         &Lexeme::Int(ref n)  => { Int(*n) },
-         &Lexeme::Float(ref n)=> { Float(*n) },
-         _ => {
-            good = false;
-            err("bad lexeme")
-         }
-      };
-      if good { Ok(ret) }
-      else { Result::Err((ParseFail::BAD_LEXEME, 0)) }
+      if let Some(exp) = parse_lexeme(&lexemes[0]) { Ok(exp) }
+      else { Result::Err((ParseFail::BadLexeme, 0)) }
    }
    else { parse_helper(lexemes) }
 }

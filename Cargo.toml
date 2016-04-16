@@ -1,6 +1,13 @@
 [package]
 
-name = "lisp"
+name = "lambdaoxide"
 version = "0.0.1"
 authors = [ "Konstantin Kowalski <kostelkow@gmail.com>" ]
 
+[lib]
+name = "lolib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "lorepl"
+path = "src/bin.rs"
