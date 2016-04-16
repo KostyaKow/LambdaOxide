@@ -41,9 +41,10 @@ empty
    - [ ] add env to print_sexps
    - [ ] unit tests with cargo
       - [x] lexer test
-      - [ ] parsing tests
+      - [x] parsing tests
       - [ ] church numerals
       - [ ] standard library
+      - [ ] test for expected failures
    - [ ] switch Sexps to not use Cons and do it manually
    - [x] evaluating naked expression like 8 or "blah" doesn't work with intepreter
    - [x] loading multiline statements

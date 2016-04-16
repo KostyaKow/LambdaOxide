@@ -88,6 +88,25 @@ fn test_parse_2() {
    assert_eq!(parsed, Sub(box Cons(Var("+"), Sub(box Cons(Int(10), Float(5.1))))));
 }
 
+
+
+#[test]
+fn test_run() {
+   test_run_fib();
+   test_run_church();
+}
+
+fn test_run_fib() {
+   let root = setup_env();
+
+   let mut cmd = "(load \"examples/fib.lam\")";
+   let mut result = run(root, &cmd).unwrap();
+
+   cmd = fib(10);
+   result = run(root, &cmd).unwrap();
+   assert_eq!(result, Int(51));
+}
+
 //TODO: finish me
 #[test]
 fn test_table() {

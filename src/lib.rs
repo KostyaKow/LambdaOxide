@@ -21,6 +21,7 @@ mod err;
 mod lexer;
 mod parser;
 mod list;
+mod unit_tests;
 
 type FunArgNames = Sexps;
 type FunArgs = Sexps;
@@ -109,7 +110,7 @@ fn get_sym_table_val(v : Option<&Callable>) -> Sexps {
 //end callable
 
 struct Table { bindings: HashMap<String, Callable>, parent: EnvId }
-struct Env { tables : Vec<Table>, }
+pub struct Env { tables : Vec<Table>, }
 
 
 impl Env {
@@ -469,6 +470,12 @@ fn run(root : Root, code : &str) -> RunResult {
    }
 }
 
+pub fn setup_env() -> RefCell<Env> {
+   let root = RefCell::new(Env::new());
+   root.borrow_mut().add_defaults();
+   root
+}
+
 pub fn interpreter() {
    use std::io::{self, BufRead};
    let stdin = io::stdin();
@@ -476,7 +483,7 @@ pub fn interpreter() {
    let root = RefCell::new(Env::new());
    root.borrow_mut().add_defaults();
 
-   let cmd = "(load \"core.lam\")";
+   let cmd = "(load \"core.lo\")";
    println!("**> {}", cmd);
    display_run_result(&run(&root, cmd));
    /*let mut cmd;
