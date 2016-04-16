@@ -38,8 +38,8 @@ pub enum Cons<T> {
 
 pub fn cons_get<T>(c : &Cons<T>, n : usize) -> Option<&T> {
    match *c {
-      Cons::Cons(ref x, box ref xs) if n==0 => Some(x),
-      Cons::Cons(ref x, box ref xs) => cons_get(&xs, n-1),
+      Cons::Cons(ref x, _) if n==0 => Some(x),
+      Cons::Cons(_, box ref xs) => cons_get(&xs, n-1),
       _ => None
    }
 }

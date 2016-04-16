@@ -4,7 +4,9 @@ use utils::vec_eq;
 use types::{Lexeme, print_lexemes, Sexps};
 use lexer::lex;
 use parser::parse;
-use err::PRINT_TESTS;
+//use err::PRINT_TESTS;
+use main::*;
+//use list::Cons;
 
 type LexTestResult = (String, Vec<Lexeme>);
 
@@ -76,16 +78,22 @@ fn test_parse_1() {
    let lexed = lex(code);
 
    let parsed = parse(&lexed).unwrap();
-   assert_eq!(parsed, Sexps::Num(5));
+   assert_eq!(parsed, Sexps::Int(3));
 }
+
+//:Sub(box Cons(:Var(+), box Cons(Sub(Cons(*, Cons(10, Cons(5.1, Nil)))))
 fn test_parse_2() {
-   let code = "(+ 1 (* 10 5.1))";
+   /*let code = "(+ 1 (* 10 5.1))";
    let lexed = lex(code);
 
    let parsed = parse(&lexed).unwrap();
 
    use types::Sexps::*;
-   assert_eq!(parsed, Sub(box Cons(Var("+"), Sub(box Cons(Int(10), Float(5.1))))));
+   let plus = Var("+".to_string());
+   let n1 = Int(10);
+   let n2 = Float(5.1);
+
+   assert_eq!(parsed, Sub(Box::new(Cons(plus, Box::new(Sub(Box::new(Cons(n1, Box::new(Cons(n2, Cons::Nil))))))))));*/
 }
 
 
@@ -99,16 +107,18 @@ fn test_run() {
 fn test_run_fib() {
    let root = setup_env();
 
-   let mut cmd = "(load \"examples/fib.lam\")";
-   let mut result = run(root, &cmd).unwrap();
+   let mut cmd = "(load \"examples/fib.lo\")";
+   let mut result = run(&root, &cmd).unwrap();
 
-   cmd = fib(10);
-   result = run(root, &cmd).unwrap();
-   assert_eq!(result, Int(51));
+   cmd = "(fib 10)";
+   result = run(&root, &cmd).unwrap();
+   assert_eq!(result, Sexps::Int(55));
 }
 
+fn test_run_church() {}
+
 //TODO: finish me
-#[test]
+/*#[test]
 fn test_table() {
    let mut x : Env = Env::new();
    let child = x.table_new(0);
@@ -119,5 +129,5 @@ fn test_table() {
    x.table_add(child, "hello3", make_sym_table_val(err("yo2")));
 
    display_sexps(&get_sym_table_val(x.lookup(child2, "hello")));
+}*/
 
-}

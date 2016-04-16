@@ -79,8 +79,6 @@ fn parse_helper(lexemes : &Vec<Lexeme>) -> ParseResult {
    let mut end_paren : Option<usize> = None;
    let mut nestedness : i32 = 0;
 
-   let place_extra_paren = -1;
-
    for (i, l) in lexemes.iter().enumerate() {
       match l {
          &Lexeme::OpenParen => {
