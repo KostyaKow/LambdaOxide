@@ -32,7 +32,6 @@ misc notes:
          https://doc.rust-lang.org/book/slice-patterns.html
       ref variable stuff
          https://www.reddit.com/r/rust/comments/2tq33x/ref_keyword/
-
    debug print
       let x = vec!(1, 2, 3);
       println!("{:?}", x);
@@ -385,7 +384,7 @@ syntax and semantics
          struct CircleBuilder { x: f64, y: f64, radius: f64, }
          impl CircleBuilder {
             fn new() -> CircleBuilder { CircleBuilder { x: 0.0, y: 0.0, radius: 0.0, } }
-            fn x(&mut self, coordinate: f64) -> &mut CircleBuilder { self.x = coordinate; self }
+            fn x(&mut self, coord: f64) -> &mut CircleBuilder { self.x = coord; self }
             fn y(&mut self, coord: f64) -> &mut CircleBuilder { self.y = coord; self }
             fn radius(&mut self, radius: f64) -> .....
             fn finalize(&self) -> Circle { Circle { x: self.x, y: self.y, radius: self.radius } }
@@ -657,7 +656,6 @@ syntax and semantics
                   let h = "Hello ".to_string();
                   let w = "world!".to_string();
                   let hw = h + &w;
-
             coerce into &str with &
                fn takes_slice(slice: &str) { println!("Got: {}", slice); }
                fn main() {
@@ -754,5 +752,4 @@ syntax and semantics
       let a = [0, 1, 2, 3, 4];
       let allA = &a[..]; //all elements of a
       let middle = &a[1..4]; //1, 2 and 3
-
 
