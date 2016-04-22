@@ -102,6 +102,14 @@ fn test_parse_2() {
 fn test_run() {
    test_run_fib();
    test_run_church();
+   test_floats();
+}
+
+fn test_floats() {
+   let root = setup_env();
+   let cmd = "(+ 3.1 1.1)";
+   let result = run(&root, &cmd).unwrap();
+   assert_eq!(result, Sexps::Float(4.2));
 }
 
 fn test_run_fib() {
