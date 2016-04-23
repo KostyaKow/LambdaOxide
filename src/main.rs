@@ -161,19 +161,26 @@ impl Env {
          if let Sexps::Err(ref s) = args_sexps {
             debug_p(5, "variable lookup calling exec of diff"); return err(s);
          }
-         let mut sum = 0;
+         let mut sum = 0.0;
+         let mut is_int = true;
+
          if let Sub(box ref args_) = args_sexps {
             let mut args : &Cons<Sexps> = args_; //Box::new(args_);
 
             loop {
                match *args {
-                  Cons::Cons(Int(n), ref ns) => { sum += n; args = ns; },
-                  Cons::Cons(_, _) => { err("bad arguments"); break },
-                  Cons::Nil   => break,
+                  Cons::Cons(Int(n), ref ns) => {
+                     sum += n as f64; args = ns;
+                  },
+                  Cons::Cons(Float(n), ref ns) => {
+                     is_int = false; sum += n; args = ns;
+                  }
+                  Cons::Nil => break,
                   _ => return err("bad arguments to sum")
                };
             }
-            Int(sum)
+            if is_int { Int(sum as i64) }
+            else { Float(sum) }
          }
          else { err("bad arguments") }
       };

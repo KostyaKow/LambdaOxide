@@ -102,14 +102,22 @@ fn test_parse_2() {
 fn test_run() {
    test_run_fib();
    test_run_church();
-   test_floats();
+   test_floats_ints();
 }
 
-fn test_floats() {
+fn test_floats_ints() {
    let root = setup_env();
-   let cmd = "(+ 3.1 1.1)";
-   let result = run(&root, &cmd).unwrap();
+   let mut cmd = "(+ 3.1 1.1)";
+   let mut result = run(&root, &cmd).unwrap();
    assert_eq!(result, Sexps::Float(4.2));
+
+   cmd = "(+ 3 0.0)";
+   let mut result = run(&root, &cmd).unwrap();
+   assert_eq!(result, Sexps::Float(3.0));
+
+   cmd = "(+ 40 2)";
+   let mut result = run(&root, &cmd).unwrap();
+   assert_eq!(result, Sexps::Int(42));
 }
 
 fn test_run_fib() {

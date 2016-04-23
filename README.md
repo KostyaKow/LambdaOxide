@@ -45,6 +45,8 @@ empty
       - [x] church numerals
       - [ ] standard library
       - [ ] test for expected failures
+      - [x] test sum with ints and floats
+      - [ ] test other operators with numberes
    - [ ] switch Sexps to not use Cons and do it manually
    - [x] evaluating naked expression like 8 or "blah" doesn't work with intepreter
    - [x] loading multiline statements
