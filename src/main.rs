@@ -102,7 +102,6 @@ fn get_sym_table_val(v : Option<&Callable>) -> Sexps {
 struct Table { bindings: HashMap<String, Callable>, parent: EnvId }
 pub struct Env { tables : Vec<Table>, }
 
-
 impl Env {
    fn new() -> Env {
       let mut env = Env { tables : Vec::new() };
@@ -473,12 +472,13 @@ pub fn setup_env() -> RefCell<Env> {
    root
 }
 
-pub fn interpreter() {
+pub fn interpreter(env : Option<RefCell<Env>>) {
    use std::io::{self, BufRead};
    let stdin = io::stdin();
 
-   let root = RefCell::new(Env::new());
-   root.borrow_mut().add_defaults();
+   let root = if let Some(root_) = env {
+      root_
+   } else { setup_env() };
 
    let cmd = "(load \"core.lo\")";
    println!("**> {}", cmd);
@@ -518,12 +518,12 @@ fn thread_intepreter() {
    let stack_size = 8*32*1024*1024;
 
    let child = thread::Builder::new().stack_size(stack_size).spawn(move || {
-      interpreter();
+      interpreter(None);
    }).unwrap();
    //let ret = child.join().unwrap();
    child.join().unwrap();
 
-   interpreter();
+   interpreter(None);
 }
 
 

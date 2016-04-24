@@ -9,8 +9,9 @@ mod parser;
 mod list;
 mod unit_tests;
 mod main;
+use std::cell::RefCell;
 
-pub fn interpreter() {
-   main::interpreter();
+pub fn interpreter(e : Option<RefCell<main::Env>>) {
+   main::interpreter(e);
 }
 

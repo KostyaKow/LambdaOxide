@@ -112,11 +112,11 @@ fn test_floats_ints() {
    assert_eq!(result, Sexps::Float(4.2));
 
    cmd = "(+ 3 0.0)";
-   let mut result = run(&root, &cmd).unwrap();
+   result = run(&root, &cmd).unwrap();
    assert_eq!(result, Sexps::Float(3.0));
 
    cmd = "(+ 40 2)";
-   let mut result = run(&root, &cmd).unwrap();
+   result = run(&root, &cmd).unwrap();
    assert_eq!(result, Sexps::Int(42));
 }
 
