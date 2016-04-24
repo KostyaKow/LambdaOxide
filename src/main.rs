@@ -20,7 +20,7 @@ pub type Root<'a> = &'a RefCell<Env>;
 type BuiltInFunc = Fn(Sexps, Root, EnvId) -> Sexps;
 
 //callable
-enum Callable {
+pub enum Callable {
    BuiltIn(EnvId, Box<BuiltInFunc>), //args, root, our env
    Lambda(EnvId, FunArgNames, Sexps)
 }
