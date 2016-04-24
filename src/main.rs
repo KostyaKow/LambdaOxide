@@ -17,7 +17,7 @@ type FunArgNames = Sexps;
 type FunArgs = Sexps;
 
 pub type Root<'a> = &'a RefCell<Env>;
-type BuiltInFunc = Fn(Sexps, Root, EnvId) -> Sexps;
+pub type BuiltInFunc = Fn(Sexps, Root, EnvId) -> Sexps;
 
 //callable
 pub enum Callable {
