@@ -34,7 +34,7 @@ empty
 
 - TODO
    - [ ] rename main.rs
-   - [ ] make argument extractor for build-in types ```rust struct ExtractedArgs { strings : Vec<Strings>, floats : Vec<f64>, exps : Vec<Sexps> } arg_extract(args : Vec<Sexps>, format : Vec<String>) -> ExtractedArgs;```
+   - [ ] make argument extractor for build-in types ```rust struct ExtractedArgs { strings : Vec<Strings>, floats : Vec<f64>, exps : Vec<Sexps> } fn extract_args(args : Sexps, format : Vec<String>) -> ExtractedArgs;```
    - [ ] implement c-types-like ffi (using libffi?)
    - [ ] implement macro system
    - [ ] comparison

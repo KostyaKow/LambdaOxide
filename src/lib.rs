@@ -2,7 +2,7 @@
 #![feature(as_unsafe_cell)]
 
 mod utils;
-mod types;
+pub mod types;
 mod err;
 mod lexer;
 mod parser;
