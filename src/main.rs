@@ -214,7 +214,7 @@ impl Env {
 
       let eq = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          if let Sexps::Err(ref s) = args_sexps {
-            debug_p(5, "variable lookup calling exec of diff"); return err(s);
+            debug_p(5, "variable lookup calling exec of eq"); return err(s);
          }
          let args = arg_extractor(&args_sexps).unwrap(); //fixme, check this
          if args.len() < 2 { return err("equality test needs at least 2 args") }
