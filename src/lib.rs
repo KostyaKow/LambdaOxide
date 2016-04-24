@@ -8,7 +8,7 @@ mod lexer;
 mod parser;
 mod list;
 mod unit_tests;
-mod main;
+pub mod main;
 use std::cell::RefCell;
 
 pub fn interpreter(e : Option<RefCell<main::Env>>) {
