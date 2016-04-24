@@ -131,7 +131,7 @@ impl Env {
       self.tables.push(Table { bindings : HashMap::new(), parent: parent });
       self.tables.len()-1
    }
-   fn table_add(&mut self, table_id : EnvId, key : &str, entry : Callable) -> bool {
+   pub fn table_add(&mut self, table_id : EnvId, key : &str, entry : Callable) -> bool {
       let mut i = 0;
       for table in self.tables.iter_mut() {
          if i == table_id {
@@ -155,7 +155,7 @@ impl Env {
          None => return None
       }
    }
-   fn add_defaults(&mut self) {
+   pub fn add_defaults(&mut self) {
       let sum = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          if let Sexps::Err(ref s) = args_sexps {
             debug_p(5, "variable lookup calling exec of diff"); return err(s);
