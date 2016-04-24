@@ -13,8 +13,8 @@ use lexer::lex;
 use parser::parse;
 use list::*;
 
-type FunArgNames = Sexps;
-type FunArgs = Sexps;
+pub type FunArgNames = Sexps;
+pub type FunArgs = Sexps;
 
 pub type Root<'a> = &'a RefCell<Env>;
 pub type BuiltInFunc = Fn(Sexps, Root, EnvId) -> Sexps;
