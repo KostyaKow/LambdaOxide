@@ -33,6 +33,7 @@ empty
 ```
 
 - TODO
+   - [ ] rename main
    - [ ] implement c-types-like ffi (using libffi?)
    - [ ] implement macro system
    - [ ] comparison
