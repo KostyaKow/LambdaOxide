@@ -37,6 +37,7 @@ empty
    - [ ] implement print
       - [x] implement print for strings
       - [ ] fix print for everything else
+   - [ ] remove check at beginning of every build-in functions (maybe make a wrapper)
    - [ ] make argument extractor for build-in types ```rust struct ExtractedArgs { strings : Vec<Strings>, floats : Vec<f64>, exps : Vec<Sexps> } fn extract_args(args : Sexps, format : Vec<String>) -> ExtractedArgs;```
    - [ ] implement c-types-like ffi (using libffi?)
    - [ ] implement macro system

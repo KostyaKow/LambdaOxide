@@ -99,7 +99,7 @@ fn get_sym_table_val(v : Option<&Callable>) -> Sexps {
 }
 //end callable
 
-fn arg_extract_str(args : &Vec<Sexps>, index : usize) -> Option<String> {
+pub fn arg_extract_str(args : &Vec<Sexps>, index : usize) -> Option<String> {
    if let Sexps::Str(ref s) = args[index] {
       Some(s.clone())
    } else { None }
@@ -356,10 +356,10 @@ fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
          else { Sexps::Var(s.clone()) }
          //get_sym_table_val(lookup_opt)
       }
-      , GameCmd(ref cmd, ref sender) => { //kkgame
-         sender.send(cmd.clone()).unwrap();
+      /*, GameCmd(ref cmd, ref sender) => { //kkgame
+         //sender.send(cmd.clone()).unwrap();
          Sexps::Int(0)
-      }
+      }*/
    }
 }
 

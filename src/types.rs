@@ -16,7 +16,6 @@ pub enum Lexeme {
 
 pub type EnvId = usize;
 
-
 //start game kkgame
 use std::sync::mpsc::Sender;
 pub type GameObjId = u32;
@@ -38,7 +37,7 @@ pub enum Sexps {
    Str(String), Int(i64), Float(f64), Var(String), Err(String), //Literal(String),
    Sub(Box<Cons<Sexps>>), Lambda(EnvId, String),
    Bool(bool) //Quote(Box<Cons<Sexps>>) //Sub(Box<Vec<Sexps>>)
-   , GameCmd(GameCommand, GameCmdSender) //kkgame addition
+   //, GameCmd(GameCommand, GameCmdSender) //kkgame addition
 }
 
 impl PartialEq for Sexps {
@@ -95,8 +94,8 @@ pub fn same_type(exp1 : &Sexps, exp2 : &Sexps) -> bool {
       Sexps::Err(..)     => if let Sexps::Err(..) = *exp2 { same = true; },
       Sexps::Sub(..)     => if let Sexps::Sub(..) = *exp2 { same = true; },
       Sexps::Lambda(..)  => if let Sexps::Lambda(..) = *exp2 { same = true; },
-      Sexps::Bool(..)    => if let Sexps::Bool(..) = *exp2 { same = true; },
-      Sexps::GameCmd(..) => if let Sexps::GameCmd(..) = *exp2 { same = true; } //kkgame
+      Sexps::Bool(..)    => if let Sexps::Bool(..) = *exp2 { same = true; }
+      //,Sexps::GameCmd(..) => if let Sexps::GameCmd(..) = *exp2 { same = true; } //kkgame
    }
    same
 }
@@ -144,8 +143,8 @@ pub fn display_sexps(exp: &Sexps) {
       Err(ref s)  => println!("{}", s),
       Lambda(..)  => println!("<lambda>"),
       Bool(x)     => println!("{}", x),
-      Sub(..)     => print_compact_tree(exp),
-      GameCmd(..) => println!("game_cmd") //kkgame
+      Sub(..)     => print_compact_tree(exp)
+      //,GameCmd(..) => println!("game_cmd") //kkgame
       /*_                 => println!("bad sexps, cant print")*/
    }
 }
