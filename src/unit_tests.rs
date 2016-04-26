@@ -16,7 +16,7 @@ fn test_lex() {
    check_lex_test(test_lex_2());
    check_lex_test(test_lex_3());
    check_lex_test(test_lex_4());
-
+   check_lex_test(test_lex_5());
    //assert!(vec_eq(expected, lexed));
    //assert_eq!(iter.next(),
    //panic!("fail");
@@ -64,6 +64,16 @@ fn test_lex_4() -> LexTestResult {
    expected.push(Lexeme::Int(-5));
    expected.push(Lexeme::Float(-5.0));
 
+   return (input.to_string(), expected);
+}
+
+fn test_lex_5() -> LexTestResult {
+   let input = "(print \"hello\")";
+   let mut expected = Vec::new();
+   expected.push(Lexeme::OpenParen);
+   expected.push(Lexeme::Sym("print".to_string()));
+   expected.push(Lexeme::Str("hello".to_string()));
+   expected.push(Lexeme::CloseParen);
    return (input.to_string(), expected);
 }
 

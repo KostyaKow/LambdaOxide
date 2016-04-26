@@ -99,6 +99,12 @@ fn get_sym_table_val(v : Option<&Callable>) -> Sexps {
 }
 //end callable
 
+fn arg_extract_str(args : &Vec<Sexps>, index : usize) -> Option<String> {
+   if let Sexps::Str(ref s) = args[index] {
+      Some(s.clone())
+   } else { None }
+}
+
 struct Table { bindings: HashMap<String, Callable>, parent: EnvId }
 pub struct Env { tables : Vec<Table>, }
 
@@ -184,6 +190,17 @@ impl Env {
          else { err("bad arguments") }
       };
       self.table_add(0, "+", Callable::BuiltIn(0, Box::new(sum)));
+
+      let print = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         if let Sexps::Err(ref s) = args_ {
+            debug_p(5, "variable looking calling exec of print"); return err(s);
+         }
+         let args = arg_extractor(&args_).unwrap();
+         if let Sexps::Str(ref s) = args[0] { println!("{}", s); }
+         else { println!("unsupported print"); }
+         err("success")
+      };
+      self.table_add(0, "print", Callable::BuiltIn(0, Box::new(print)));
 
       let diff = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          if let Sexps::Err(ref s) = args_sexps {
