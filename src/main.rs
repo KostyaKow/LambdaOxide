@@ -104,6 +104,11 @@ pub fn arg_extract_str(args : &Vec<Sexps>, index : usize) -> Option<String> {
       Some(s.clone())
    } else { None }
 }
+pub fn arg_extract_float(args : &Vec<Sexps>, index : usize) -> Option<f64> {
+   if let Sexps::Float(ref s) = args[index] {
+      Some(s.clone())
+   } else { None }
+}
 
 struct Table { bindings: HashMap<String, Callable>, parent: EnvId }
 pub struct Env { tables : Vec<Table>, }
@@ -356,10 +361,6 @@ fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
          else { Sexps::Var(s.clone()) }
          //get_sym_table_val(lookup_opt)
       }
-      /*, GameCmd(ref cmd, ref sender) => { //kkgame
-         //sender.send(cmd.clone()).unwrap();
-         Sexps::Int(0)
-      }*/
    }
 }
 

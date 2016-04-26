@@ -16,28 +16,11 @@ pub enum Lexeme {
 
 pub type EnvId = usize;
 
-//start game kkgame
-use std::sync::mpsc::Sender;
-pub type GameObjId = u32;
-pub type GameCoord = f32;
-pub type GamePoint = [GameCoord; 2];
-
-//Obj(<triangle|square|circle>, <color|pic_path>)
-#[derive(Debug, Clone)]
-pub enum GameCommand {
-   Obj(String, String), Move(GameObjId, GamePoint),
-   Rotate(GameObjId, GameCoord),
-   Scale(GameObjId, GamePoint), Exit
-}
-pub type GameCmdSender = Sender<GameCommand>;
-//end game
-
 #[derive(Clone, Debug)] //Try to implement copy
 pub enum Sexps {
    Str(String), Int(i64), Float(f64), Var(String), Err(String), //Literal(String),
    Sub(Box<Cons<Sexps>>), Lambda(EnvId, String),
    Bool(bool) //Quote(Box<Cons<Sexps>>) //Sub(Box<Vec<Sexps>>)
-   //, GameCmd(GameCommand, GameCmdSender) //kkgame addition
 }
 
 impl PartialEq for Sexps {
@@ -95,7 +78,6 @@ pub fn same_type(exp1 : &Sexps, exp2 : &Sexps) -> bool {
       Sexps::Sub(..)     => if let Sexps::Sub(..) = *exp2 { same = true; },
       Sexps::Lambda(..)  => if let Sexps::Lambda(..) = *exp2 { same = true; },
       Sexps::Bool(..)    => if let Sexps::Bool(..) = *exp2 { same = true; }
-      //,Sexps::GameCmd(..) => if let Sexps::GameCmd(..) = *exp2 { same = true; } //kkgame
    }
    same
 }
@@ -144,8 +126,7 @@ pub fn display_sexps(exp: &Sexps) {
       Lambda(..)  => println!("<lambda>"),
       Bool(x)     => println!("{}", x),
       Sub(..)     => print_compact_tree(exp)
-      //,GameCmd(..) => println!("game_cmd") //kkgame
-      /*_                 => println!("bad sexps, cant print")*/
+      //_                 => println!("bad sexps, cant print")
    }
 }
 fn print_compact_tree_helper(t: &Sexps) {
