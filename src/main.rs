@@ -339,6 +339,10 @@ fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
          else { Sexps::Var(s.clone()) }
          //get_sym_table_val(lookup_opt)
       }
+      , GameCmd(ref cmd, ref sender) => { //kkgame
+         sender.send(cmd.clone()).unwrap();
+         Sexps::Int(0)
+      }
    }
 }
 
