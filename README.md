@@ -64,7 +64,7 @@ empty
    - [ ] implement variable-number arguments with * or .
    - [ ] multiple expressions in lambda, etc.
    - [ ] convert built-ins to only handle 2 arguments, and make wrappers in lisp
-   - [ ] investigate why multi-line map definition hangs in core.lam
+   - [x] investigate why multi-line map definition hangs in core.lam
    - [x] Fib example
    - [ ] ; comment
       - [x] ; at beggining of line
@@ -72,6 +72,8 @@ empty
    - [ ] multi-line comments
    - [ ] if we get err in file while interpreting, abort and report error
    - [ ] comparison operator other than = (>, <)
+   - [x] do
+   - [x] sleep
    - [ ] logic operators
       - [ ] not
       - [ ] and
