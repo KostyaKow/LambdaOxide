@@ -166,11 +166,20 @@ impl Env {
          None => return None
       }
    }
+   pub fn table_add_f<F>(&mut self, key : &str, entry : F)
+      -> bool
+      where F : Fn(Sexps, Root, EnvId) -> Sexps + 'static
+   {
+      let checker = move |args : Sexps, root : Root, table : EnvId| -> Sexps {
+         if let Sexps::Err(ref s) = args {
+            debug_p(5, "variable lookup calling exec"); return err(s);
+         }
+         else { entry(args, root, table) }
+      };
+      self.table_add(0, key, Callable::BuiltIn(0, Box::new(checker)))
+   }
    pub fn add_defaults(&mut self) {
       let sum = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
-         if let Sexps::Err(ref s) = args_sexps {
-            debug_p(5, "variable lookup calling exec of diff"); return err(s);
-         }
          let mut sum = 0.0;
          let mut is_int = true;
 
@@ -194,23 +203,10 @@ impl Env {
          }
          else { err("bad arguments") }
       };
-      self.table_add(0, "+", Callable::BuiltIn(0, Box::new(sum)));
-
-      let print = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
-         if let Sexps::Err(ref s) = args_ {
-            debug_p(5, "variable looking calling exec of print"); return err(s);
-         }
-         let args = arg_extractor(&args_).unwrap();
-         if let Sexps::Str(ref s) = args[0] { println!("{}", s); }
-         else { println!("unsupported print"); }
-         err("success")
-      };
-      self.table_add(0, "print", Callable::BuiltIn(0, Box::new(print)));
+      //self.table_add(0, "+", Callable::BuiltIn(0, Box::new(sum)));
+      self.table_add_f("+", sum);
 
       let diff = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
-         if let Sexps::Err(ref s) = args_sexps {
-            debug_p(5, "variable lookup calling exec of diff"); return err(s);
-         }
          let mut diff = 0;
          let mut first = true;
 
@@ -232,12 +228,9 @@ impl Env {
          }
          else { err("bad arguments") }
       };
-      self.table_add(0, "-", Callable::BuiltIn(0, Box::new(diff)));
+      self.table_add_f("-", diff);
 
       let eq = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
-         if let Sexps::Err(ref s) = args_sexps {
-            debug_p(5, "variable lookup calling exec of eq"); return err(s);
-         }
          let args = arg_extractor(&args_sexps).unwrap(); //fixme, check this
          if args.len() < 2 { return err("equality test needs at least 2 args") }
          let first = args[0].clone();
@@ -247,13 +240,9 @@ impl Env {
          }
          Sexps::Bool(true)
       };
-      self.table_add(0, "=", Callable::BuiltIn(0, Box::new(eq)));
+      self.table_add_f("=", eq);
 
       let load = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
-         if let Err(ref s) = args_sexps {
-            debug_p(5, "variable lookup calling exec of load"); return err(s);
-         }
-
          //TODO: kkleft assert rest = Null
          //use std::io::prelude::*;
          use std::fs::File;
@@ -306,18 +295,44 @@ impl Env {
          }
          else { err("cannot load file: bad name") }
       };
-      self.table_add(0, "load", Callable::BuiltIn(0, Box::new(load)));
+      self.table_add_f("load", load);
 
-      let print_root = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps
-      {
-         if let Err(ref s) = args_sexps {
-            debug_p(5, "variable lookup calling exec of load"); return err(s);
-         }
-
+      let print_root = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          root.borrow().print();
          err("succ")
       };
-      self.table_add(0, "print_env", Callable::BuiltIn(0, Box::new(print_root)));
+      self.table_add_f("print_env", print_root);
+
+      let print = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         let args = arg_extractor(&args_).unwrap();
+         if let Sexps::Str(ref s) = args[0] { println!("{}", s); }
+         else { println!("unsupported print"); }
+         err("success")
+      };
+      self.table_add_f("print", print);
+
+      let sleep = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         let args = arg_extractor(&args_).unwrap();
+         if args.len() != 1 { return err("sleep needs 1 argument"); }
+         let time = arg_extract_float(&args, 0).unwrap()*1000.0;
+
+         use std::thread::sleep_ms;
+         sleep_ms(time as u32);
+
+         Sexps::Str("success".to_string())
+      };
+      self.table_add_f("sleep", sleep);
+
+      let do_ = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         let args = arg_extractor(&args_).unwrap();
+
+         let mut result = err("empty do");
+         for arg in args {
+            result = eval(&arg, root, table);
+         }
+         result
+      };
+      self.table_add_f("do", do_);
 
       let is_nil = |args : Sexps, root : Root, table : EnvId| -> Sexps {
          if let Sub(box Cons::Cons(Err(_), _)) = args {
@@ -325,7 +340,7 @@ impl Env {
          }
          else { Bool(false) }
       };
-      self.table_add(0, "null?", Callable::BuiltIn(0, Box::new(is_nil)));
+      self.table_add_f("null?", is_nil);
 
       self.table_add(0, "nil", make_sym_table_val(err("")));
    }
