@@ -1,13 +1,12 @@
 #![allow(dead_code)]
-//extern crate err;use err::DEBUG;
-//extern crate list; use list::{Cons, cons_map};
-//extern crate utils; use utils::{print_space, print_nest};
 
 use err::DEBUG;
 use std::boxed::Box;
-use list::{Cons, cons_map};
+use list::{Cons, cons_map, cons};
 use utils::{print_space, print_nest};
 use self::Sexps::*;
+use main::{Env, Callable};
+use std::cell::RefCell;
 
 #[derive(Debug, PartialEq)]
 pub enum Lexeme {
@@ -15,6 +14,12 @@ pub enum Lexeme {
 }
 
 pub type EnvId = usize;
+
+pub type FunArgNames = Sexps;
+pub type FunArgs = Sexps;
+
+pub type Root<'a> = &'a RefCell<Env>;
+pub type BuiltInFunc = Fn(Sexps, Root, EnvId) -> Sexps;
 
 #[derive(Clone, Debug)] //Try to implement copy
 pub enum Sexps {
@@ -45,6 +50,7 @@ impl Drop for Sexps {
    }
 }
 
+//results, Lex fail, parse fail, eval fails
 #[derive(Debug)]
 pub enum LexFail {}
 #[derive(Debug)]
@@ -67,6 +73,8 @@ pub fn display_run_result(res : &RunResult) {
       _           => println!("error: {:?}", res)
    }
 }
+//end result, and failure enums
+
 pub fn same_type(exp1 : &Sexps, exp2 : &Sexps) -> bool {
    let mut same = false;
    match *exp1 {
@@ -99,6 +107,44 @@ pub fn arg_extractor(exp : &Sexps) -> Option<Vec<Sexps>> {
       Some(ret)
    }
    else { None }
+}
+
+pub fn arg_extract_str(args : &Vec<Sexps>, index : usize) -> Option<String> {
+   if let Sexps::Str(ref s) = args[index] {
+      Some(s.clone())
+   } else { None }
+}
+pub fn arg_extract_float(args : &Vec<Sexps>, index : usize) -> Option<f64> {
+   if let Sexps::Float(ref s) = args[index] {
+      Some(s.clone())
+   } else if let Sexps::Int(ref s) = args[index] {
+      Some(s.clone() as f64)
+   } else { None }
+}
+
+pub fn make_sym_table_val(exp : Sexps) -> Callable {
+   //let root = Env::new();
+   let ret : Box<Fn(Sexps, Root, EnvId) -> Sexps> = Box::new(move |args, root, env| -> Sexps {
+      cons_to_sexps(cons(err("__var"), cons(exp.clone(), Cons::Nil)))
+   });
+   Callable::BuiltIn(0, ret)
+}
+pub fn sym_table_is_var(v : Option<&Callable>) -> bool {
+   if let Some(f) = v {
+      match f.exec(err("__sym"), &(RefCell::new(Env::new()))) {
+         Sub(box Cons::Cons(Err(ref s), _)) if s == "__var" => true,
+         _ => false
+      }
+   } else { false }
+}
+pub fn get_sym_table_val(v : Option<&Callable>) -> Sexps {
+   if let Some(f) = v {
+      match f.exec(err("__sym"), &(RefCell::new(Env::new()))) {
+         Sexps::Sub(box Cons::Cons(Sexps::Err(ref s), box Cons::Cons(ref exp, _))) if s == "__var"
+            => exp.clone(),
+         _ => err("Bad value")
+      }
+   } else { err("Not found") }
 }
 
 //works well, but we have derive(Debug) on lexemes so we can just debug print them

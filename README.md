@@ -78,6 +78,7 @@ empty
       - [ ] not
       - [ ] and
       - [ ] or
+   - [ ] when testing multi-line expressions (when missing parenthesis), we can concatentate Lexeme Vectors instead of concating strings and re-lexing whole string.
    - [ ] make embeddable library
       - [x] separate lib and bin
 

@@ -5,19 +5,13 @@ use std::boxed::Box;
 
 use std::cell::RefCell;
 
+use err::{debug_p, DEBUG};
 use utils::*;
 use types::*;
 use types::Sexps::*;
-use err::{debug_p, DEBUG};
 use lexer::lex;
 use parser::parse;
 use list::*;
-
-pub type FunArgNames = Sexps;
-pub type FunArgs = Sexps;
-
-pub type Root<'a> = &'a RefCell<Env>;
-pub type BuiltInFunc = Fn(Sexps, Root, EnvId) -> Sexps;
 
 //callable
 pub enum Callable {
@@ -25,7 +19,7 @@ pub enum Callable {
    Lambda(EnvId, FunArgNames, Sexps)
 }
 impl Callable {
-   fn exec(&self, args_exp : Sexps, root : Root) -> Sexps {
+   pub fn exec(&self, args_exp : Sexps, root : Root) -> Sexps {
       debug_p(2, "calling .exec of callable");
 
       match *self {
@@ -72,51 +66,13 @@ impl Callable {
       }
    }
 }
-
-fn make_sym_table_val(exp : Sexps) -> Callable {
-   //let root = Env::new();
-   let ret : Box<Fn(Sexps, Root, EnvId) -> Sexps> = Box::new(move |args, root, env| -> Sexps {
-      cons_to_sexps(cons(err("__var"), cons(exp.clone(), Cons::Nil)))
-   });
-   Callable::BuiltIn(0, ret)
-}
-fn sym_table_is_var(v : Option<&Callable>) -> bool {
-   if let Some(f) = v {
-      match f.exec(err("__sym"), &(RefCell::new(Env::new()))) {
-         Sub(box Cons::Cons(Err(ref s), _)) if s == "__var" => true,
-         _ => false
-      }
-   } else { false }
-}
-fn get_sym_table_val(v : Option<&Callable>) -> Sexps {
-   if let Some(f) = v {
-      match f.exec(err("__sym"), &(RefCell::new(Env::new()))) {
-         Sexps::Sub(box Cons::Cons(Sexps::Err(ref s), box Cons::Cons(ref exp, _))) if s == "__var"
-            => exp.clone(),
-         _ => err("Bad value")
-      }
-   } else { err("Not found") }
-}
 //end callable
-
-pub fn arg_extract_str(args : &Vec<Sexps>, index : usize) -> Option<String> {
-   if let Sexps::Str(ref s) = args[index] {
-      Some(s.clone())
-   } else { None }
-}
-pub fn arg_extract_float(args : &Vec<Sexps>, index : usize) -> Option<f64> {
-   if let Sexps::Float(ref s) = args[index] {
-      Some(s.clone())
-   } else if let Sexps::Int(ref s) = args[index] {
-      Some(s.clone() as f64)
-   } else { None }
-}
 
 struct Table { bindings: HashMap<String, Callable>, parent: EnvId }
 pub struct Env { tables : Vec<Table>, }
 
 impl Env {
-   fn new() -> Env {
+   pub fn new() -> Env {
       let mut env = Env { tables : Vec::new() };
       env.table_new(0);
       env
@@ -207,6 +163,15 @@ impl Env {
       };
       //self.table_add(0, "+", Callable::BuiltIn(0, Box::new(sum)));
       self.table_add_f("+", sum);
+
+      let mul = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         let mul = 0.0;
+         let mut is_int = true;
+         let args = arg_extractor(&args_).unwrap();
+         for i in 0..args.len() {
+            let n = arg_extract_float(args, i);
+         }
+      }
 
       let diff = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          let mut diff = 0;
