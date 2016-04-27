@@ -331,7 +331,7 @@ impl Env {
    }
 }
 
-fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
+pub fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    //root.borrow_mut().table_add(0, "hello", make_sym_table_val(err("test")));
    //print_tree(&get_sym_table_val(root.borrow_mut().lookup(0, "hello")), 0);
    //root.borrow_mut().table_add(0, "hello", make_sym_table_val(Sexps::Num(5)));
