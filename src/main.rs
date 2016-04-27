@@ -107,6 +107,8 @@ pub fn arg_extract_str(args : &Vec<Sexps>, index : usize) -> Option<String> {
 pub fn arg_extract_float(args : &Vec<Sexps>, index : usize) -> Option<f64> {
    if let Sexps::Float(ref s) = args[index] {
       Some(s.clone())
+   } else if let Sexps::Int(ref s) = args[index] {
+      Some(s.clone() as f64)
    } else { None }
 }
 
