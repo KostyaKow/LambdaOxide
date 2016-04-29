@@ -346,6 +346,10 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
             root.borrow_mut().table_add(t, name, eval_result);
             Var("success".to_string())
          }
+         /*else if let Cons::Cons(Sub(box Cons::Cons(ref name, ref args)), ref binding) = *args {
+            let l = apply_macro("lambda", Cons::Cons(args, binding), root, t);
+            apply_macro("define", Cons::Cons(name, l), root, t)
+         }*/
          else { err("bad define syntax") }
       }
       "lambda" => {
