@@ -34,14 +34,32 @@ empty
 
 - TODO
    - [ ] rename main.rs
-   - [ ] implement print
+   - [x] implement print
       - [x] implement print for strings
-      - [ ] fix print for everything else
+      - [x] fix print for everything else
+   - [ ] change the way we store sexps
+      - [x] investigate new Sexps style
+      - [ ] build-in cons
+      - [ ] modify cells
+   - [ ] check argument types and number for build-ins
    - [ ] remove check at beginning of every build-in functions (maybe make a wrapper)
+   - [ ] int-float coarching
+   - [ ] adding strings
+   - [ ] make matching arguments easier for build-ins
+      - [x] extract float
+      - [x] extract int
+      - [ ] extract string
    - [ ] make argument extractor for build-in types ```rust struct ExtractedArgs { strings : Vec<Strings>, floats : Vec<f64>, exps : Vec<Sexps> } fn extract_args(args : Sexps, format : Vec<String>) -> ExtractedArgs;```
    - [ ] implement c-types-like ffi (using libffi?)
    - [ ] implement macro system
+   - [ ] logic operators
+      - [ ] not
+      - [ ] and
+      - [ ] or
    - [ ] comparison
+      - [x] =
+      - [ ] <
+      - [ ] >
    - [x] floats
    - [ ] quote
    - [ ] add env to print_sexps
@@ -55,14 +73,15 @@ empty
       - [ ] test other operators with numberes
    - [ ] switch Sexps to not use Cons and do it manually
    - [x] evaluating naked expression like 8 or "blah" doesn't work with intepreter
-   - [x] loading multiline statements
+   - [ ] repl and syntax highlights
+      - [x] loading multiline statements
+      - [ ] repl history
    - [ ] move built-in functions to separate file
-   - [x] make matching arguments easier for build-ins
    - [ ] build-in cons
    - [ ] convert sexps to use vec (??? maybe)
    - [ ] switch form list::Cons to list::List
    - [ ] implement variable-number arguments with * or .
-   - [ ] multiple expressions in lambda, etc.
+   - [ ] multiple expressions in lambda, etc. (we can just use do for now)
    - [ ] convert built-ins to only handle 2 arguments, and make wrappers in lisp
    - [x] investigate why multi-line map definition hangs in core.lam
    - [x] Fib example
@@ -71,14 +90,12 @@ empty
       - [ ] ; after code
    - [ ] multi-line comments
    - [ ] if we get err in file while interpreting, abort and report error
-   - [ ] comparison operator other than = (>, <)
    - [x] do
    - [x] sleep
-   - [ ] logic operators
-      - [ ] not
-      - [ ] and
-      - [ ] or
    - [ ] when testing multi-line expressions (when missing parenthesis), we can concatentate Lexeme Vectors instead of concating strings and re-lexing whole string.
-   - [ ] make embeddable library
+   - [x] make embeddable library
       - [x] separate lib and bin
+      - [ ] figure out a way to modify external environment from language
+   - [ ] optimize
+      - [ ] compiler
 
