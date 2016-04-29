@@ -32,13 +32,17 @@ pub fn is_float(s : &str) -> bool {
    let mut have_dot = false;
    while i < s.len() {
       let c = char_at(s, i).unwrap();
-      if !c.is_digit(10) && !(i == 0 && c == '-' && s.len() > 1) {
+      let first_neg = i == 0 && c == '-';
+
+      if !c.is_digit(10) && !(first_neg && s.len() > 1) {
          if c == '.' && have_dot == false { have_dot = true; }
          else { return false; }
       }
       i += 1;
    }
-   true
+   //if s == '.' then it's not number
+   if have_dot == true && s.len() == 1 { false }
+   else { true }
 }
 pub fn to_float(s : &str) -> f64 {
    s.parse::<f64>().unwrap()

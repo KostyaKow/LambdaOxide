@@ -272,8 +272,9 @@ impl Env {
 
       let print = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
          let args = arg_extractor(&args_).unwrap();
-         if let Sexps::Str(ref s) = args[0] { println!("{}", s); }
-         else { println!("unsupported print"); }
+         /*if let Sexps::Str(ref s) = args[0] { println!("{}", s); }
+         else { println!("unsupported print"); }*/
+         display_sexps(&args[0]);
          err("success")
       };
       self.table_add_f("print", print);
