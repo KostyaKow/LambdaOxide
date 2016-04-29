@@ -164,14 +164,14 @@ impl Env {
       //self.table_add(0, "+", Callable::BuiltIn(0, Box::new(sum)));
       self.table_add_f("+", sum);
 
-      let mul = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+      /*let mul = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
          let mul = 0.0;
          let mut is_int = true;
          let args = arg_extractor(&args_).unwrap();
          for i in 0..args.len() {
             let n = arg_extract_float(args, i);
          }
-      }
+      }*/
 
       let diff = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          let mut diff = 0;
@@ -323,8 +323,8 @@ pub fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    }
 
    match *exp {
-      Str(_) | Float(_) | Int(_)
-             | Bool(_)       => exp.clone(), //self evaluation
+      Str(_) | Float(_) | Quote(_) |
+      Int(_) | Bool(_)       => exp.clone(), //self evaluation
       Sub(_)                 => apply(exp, root, table),
       //Sexps::Lambda(..)           => apply(exp, root, table),
       ref l@Lambda(..)       => l.clone(),

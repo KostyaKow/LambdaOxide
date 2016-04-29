@@ -4,6 +4,28 @@
 (define cdr  (lambda (o2) (o2 (lambda (j i) i))))
 (define cadr (lambda (x) (car (cdr x))))
 
+(define list-ref
+   (lambda (items n)
+      (if (= n 0)
+         (car items)
+         (list-ref (cdr items) (- n 1)))))
+
+(define length
+   (do
+      (define iter
+         (lambda (lst count)
+            (if (null? lst)
+               count
+               (iter (cdr lst) (+ count 1)))))
+      (lambda (lst)
+         (iter lst 0))))
+
+(define append
+   (lambda (lst1 lst2)
+      (if (null? lst1)
+         lst2
+         (cons (car lst1) (append (cdr lst1) lst2)))))
+
 (define map
    (lambda (f lst)
       (if (null? lst)

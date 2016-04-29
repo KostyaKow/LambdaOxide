@@ -8,11 +8,6 @@ use self::Sexps::*;
 use main::{Env, Callable};
 use std::cell::RefCell;
 
-#[derive(Debug, PartialEq)]
-pub enum Lexeme {
-   OpenParen, CloseParen, Str(String), Sym(String), Int(i64), Float(f64), Quote(char)
-}
-
 pub type EnvId = usize;
 
 pub type FunArgNames = Sexps;
@@ -21,11 +16,21 @@ pub type FunArgs = Sexps;
 pub type Root<'a> = &'a RefCell<Env>;
 pub type BuiltInFunc = Fn(Sexps, Root, EnvId) -> Sexps;
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum QuoteType {
+   BackQuote, Comma, Q
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Lexeme {
+   OpenParen, CloseParen, Str(String), Sym(String), Int(i64), Float(f64), Quote(QuoteType)
+}
+
 #[derive(Clone, Debug)] //Try to implement copy
 pub enum Sexps {
-   Str(String), Int(i64), Float(f64), Var(String), Err(String), //Literal(String),
-   Sub(Box<Cons<Sexps>>), Lambda(EnvId, String),
-   Bool(bool) //Quote(Box<Cons<Sexps>>) //Sub(Box<Vec<Sexps>>)
+   Str(String), Int(i64), Float(f64), Err(String), Bool(bool), Var(String),
+   Lambda(EnvId, String), Quote(QuoteType), Sub(Box<Cons<Sexps>>),
+   //Sub(Box<Vec<Sexps>>), Literal(String) //literal is var now
 }
 
 impl PartialEq for Sexps {
@@ -75,6 +80,22 @@ pub fn display_run_result(res : &RunResult) {
 }
 //end result, and failure enums
 
+pub fn char_to_quote(c : char) -> Option<QuoteType> {
+   match c {
+      '`'   => Some(QuoteType::BackQuote),
+      '\''  => Some(QuoteType::Q),
+      ','   => Some(QuoteType::Comma),
+      _     => None
+   }
+}
+pub fn quote_to_str(q : QuoteType) -> String {
+   match q {
+      QuoteType::BackQuote   => "`",
+      QuoteType::Q           => "'",
+      QuoteType::Comma       => ","
+   }.to_string()
+}
+
 pub fn same_type(exp1 : &Sexps, exp2 : &Sexps) -> bool {
    let mut same = false;
    match *exp1 {
@@ -85,7 +106,8 @@ pub fn same_type(exp1 : &Sexps, exp2 : &Sexps) -> bool {
       Sexps::Err(..)     => if let Sexps::Err(..) = *exp2 { same = true; },
       Sexps::Sub(..)     => if let Sexps::Sub(..) = *exp2 { same = true; },
       Sexps::Lambda(..)  => if let Sexps::Lambda(..) = *exp2 { same = true; },
-      Sexps::Bool(..)    => if let Sexps::Bool(..) = *exp2 { same = true; }
+      Sexps::Bool(..)    => if let Sexps::Bool(..) = *exp2 { same = true; },
+      Sexps::Quote(..)   => if let Sexps::Quote(..) = *exp2 { same = true; }
    }
    same
 }
@@ -157,8 +179,8 @@ pub fn print_lexemes(lexemes: &Vec<Lexeme>) {
          Lexeme::Str(ref s)   => println!("string {}", s),
          Lexeme::Sym(ref s)   => println!("sym {}", s),
          Lexeme::Int(ref n)   => println!("integer {}", n),
-         Lexeme::Float(ref n)  => println!("float {}", n),
-         Lexeme::Quote(ref c) => println!("quote {}", c)
+         Lexeme::Float(ref n) => println!("float {}", n),
+         Lexeme::Quote(ref q) => println!("quote: {}", quote_to_str(q.clone()))
       }
    }
 }
@@ -171,7 +193,8 @@ pub fn display_sexps(exp: &Sexps) {
       Err(ref s)  => println!("{}", s),
       Lambda(..)  => println!("<lambda>"),
       Bool(x)     => println!("{}", x),
-      Sub(..)     => print_compact_tree(exp)
+      Sub(..)     => print_compact_tree(exp),
+      Quote(ref q)=> println!("{}", quote_to_str(q.clone()))
       //_                 => println!("bad sexps, cant print")
    }
 }

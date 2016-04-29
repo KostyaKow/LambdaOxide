@@ -1,4 +1,4 @@
-use types::Lexeme;
+use types::{Lexeme, QuoteType, char_to_quote};
 use utils::*;
 
 fn collect_sym(col : &str) -> Lexeme {
@@ -26,7 +26,7 @@ pub fn lex(code : &str) -> Vec<Lexeme> {
       //special character push previously collected
       let c = char_at(code, i).unwrap();
       //should we collect symbols
-      let collect = str_start || contains(c, vec!['(', ')', '\'', '`', ',', ' ']);
+      let collect = str_start || contains(c, vec![' ', '(', ')', '\'', '`', ',']);
 
       if collect && !col.is_empty() {
          lexemes.push(collect_sym(&col));
@@ -40,7 +40,7 @@ pub fn lex(code : &str) -> Vec<Lexeme> {
       }
       if let Some(c) = char_at(code, i) {
          match c {
-            ',' | '`' | '\'' => lexemes.push(Lexeme::Quote(c)),
+            ',' | '`' | '\'' => lexemes.push(Lexeme::Quote(char_to_quote(c).unwrap())),
             '(' => lexemes.push(Lexeme::OpenParen),
             ')' => lexemes.push(Lexeme::CloseParen),
             '"' => i-=1, //"string""s2"

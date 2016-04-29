@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use utils::vec_eq;
-use types::{Lexeme, print_lexemes, Sexps};
+use types::{Lexeme, QuoteType, print_lexemes, Sexps};
 use lexer::lex;
 use parser::parse;
 //use err::PRINT_TESTS;
@@ -41,14 +41,17 @@ fn test_lex_1() -> LexTestResult {
 }
 fn test_lex_2() -> LexTestResult {
    let input = "(() ())".to_string();
-   let expected = vec![Lexeme::OpenParen, Lexeme::OpenParen, Lexeme::CloseParen, Lexeme::OpenParen, Lexeme::CloseParen, Lexeme::CloseParen];
+   use types::Lexeme::*;
+   let expected = vec![OpenParen, OpenParen, CloseParen, OpenParen, CloseParen, CloseParen];
    return (input, expected);
 }
 fn test_lex_3() -> LexTestResult {
    //let input = "`(test ,blah '3.5".to_string();
    let input = "`(test ,blah '3.5".to_string();
-
-   let expected = vec![Lexeme::Quote('`'), Lexeme::OpenParen, Lexeme::Sym("test".to_string()), Lexeme::Quote(','), Lexeme::Sym("blah".to_string()), Lexeme::Quote('\''), Lexeme::Float(3.5)];
+   use types::Lexeme::*;
+   use types::QuoteType::*;
+   let expected = vec![Quote(BackQuote), OpenParen, Sym("test".to_string()), Quote(Comma),
+                       Sym("blah".to_string()), Quote(Q), Float(3.5)];
    return (input, expected);
 }
 fn test_lex_4() -> LexTestResult {
@@ -66,7 +69,6 @@ fn test_lex_4() -> LexTestResult {
 
    return (input.to_string(), expected);
 }
-
 fn test_lex_5() -> LexTestResult {
    let input = "(print \"hello\")";
    let mut expected = Vec::new();

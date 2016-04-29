@@ -2,7 +2,8 @@ use list::{Cons, cons, cons_reverse};
 use types::*;
 
 //inclusive let i = start; while (i <= end)
-fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> Vec<(usize, usize)>
+fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize)
+-> Vec<(usize, usize)>
 {
    let mut nestedness = 0;
    let mut children : Vec<(usize, usize)> = Vec::new();
@@ -38,6 +39,7 @@ fn parse_lexeme(l : &Lexeme) -> Option<Sexps> {
          &Lexeme::Sym(ref s)  => { Var(s.to_string()) },
          &Lexeme::Int(ref n)  => { Int(*n) },
          &Lexeme::Float(ref n)=> { Float(*n) },
+         &Lexeme::Quote(ref q)=> { Quote(q.clone()) }
          _ => { return None; }
    };
    Some(exp)
@@ -110,5 +112,10 @@ pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
       if let Some(exp) = parse_lexeme(&lexemes[0]) { Ok(exp) }
       else { Result::Err((ParseFail::BadLexeme, 0)) }
    }
+   /*else if lexemes.len() == 2 {
+      if let Lexeme::Quote(_) = lexemes[0] {
+
+      }
+   }*/
    else { parse_helper(lexemes) }
 }
