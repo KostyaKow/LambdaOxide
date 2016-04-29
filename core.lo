@@ -32,8 +32,6 @@
          nil
          (cons (f (car lst)) (map f (cdr lst))))))
 
-;(define map (lambda (f lst) (if (null? lst) nil (cons (f (car lst)) (map f (cdr lst))))))
-
 (define filter
    (lambda (f lst)
       (if (null? lst)
@@ -47,12 +45,4 @@
          (if (null? (car lst))
             init
             (fold f (combine (car lst) init) (cdr lst)))))
-
-
-;(define fold
-;   (lambda (combine init lst)
-;      (let ((first (car lst)))
-;         (if (null? first)
-;            init
-;            (fold f (combine first init) (cdr lst))))))
 

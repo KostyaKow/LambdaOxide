@@ -45,22 +45,6 @@ impl Callable {
                } else { return err("Bad argument names in lambda") }
             }
             else { err("bad args to lambda"); }
-            /*if let Sexps::Sub(box args_@Cons::Cons(Sexps::Var(_), _) = args_exp {
-               //if let Sexps::Sub(box = ) arg_names
-               let mut args : Cons<Sexps> = args_;
-               while let Cons::Cons(Sexps::Var(arg), box rest) {
-                  args = rest;
-               }
-            }*/
-
-            //let new_table = root.borrow_mut().table_new(parent.clone());
-            //if let Sexps::Sub(box args_@Cons::Cons(Sexps::Var(arg), box rest) = args_ {
-            //root.borrow_mut().table_add(new_table, "~", make_sym_table_val(args));
-            //let mut env = SymTable::new(root, env_parent.clone());
-            /*if let Some(ref arg_names) = *arg_names_opt {
-               //let mut i = 0;
-               //for arg in args { env.add(arg_names[i], arg); i+=1; }
-            } else { kkleft: env.add("*", args); } */
             eval(exp, root, exec_table.clone()) //kkleft: eval or apply
          }
       }
