@@ -43,12 +43,12 @@ empty
       - [ ] modify cells
    - [ ] check argument types and number for build-ins
    - [ ] remove check at beginning of every build-in functions (maybe make a wrapper)
-   - [ ] int-float coarching
-   - [ ] adding strings
+   - [ ] int-float coarcing
+   - [x] adding strings
    - [ ] make matching arguments easier for build-ins
       - [x] extract float
-      - [x] extract int
-      - [ ] extract string
+      - [ ] extract int
+      - [x] extract string
    - [ ] make argument extractor for build-in types ```rust struct ExtractedArgs { strings : Vec<Strings>, floats : Vec<f64>, exps : Vec<Sexps> } fn extract_args(args : Sexps, format : Vec<String>) -> ExtractedArgs;```
    - [ ] implement c-types-like ffi (using libffi?)
    - [ ] implement macro system

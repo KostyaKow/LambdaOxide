@@ -206,43 +206,41 @@ impl Env {
             /*let mut f = try!(File::open(s));
             try!(f.read_to_string(&mut file_content));*/
             let path = Path::new(path_str); //path_str);
-            match File::open(&path) {
-               Ok(mut file) => {
-                  let mut file_content = String::new();
-                  match file.read_to_string(&mut file_content) {
-                     Ok(_) => {
-                        let lines = file_content.split("\n").collect::<Vec<&str>>();
 
-                        let mut x : Sexps = err("empty file");
+            let f_res = File::open(&path);
+            if let Result::Err(why) = f_res {
+               let desc = Error::description(&why);
+               return err(&*format!("failed to open file: {}", desc));
+            }
+            let mut file = f_res.unwrap();
 
-                        let mut line_acc = String::new();
+            let mut content = String::new();
+            let read_res = file.read_to_string(&mut content);
+            if let Result::Err(why) = read_res {
+               let desc = Error::description(&why);
+               return err(&*format!("failed to read file: {}", desc));
+            }
 
-                        for line in lines.iter() {
-                           if line.len() < 1 { continue; }
-                           if char_at(line, 0).unwrap() == ';' { continue; }
-                           line_acc = line_acc + line;
-                           let out = run(&root, &line_acc);
-                           if let Result::Err((RunFail::UncompleteExp, _)) = out {
-                              continue;
-                           }
-                           else {
-                              line_acc = String::new();
-                              x = out.unwrap();
-                           }
-                        }
-                        x
-                     }
-                     Result::Err(why) => {
-                        let desc = Error::description(&why);
-                        err(&*format!("failed to read file: {}", desc))
-                     }
-                  }
+            let lines = content.split("\n").collect::<Vec<&str>>();
+
+            let mut x : Sexps = err("empty file");
+
+            let mut line_acc = String::new();
+
+            for line in lines.iter() {
+               if line.len() < 1 { continue; }
+               if char_at(line, 0).unwrap() == ';' { continue; }
+               line_acc = line_acc + line;
+               let out = run(&root, &line_acc);
+               if let Result::Err((RunFail::UncompleteExp, _)) = out {
+                  continue;
                }
-               Result::Err(why) => {
-                  let desc = Error::description(&why);
-                  err(&*format!("failed to open file: {}", desc))
+               else {
+                  line_acc = String::new();
+                  x = out.unwrap();
                }
             }
+            x
          }
          else { err("cannot load file: bad name") }
       };
