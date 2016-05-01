@@ -229,58 +229,6 @@ impl Env {
          }
          else { err("cannot load code: bad argument") }
       };
-
-      /*let load = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
-         //TODO: kkleft assert rest = Null
-         //use std::io::prelude::*;
-         use std::fs::File;
-         use std::path::Path;
-         use std::error::Error;
-         use std::io::Read;
-
-         if let Sub(box Cons::Cons(Str(ref code), ref rest)) = args_sexps {
-            println!("loading file {}", path_str); //err("file")
-            //let mut f = try!(File::open(s));
-            //try!(f.read_to_string(&mut file_content));
-            let path = Path::new(path_str); //path_str);
-
-            let f_res = File::open(&path);
-            if let Result::Err(why) = f_res {
-               let desc = Error::description(&why);
-               return err(&*format!("failed to open file: {}", desc));
-            }
-            let mut file = f_res.unwrap();
-
-            let mut content = String::new();
-            let read_res = file.read_to_string(&mut content);
-            if let Result::Err(why) = read_res {
-               let desc = Error::description(&why);
-               return err(&*format!("failed to read file: {}", desc));
-            }
-
-            let lines = content.split("\n").collect::<Vec<&str>>();
-
-            let mut x : Sexps = err("empty file");
-
-            let mut line_acc = String::new();
-
-            for line in lines.iter() {
-               if line.len() < 1 { continue; }
-               if char_at(line, 0).unwrap() == ';' { continue; }
-               line_acc = line_acc + line;
-               let out = run(&root, &line_acc);
-               if let Result::Err((RunFail::UncompleteExp, _)) = out {
-                  continue;
-               }
-               else {
-                  line_acc = String::new();
-                  x = out.unwrap();
-               }
-            }
-            x
-         }
-         else { err("cannot load file: bad name") }
-      };*/
       self.table_add_f("load", load);
 
       let print_root = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
@@ -504,14 +452,17 @@ pub fn interpreter(env : Option<RefCell<Env>>) {
    use std::io::{self, BufRead};
    let stdin = io::stdin();
 
-   let root = if let Some(root_) = env {
-      root_
-   } else { setup_env() };
+   let root = if let Some(root_) = env { root_ }
+   else { setup_env() };
 
-   let cmd = "(load_file \"core.lo\")";
+   use std::str::from_utf8;
+   let core_file = from_utf8(&include_bytes!("../core.lo")[..]).unwrap().to_string();
+   load_internal(&core_file, &root);
+
+  /* let cmd = "(load_file \"core.lo\")";
    println!("**> {}", cmd);
    display_run_result(&run(&root, cmd));
-   /*let mut cmd;
+   let mut cmd;
    cmd = "(define f (lambda (x) (+ x x)))";
    println!("**> {}", cmd);
    display_sexps(&run(&root, cmd));
