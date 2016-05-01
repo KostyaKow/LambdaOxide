@@ -1,3 +1,5 @@
+(define l (lambda (path) (load_file path)))
+
 (define && (lambda (a b) (and a b)))
 (define || (lambda (a b) (or a b)))
 (define ! (lambda (x) (not x)))
