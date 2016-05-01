@@ -55,10 +55,11 @@ empty
    - [ ] strings
       - [x] make strings addable. Cast all arguments to string if one of arguments to + is string
       - [ ] string indexing, slices, etc.
-   - [ ] other number functions
+   - [x] other number functions
       - [x] mul
-      - [ ] div
+      - [x] div
    - [ ] logic operators
+      - [x] and, and or take variable number of arguments
       - [x] not
       - [x] and
       - [x] or
