@@ -383,8 +383,6 @@ pub fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
          debug_p(2, "Looking up variable");
          let borrowed = root.borrow();
          let lookup_opt = borrowed.lookup(table, &s.clone());
-         //if let Some(&Callable::BuiltIn(..)) = lookup_opt { Sexps::Var(s.clone()) }
-         //else { get_sym_table_val(lookup_opt) }
          if sym_table_is_var(lookup_opt) {
             let x = get_sym_table_val(lookup_opt);
             if DEBUG >=3 { print!("eval variable {}: ", s); print_tree(&x, 0); }
