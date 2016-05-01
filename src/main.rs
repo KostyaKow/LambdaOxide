@@ -145,7 +145,6 @@ impl Env {
          }
          else { err("bad arguments") }
       };
-      //self.table_add(0, "+", Callable::BuiltIn(0, Box::new(sum)));
       self.table_add_f("+", sum);
 
       /*let mul = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
@@ -193,7 +192,45 @@ impl Env {
       };
       self.table_add_f("=", eq);
 
+      let load_file = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
+         use utils::load_internal;
+         //TODO: kkleft assert rest = Null
+         use std::fs::File;
+         use std::path::Path;
+         use std::error::Error;
+         use std::io::Read;
+
+         if let Sub(box Cons::Cons(Str(ref path_str), ref rest)) = args_sexps {
+            println!("loading file {}", path_str);
+            /*let mut f = try!(File::open(s));
+            try!(f.read_to_string(&mut file_content));*/
+            let path = Path::new(path_str); //path_str);
+
+            let f_res = File::open(&path);
+            if let Result::Err(why) = f_res {
+               return err(&*format!("failed to open file: {}", Error::description(&why)));
+            }
+            let mut file = f_res.unwrap();
+
+            let mut content = String::new();
+            let read_res = file.read_to_string(&mut content);
+            if let Result::Err(why) = read_res {
+               return err(&*format!("failed to read file: {}", Error::description(&why)));
+            }
+            load_internal(&content, root)
+         }
+         else { err("cannot load file: bad argument") }
+      };
+      self.table_add_f("load_file", load_file);
+
       let load = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
+         if let Sub(box Cons::Cons(Str(ref code), ref rest)) = args_sexps {
+            load_internal(code, root)
+         }
+         else { err("cannot load code: bad argument") }
+      };
+
+      /*let load = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          //TODO: kkleft assert rest = Null
          //use std::io::prelude::*;
          use std::fs::File;
@@ -201,10 +238,10 @@ impl Env {
          use std::error::Error;
          use std::io::Read;
 
-         if let Sub(box Cons::Cons(Str(ref path_str), ref rest)) = args_sexps {
+         if let Sub(box Cons::Cons(Str(ref code), ref rest)) = args_sexps {
             println!("loading file {}", path_str); //err("file")
-            /*let mut f = try!(File::open(s));
-            try!(f.read_to_string(&mut file_content));*/
+            //let mut f = try!(File::open(s));
+            //try!(f.read_to_string(&mut file_content));
             let path = Path::new(path_str); //path_str);
 
             let f_res = File::open(&path);
@@ -243,7 +280,7 @@ impl Env {
             x
          }
          else { err("cannot load file: bad name") }
-      };
+      };*/
       self.table_add_f("load", load);
 
       let print_root = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
@@ -471,7 +508,7 @@ pub fn interpreter(env : Option<RefCell<Env>>) {
       root_
    } else { setup_env() };
 
-   let cmd = "(load \"core.lo\")";
+   let cmd = "(load_file \"core.lo\")";
    println!("**> {}", cmd);
    display_run_result(&run(&root, cmd));
    /*let mut cmd;

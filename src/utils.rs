@@ -1,5 +1,37 @@
 #![allow(dead_code)]
 
+use types::{Root, Sexps, err, RunFail};
+use main::run;
+pub fn load_internal(code : &String, root : Root) -> Sexps {
+   let lines = code.split("\n").collect::<Vec<&str>>();
+
+   let mut x : Sexps = err("empty file");
+
+   let mut line_acc = String::new();
+   let mut i = 0;
+
+   for line in lines.iter() {
+      i+=1;
+      if line.len() < 1 { continue; }
+      if char_at(line, 0).unwrap() == ';' { continue; }
+      line_acc = line_acc + line;
+      let out = run(&root, &line_acc);
+      if let Result::Err((RunFail::UncompleteExp, _)) = out {
+         continue;
+      }
+      else if let Result::Err((x, err_n)) = out {
+         let ret = format!("cannot load code line {} ({}): {:?}",
+                           i, err_n, x);
+         return err(&*ret);
+      }
+      else {
+         line_acc = String::new();
+         x = out.unwrap();
+      }
+   }
+   x
+}
+
 pub fn syntax_err(s : &str, n : u32) {
    println!("error at {}: {}", n, s);
 }
