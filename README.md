@@ -63,7 +63,7 @@ empty
       - [x] and
       - [x] or
          - [ ] short-circuit
-   - [ ] comparison
+   - [x] comparison
       - [x] =
       - [x] <
       - [x] >
