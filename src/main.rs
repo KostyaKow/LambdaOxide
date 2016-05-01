@@ -116,8 +116,7 @@ fn builtin_mul(args_ : Sexps, root : Root, table : EnvId) -> Sexps {
       if let Some(x) = arg_extract_num(&args, i) { ret *= x; }
       else { return err("bad argument to *"); }
    }
-   if has_float { Float(ret) }
-   else { Int(ret as i64) }
+   if has_float { Float(ret) } else { Int(ret as i64) }
 }
 
 impl Env {
@@ -189,7 +188,22 @@ impl Env {
       self.table_add_f("+", builtin_sum);
       self.table_add_f("*", builtin_mul);
 
-      let diff = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
+      let diff = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         let mut diff = 0.0;
+         let mut first = true;
+         let args = arg_extractor(&args_).unwrap();
+         let mut has_float = false;
+         for i in 0..args.len() {
+            if let Some(x) = arg_extract_float(&args, i) { has_float = true; }
+            if let Some(x) = arg_extract_num(&args, i) {
+               if first { diff = x; first = false; } else { diff -= x; }
+            }
+            else { return err("bad arguments to -"); }
+         }
+         if has_float { Float(diff) } else { Int(diff as i64) }
+      };
+
+      /*let diff = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          let mut diff = 0;
          let mut first = true;
 
@@ -210,19 +224,39 @@ impl Env {
             Int(diff)
          }
          else { err("bad arguments") }
-      };
+      };*/
       self.table_add_f("-", diff);
+
+      let div = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         let args = arg_extractor(&args_).unwrap();
+         let mut ret = 0.0;
+         let mut first = true;
+         let mut has_float = false;
+         for i in 0..args.len() {
+            if let Some(x) = arg_extract_float(&args, i) { has_float = true; }
+            if let Some(x) = arg_extract_num(&args, i) {
+               if first { ret = x; first = false; } else { ret /= x; }
+            }
+            else { return err("bad arguments to /"); }
+         }
+         if has_float { Float(ret) }
+         else {
+            let int_ret = ret as i64;
+            if int_ret as f64 == ret { Int(int_ret) } else { Float(ret) }
+         }
+      };
+      self.table_add_f("/", div);
 
       let lt = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          let args = arg_extractor(&args_sexps).unwrap(); //fixme, check this
-         if args.len() < 2 { return err("< needs at least 2 args") }
+         if args.len() != 2 { return err("< needs 2 args") }
          Sexps::Bool(args[0] < args[1])
       };
       self.table_add_f("<", lt);
 
       let gt = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          let args = arg_extractor(&args_sexps).unwrap(); //fixme, check this
-         if args.len() < 2 { return err("> needs at least 2 args") }
+         if args.len() != 2 { return err("> needs 2 args") }
          Sexps::Bool(args[0] > args[1])
       };
       self.table_add_f(">", gt);
@@ -241,7 +275,7 @@ impl Env {
 
       let not_ = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
          let args = arg_extractor(&args_).unwrap();
-         if args.len() != 1 { err("not only takes 1 argument"); }
+         if args.len() != 1 { return err("not only takes 1 argument"); }
          if let Some(b) = arg_extract_bool(&args, 0) { Bool(!b) }
          else { err("bad argument type passed to not") }
       };
@@ -249,25 +283,27 @@ impl Env {
 
       let and_ = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
          let args = arg_extractor(&args_).unwrap();
-         if args.len() != 2 { err("and only takes 2 argument"); }
-         if let Some(a) = arg_extract_bool(&args, 0) {
-             if let Some(b) = arg_extract_bool(&args, 1) {
-               return Bool(a && b);
+         if args.len() < 2 { return err("and needs at least 2 argument"); }
+         for i in 0..args.len() {
+            if let Some(b) = arg_extract_bool(&args, i) {
+               if !b { return Bool(false); }
             }
+            else { return err("bad argument types passed to and"); }
          }
-         err("bad argument types passed to and")
+         Bool(true)
       };
       self.table_add_f("and", and_);
 
       let or_ = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
          let args = arg_extractor(&args_).unwrap();
-         if args.len() != 2 { err("or only takes 2 argument"); }
-         if let Some(a) = arg_extract_bool(&args, 0) {
-             if let Some(b) = arg_extract_bool(&args, 1) {
-               return Bool(a || b);
+         if args.len() < 2 { return err("or needs at least 2 argument"); }
+         for i in 0..args.len() {
+            if let Some(b) = arg_extract_bool(&args, i) {
+               if b { return Bool(true); }
             }
+            else { return err("bad argument types passed to or"); }
          }
-         err("bad argument types passed to or")
+         Bool(false)
       };
       self.table_add_f("or", or_);
 
