@@ -15,3 +15,6 @@ pub fn interpreter(e : Option<RefCell<main::Env>>) {
    main::interpreter(e);
 }
 
+pub fn add_lisp_to_binary(code : &String, root : types::Root) -> types::Sexps {
+   utils::load_internal(code, root)
+}
