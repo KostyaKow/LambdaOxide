@@ -55,6 +55,71 @@ impl Callable {
 struct Table { bindings: HashMap<String, Callable>, parent: EnvId }
 pub struct Env { tables : Vec<Table>, }
 
+fn builtin_sum(args_sexps : Sexps, root : Root, table : EnvId) -> Sexps {
+   let args = arg_extractor(&args_sexps).unwrap();
+
+   let mut has_string = false;
+   for i in 0..args.len() {
+      if let Some(_) = arg_extract_str(&args, i) {
+         has_string = true;
+         break;
+      }
+   }
+   if has_string {
+      let mut ret = String::new();
+      for i in 0..args.len() {
+         let s_val = if let Some(x) = arg_extract_int(&args, i) {
+            x.to_string()
+         } else if let Some(x) = arg_extract_float(&args, i) {
+            x.to_string()
+         } else if let Some(x) = arg_extract_str(&args, i) {
+            x
+         } else {
+            return err("bad argument to sum"); "error"
+         };
+         ret = ret + &*s_val;
+      }
+      return Sexps::Str(ret);
+   }
+
+   let mut sum = 0.0;
+   let mut is_int = true;
+
+   if let Sub(box ref args_) = args_sexps {
+      let mut args : &Cons<Sexps> = args_; //Box::new(args_);
+
+      loop {
+         match *args {
+            Cons::Cons(Int(n), ref ns) => {
+               sum += n as f64; args = ns;
+            },
+            Cons::Cons(Float(n), ref ns) => {
+               is_int = false; sum += n; args = ns;
+            }
+            Cons::Nil => break,
+            _ => return err("bad arguments to sum")
+         };
+      }
+      if is_int { Int(sum as i64) }
+      else { Float(sum) }
+   }
+   else { err("bad arguments") }
+}
+
+fn builtin_mul(args_ : Sexps, root : Root, table : EnvId) -> Sexps {
+   let args = arg_extractor(&args_).unwrap();
+   let mut ret = 1.0;
+   let mut has_float = false;
+
+   for i in 0..args.len() {
+      if let Some(x) = arg_extract_float(&args, i) { has_float = true; }
+      if let Some(x) = arg_extract_num(&args, i) { ret *= x; }
+      else { return err("bad argument to *"); }
+   }
+   if has_float { Float(ret) }
+   else { Int(ret as i64) }
+}
+
 impl Env {
    pub fn new() -> Env {
       let mut env = Env { tables : Vec::new() };
@@ -121,40 +186,8 @@ impl Env {
       self.table_add(0, key, Callable::BuiltIn(0, Box::new(checker)))
    }
    pub fn add_defaults(&mut self) {
-      let sum = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
-         let mut sum = 0.0;
-         let mut is_int = true;
-
-         if let Sub(box ref args_) = args_sexps {
-            let mut args : &Cons<Sexps> = args_; //Box::new(args_);
-
-            loop {
-               match *args {
-                  Cons::Cons(Int(n), ref ns) => {
-                     sum += n as f64; args = ns;
-                  },
-                  Cons::Cons(Float(n), ref ns) => {
-                     is_int = false; sum += n; args = ns;
-                  }
-                  Cons::Nil => break,
-                  _ => return err("bad arguments to sum")
-               };
-            }
-            if is_int { Int(sum as i64) }
-            else { Float(sum) }
-         }
-         else { err("bad arguments") }
-      };
-      self.table_add_f("+", sum);
-
-      /*let mul = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
-         let mul = 0.0;
-         let mut is_int = true;
-         let args = arg_extractor(&args_).unwrap();
-         for i in 0..args.len() {
-            let n = arg_extract_float(args, i);
-         }
-      }*/
+      self.table_add_f("+", builtin_sum);
+      self.table_add_f("*", builtin_mul);
 
       let diff = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          let mut diff = 0;
@@ -180,17 +213,63 @@ impl Env {
       };
       self.table_add_f("-", diff);
 
+      let lt = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
+         let args = arg_extractor(&args_sexps).unwrap(); //fixme, check this
+         if args.len() < 2 { return err("< needs at least 2 args") }
+         Sexps::Bool(args[0] < args[1])
+      };
+      self.table_add_f("<", lt);
+
+      let gt = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
+         let args = arg_extractor(&args_sexps).unwrap(); //fixme, check this
+         if args.len() < 2 { return err("> needs at least 2 args") }
+         Sexps::Bool(args[0] > args[1])
+      };
+      self.table_add_f(">", gt);
+
       let eq = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          let args = arg_extractor(&args_sexps).unwrap(); //fixme, check this
          if args.len() < 2 { return err("equality test needs at least 2 args") }
          let first = args[0].clone();
          for arg in args {
-            if !same_type(&first, &arg) { return Sexps::Bool(false) }
+            //if !same_type(&first, &arg) { return Sexps::Bool(false) }
             if arg != first { return Sexps::Bool(false) }
          }
          Sexps::Bool(true)
       };
       self.table_add_f("=", eq);
+
+      let not_ = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         let args = arg_extractor(&args_).unwrap();
+         if args.len() != 1 { err("not only takes 1 argument"); }
+         if let Some(b) = arg_extract_bool(&args, 0) { Bool(!b) }
+         else { err("bad argument type passed to not") }
+      };
+      self.table_add_f("not", not_);
+
+      let and_ = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         let args = arg_extractor(&args_).unwrap();
+         if args.len() != 2 { err("and only takes 2 argument"); }
+         if let Some(a) = arg_extract_bool(&args, 0) {
+             if let Some(b) = arg_extract_bool(&args, 1) {
+               return Bool(a && b);
+            }
+         }
+         err("bad argument types passed to and")
+      };
+      self.table_add_f("and", and_);
+
+      let or_ = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         let args = arg_extractor(&args_).unwrap();
+         if args.len() != 2 { err("or only takes 2 argument"); }
+         if let Some(a) = arg_extract_bool(&args, 0) {
+             if let Some(b) = arg_extract_bool(&args, 1) {
+               return Bool(a || b);
+            }
+         }
+         err("bad argument types passed to or")
+      };
+      self.table_add_f("or", or_);
 
       let load_file = |args_sexps : Sexps, root : Root, table : EnvId| -> Sexps {
          use utils::load_internal;
@@ -249,7 +328,7 @@ impl Env {
       let sleep = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
          let args = arg_extractor(&args_).unwrap();
          if args.len() != 1 { return err("sleep needs 1 argument"); }
-         let time = arg_extract_float(&args, 0).unwrap()*1000.0;
+         let time = arg_extract_num(&args, 0).unwrap()*1000.0;
 
          use std::thread::sleep_ms;
          sleep_ms(time as u32);
@@ -278,6 +357,9 @@ impl Env {
       self.table_add_f("null?", is_nil);
 
       self.table_add(0, "nil", make_sym_table_val(err("")));
+      self.table_add(0, "true", make_sym_table_val(Bool(true)));
+      self.table_add(0, "false", make_sym_table_val(Bool(false)));
+
    }
 }
 

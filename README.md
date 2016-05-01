@@ -52,14 +52,21 @@ empty
    - [ ] make argument extractor for build-in types ```rust struct ExtractedArgs { strings : Vec<Strings>, floats : Vec<f64>, exps : Vec<Sexps> } fn extract_args(args : Sexps, format : Vec<String>) -> ExtractedArgs;```
    - [ ] implement c-types-like ffi (using libffi?)
    - [ ] implement macro system
+   - [ ] strings
+      - [x] make strings addable. Cast all arguments to string if one of arguments to + is string
+      - [ ] string indexing, slices, etc.
+   - [ ] other number functions
+      - [x] mul
+      - [ ] div
    - [ ] logic operators
-      - [ ] not
-      - [ ] and
-      - [ ] or
+      - [x] not
+      - [x] and
+      - [x] or
+         - [ ] short-circuit
    - [ ] comparison
       - [x] =
-      - [ ] <
-      - [ ] >
+      - [x] <
+      - [x] >
    - [x] floats
    - [ ] quote
    - [ ] add env to print_sexps

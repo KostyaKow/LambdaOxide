@@ -1,5 +1,8 @@
+(define && (lambda (a b) (and a b)))
+(define || (lambda (a b) (or a b)))
+(define ! (lambda (x) (not x)))
 
-(define cons(lambda (a b) (lambda (f) (f a b))))
+(define cons (lambda (a b) (lambda (f) (f a b))))
 (define car  (lambda (o1) (o1 (lambda (x y) x))))
 (define cdr  (lambda (o2) (o2 (lambda (j i) i))))
 (define cadr (lambda (x) (car (cdr x))))

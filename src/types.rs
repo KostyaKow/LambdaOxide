@@ -39,8 +39,36 @@ impl PartialEq for Sexps {
          (&Str(ref s1), &Str(ref s2))     => s1 == s2,
          (&Int(ref n1), &Int(ref n2))     => n1 == n2,
          (&Float(ref n1), &Float(ref n2)) => n1 == n2,
+         (&Float(ref n1), &Int(ref n2))   => n1.clone() == (n2.clone() as f64),
+         (&Int(ref n1), &Float(ref n2))   => (n1.clone() as f64) == n2.clone(),
          (&Bool(ref b1), &Bool(ref b2))   => b1 == b2,
          _                                => false
+      }
+   }
+}
+
+use std::cmp::Ordering;
+impl PartialOrd for Sexps {
+   fn partial_cmp(&self, other: &Sexps) -> Option<Ordering> {
+      use std::cmp::Ordering::*;
+      match (self, other) {
+         (&Int(ref n1), &Int(ref n2)) if n1 < n2  => Some(Less),
+         (&Int(ref n1), &Int(ref n2)) if n1 > n2  => Some(Greater),
+         //(&Int(ref n1), &Int(ref n2)) if n1 == n2 => Some(Equal),
+         (&Float(ref n1), &Float(ref n2)) if n1 > n2  => Some(Greater),
+         (&Float(ref n1), &Float(ref n2)) if n1 < n2  => Some(Less),
+
+         (&Float(ref n1), &Int(ref n2)) if n1.clone() > (n2.clone() as f64)
+            => Some(Greater),
+         (&Float(ref n1), &Int(ref n2)) if n1.clone() < (n2.clone() as f64)
+             => Some(Less),
+
+         (&Int(ref n1), &Float(ref n2)) if (n1.clone() as f64) > n2.clone()
+            => Some(Greater),
+         (&Int(ref n1), &Float(ref n2)) if (n1.clone() as f64) < n2.clone()
+             => Some(Less),
+
+         _                                => None
       }
    }
 }
@@ -136,12 +164,21 @@ pub fn arg_extract_str(args : &Vec<Sexps>, index : usize) -> Option<String> {
       Some(s.clone())
    } else { None }
 }
-pub fn arg_extract_float(args : &Vec<Sexps>, index : usize) -> Option<f64> {
+pub fn arg_extract_num(args : &Vec<Sexps>, index : usize) -> Option<f64> {
    if let Sexps::Float(ref s) = args[index] {
       Some(s.clone())
    } else if let Sexps::Int(ref s) = args[index] {
       Some(s.clone() as f64)
    } else { None }
+}
+pub fn arg_extract_int(args : &Vec<Sexps>, index : usize) -> Option<i64> {
+    if let Sexps::Int(ref s) = args[index] { Some(s.clone()) } else { None }
+}
+pub fn arg_extract_float(args : &Vec<Sexps>, index : usize) -> Option<f64> {
+   if let Sexps::Float(ref s) = args[index] { Some(s.clone()) } else { None }
+}
+pub fn arg_extract_bool(args : &Vec<Sexps>, index : usize) -> Option<bool> {
+   if let Sexps::Bool(ref b) = args[index] { Some(b.clone()) } else { None }
 }
 
 pub fn make_sym_table_val(exp : Sexps) -> Callable {
