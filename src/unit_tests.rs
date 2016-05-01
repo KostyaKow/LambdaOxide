@@ -135,7 +135,7 @@ fn test_floats_ints() {
 fn test_run_fib() {
    let root = setup_env();
 
-   let mut cmd = "(load \"examples/fib.lo\")";
+   let mut cmd = "(load_file \"examples/fib.lo\")";
    let mut result = run(&root, &cmd).unwrap();
 
    cmd = "(fib 10)";
@@ -145,7 +145,7 @@ fn test_run_fib() {
 
 fn test_run_church() {
    let root = setup_env();
-   let mut cmd = "(load \"examples/church.lo\")";
+   let mut cmd = "(load_file \"examples/church.lo\")";
    let mut result = run(&root, &cmd).unwrap();
 
    cmd = "(fromc (mul (add two one) (mul two two)))";
