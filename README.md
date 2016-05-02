@@ -34,6 +34,11 @@ empty
 
 - TODO
    - [ ] rename main.rs
+   - [ ] grpahics engine TODO's
+      - [ ] quad tree for engine
+      - [ ] https://en.wikipedia.org/wiki/Logo_(programming_language)
+   - [ ] cond macro
+   - [ ] add built-in list (function), is_string, is_float, is_int, is_func
    - [ ] set (so colorfulcircle.lo gets list of triangles).
    - [x] implement print
       - [x] implement print for strings
