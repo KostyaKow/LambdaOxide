@@ -10,6 +10,7 @@
 (define cadr (lambda (x) (car (cdr x))))
 
 (define repeat (lambda (n lst) (if (= n 1) lst (append lst (repeat (- n 1) lst)))))
+(define loop (lambda (n f) (if (= n 0) nil (cons (f) (loop (- n 1) f)))))
 
 (define list-ref
    (lambda (items n)
@@ -51,5 +52,5 @@
    (lambda (combine init lst)
          (if (null? (car lst))
             init
-            (fold f (combine (car lst) init) (cdr lst)))))
+            (fold combine (combine (car lst) init) (cdr lst)))))
 
