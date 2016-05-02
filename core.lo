@@ -9,6 +9,8 @@
 (define cdr  (lambda (o2) (o2 (lambda (j i) i))))
 (define cadr (lambda (x) (car (cdr x))))
 
+(define repeat (lambda (n lst) (if (= n 1) lst (append lst (repeat (- n 1) lst)))))
+
 (define list-ref
    (lambda (items n)
       (if (= n 0)

@@ -34,6 +34,7 @@ empty
 
 - TODO
    - [ ] rename main.rs
+   - [ ] set (so colorfulcircle.lo gets list of triangles).
    - [x] implement print
       - [x] implement print for strings
       - [x] fix print for everything else
