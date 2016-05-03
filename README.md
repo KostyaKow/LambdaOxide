@@ -37,6 +37,7 @@ empty
    - [ ] grpahics engine TODO's
       - [ ] quad tree for engine
       - [ ] https://en.wikipedia.org/wiki/Logo_(programming_language)
+   - [ ] apply (apply + (list 1 2 3))
    - [ ] cond macro
    - [ ] add built-in list (function), is_string, is_float, is_int, is_func
    - [ ] set (so colorfulcircle.lo gets list of triangles).

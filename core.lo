@@ -12,6 +12,11 @@
 (define repeat (lambda (n lst) (if (= n 1) lst (append lst (repeat (- n 1) lst)))))
 (define loop (lambda (n f) (if (= n 0) nil (cons (f) (loop (- n 1) f)))))
 
+(define range (lambda (start end)
+   (if (> start end)
+      nil
+      (cons start (range (+ start 1) end)))))
+
 (define list-ref
    (lambda (items n)
       (if (= n 0)
