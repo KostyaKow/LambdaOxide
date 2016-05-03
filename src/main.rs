@@ -74,6 +74,8 @@ fn builtin_sum(args_sexps : Sexps, root : Root, table : EnvId) -> Sexps {
             x.to_string()
          } else if let Some(x) = arg_extract_str(&args, i) {
             x
+         } else if let Some(x) = arg_extract_bool(&args, i) {
+            if x { "true".to_string() } else { "false".to_string() }
          } else {
             return err("bad argument to sum"); "error"
          };
