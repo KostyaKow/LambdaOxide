@@ -33,6 +33,7 @@ empty
 ```
 
 - TODO
+   - [ ] if and or shortcircuit
    - [ ] rename main.rs
    - [ ] grpahics engine TODO's
       - [ ] quad tree for engine

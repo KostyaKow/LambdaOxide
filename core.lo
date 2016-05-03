@@ -21,7 +21,9 @@
    (lambda (items n)
       (if (= n 0)
          (car items)
-         (list-ref (cdr items) (- n 1)))))
+         (if (null? items)
+            nil
+            (list-ref (cdr items) (- n 1))))))
 
 (define apply (lambda (f lst) (do
    (define len (length lst))
