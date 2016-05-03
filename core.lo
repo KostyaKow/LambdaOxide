@@ -23,6 +23,35 @@
          (car items)
          (list-ref (cdr items) (- n 1)))))
 
+(define apply (lambda (f lst) (do
+   (define len (length lst))
+   (if (= len 0)
+      (f)
+      (if (= len 1)
+         (f (car lst))
+         (if (= len 2)
+            (f (car lst) (cadr lst))
+            (if (= len 3)
+               (f (car lst) (cadr lst) (list-ref lst 2))
+               (print (+ "can't apply function to " (length lst) " arguments")))))))))
+
+(define print-lst (lambda (lst)
+   (if (null? lst)
+      (print "nil")
+      (do (print (car lst))
+          (print-lst (cdr lst))))))
+
+(define modify-lst (lambda (lst n new_val)
+   (if (= n 0)
+      (cons new_val (cdr lst))
+      (cons (car lst) (modify-lst (cdr lst) (- n 1) new_val)))))
+
+;(define lst (cons 1 (cons 2 (cons 3 nil))))
+;(print-lst lst)
+;(define lst2 (modify-lst lst 1 10))
+;(print-lst lst2)
+
+
 (define length
    (do
       (define iter

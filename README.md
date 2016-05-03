@@ -38,6 +38,9 @@ empty
       - [ ] quad tree for engine
       - [ ] https://en.wikipedia.org/wiki/Logo_(programming_language)
    - [ ] apply (apply + (list 1 2 3))
+      - [x] crappy/slow lisp implementation that only supports 3 arguments
+   - [ ] explicit type casting for strings/ints/floats
+   - [ ] add prompt or input
    - [ ] cond macro
    - [ ] add built-in list (function), is_string, is_float, is_int, is_func
    - [ ] set (so colorfulcircle.lo gets list of triangles).
@@ -50,7 +53,7 @@ empty
       - [ ] modify cells
    - [ ] check argument types and number for build-ins
    - [ ] remove check at beginning of every build-in functions (maybe make a wrapper)
-   - [ ] int-float coarcing
+   - [x] int-float coarcing
    - [x] adding strings
    - [ ] make matching arguments easier for build-ins
       - [x] extract float
