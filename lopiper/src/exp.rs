@@ -14,11 +14,11 @@ pub enum Lexeme {
 pub enum Sexps {
    Str(String), Int(i64), Float(f64), Bool(bool),
    Var(String), Lambda(String),
-   Cons(Box<Sexps>, Box<Sexps>), List(Vec<Sexps>)
+   Cons(Box<Sexps>, Box<Sexps>), Array(Vec<Sexps>)
 }
 
 fn modify(exp: &mut Sexps, a : Sexps) {
-   if let Sexps::List(ref mut v) = *exp {
+   if let Sexps::Array(ref mut v) = *exp {
       v[0] = a;
    }
 }
