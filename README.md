@@ -117,4 +117,14 @@ empty
       - [ ] figure out a way to modify external environment from language
    - [ ] optimize
       - [ ] compiler
+      - [ ] have both vector and cons
+
+Differences with standard/SICP Scheme:
+   - cannot use special form `(define  (func arg1 arg2) (...))`, have to use `(define func (lambda (arg1 arg2) (...)))`
+   - "begin" is called "do"
+   - Definition cannot contain multiple expressions
+   - no let binding
+   - no cond
+   - no macro system
+   - no quote '
 
