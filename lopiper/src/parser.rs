@@ -7,10 +7,10 @@ use exp::Sexps;
 pub type ParseResult = LoResult<Sexps>;
 
 //range_start, range_end, quotes, atom
-type Child = (usize, usize, Vec<QuoteType>, bool);
-type ChildExpResult = LoResult<Vec<Child>>;
+type ChildRange = (usize, usize, Vec<QuoteType>, bool);
+type ChildRangesResult = LoResult<Vec<ChildRange>>;
 
-/*get_child_exps
+/*get_child_ranges
    returns starting and ending location of parenthesis
       start and end are inclusive: let i = start; while (i <= end) ..
    collects top-level quotes
@@ -18,10 +18,10 @@ type ChildExpResult = LoResult<Vec<Child>>;
    if nestedness < 0, throws ExtraCloseParen error
    if at the end of loop, nestedness > 0, throws NoEndParen
    TODO: (don't understand what this means) what if we have unmatched close paren, and different nestedness begin and start. Should it be error?*/
-fn get_child_exps(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildExpResult {
+fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesResult {
    let (mut start, mut end) = range;
    let mut nestedness = 0;
-   let mut children : Vec<Child> = Vec::new();
+   let mut children : Vec<ChildRange> = Vec::new();
    let mut child_start : Option<usize> = None;
    let mut quotes = Vec::new();
 
@@ -63,7 +63,7 @@ fn get_child_exps(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildExpResult {
 //when passing child/range, don't include parenthesis
 //TODO:::::::::::::::::::::::fix parse to not include parenthesis
 //returns either Sexps::Err() or parsed body
-fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
+fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
    use genutils::is_none;
    let (start, end, quotes_vec, is_atom) = child;
    if is_atom {
@@ -82,7 +82,7 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
    }
 
    let mut sub : Vec<Sexps> = Vec::new();
-   let children_ranges_res = get_child_exps(lexemes, (start, end));
+   let children_ranges_res = get_child_ranges(lexemes, (start, end));
    if let Err(e) = children_ranges_res {
       return Sexps::err_new_box(e.clone());
    }
@@ -140,7 +140,7 @@ pub fn parse(lexemes : &Vec<Lexeme>) -> (Sexps, bool) {
       return (Sexps::arr_new_singleton(parse_exp_err(ErrCode::UncompleteExp, lexemes, 0, None)), false);
    }
 
-   let childs_ret = get_child_exps(lexemes, (0, lexemes.len()-1));
+   let childs_ret = get_child_ranges(lexemes, (0, lexemes.len()-1));
    if let Ok(childs) = childs_ret {
       let mut ret = Vec::new();
       let mut errs = Vec::new();
