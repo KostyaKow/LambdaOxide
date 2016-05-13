@@ -13,6 +13,7 @@ comma = unquote
 //(eval ''(+ 3 5)) => '(+ 3 5)
 //(eval (eval ''(+ 3 5))) => 8
 //'''3 => '''3 or (quote (uqote (quote 3)))
+//'fsdf 3 => fsdf 3
 */
 
 #[derive(Debug, PartialEq, Clone)]

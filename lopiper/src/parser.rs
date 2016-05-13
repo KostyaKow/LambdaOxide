@@ -52,11 +52,10 @@ fn get_child_exps(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildExpResult {
 }
 
 //range without include parenthesis
-fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResult
+fn parse_range_old(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResult
 {
    if start == end {
       let l = parse_lexeme(lexemes[start]);
-      //TODO: **> 'fsdf 3
       if let Some(exp) = parse_lexeme(&lexemes[start]) {
          return Ok(exp);
       } else {
@@ -92,7 +91,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResul
    Ok(cons_to_sexps(cons_reverse(sub)))
 }
 
-/*fn parse_helper(lexemes : &Vec<Lexeme>) -> ParseResult {
+/*fn parse_helper_old(lexemes : &Vec<Lexeme>) -> ParseResult {
    let mut start_paren : Option<usize> = None;
    let mut end_paren : Option<usize> = None;
    let mut nestedness : i32 = 0;
@@ -124,8 +123,21 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResul
    parse_range(lexemes, start+1, end-1)
 }*/
 
+//child doesn't include parenthesis
+//either Sexps::Err() or parsed body
 fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
-   let (start, end, )
+   let (start, end, quotes_vec, is_atom) = child;
+   if is_atom {
+      assert_eq!(start, end); //TODO:::::::::::::::dont crash
+      let mut exp = if let Some(exp) = parse_lexeme(&lexemes[start]) {
+         exp
+      } else {
+         return Sexps::err_new(parse_err(ErrCode::BadLexeme, lexemes, start, None));
+      }
+      if quotes_vec.len() > 0 {
+
+      }
+   }
 }
 
 //either returns (Sexps::Array of parsed exp's, true)
@@ -141,7 +153,9 @@ pub fn parse(lexemes : &Vec<Lexeme>) -> (Sexps, bool) {
          if let Sexps::Err(e) = parsed_child { errs.push(parsed_child); }
          else { ret.push(parsed_child); }
       }
-      Sexps::arr_new_from_vec(if errs.len() == 0 { ret } else { errs })
+
+      let good = errs.len() == 0;
+      (Sexps::arr_new_from_vec(if good { ret } else { errs }), good)
    } else if let Err(e) = childs_ret {
       (Sexps::arr_new_singleton(Sexps::err_new(e)), false)
    }
