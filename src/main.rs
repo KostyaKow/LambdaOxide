@@ -45,14 +45,16 @@ impl Callable {
                } else { return err("Bad argument names in lambda") }
             }
             else { err("bad args to lambda"); }
-            eval(exp, root, exec_table.clone()) //kkleft: eval or apply
+            let ret = eval(exp, root, exec_table.clone());
+            root.borrow_mut().rm_table(exec_table.clone());
+            ret
          }
       }
    }
 }
 //end callable
 
-struct Table { bindings: HashMap<String, Callable>, parent: EnvId }
+struct Table { bindings: HashMap<String, Callable>, parent: EnvId, collect: bool }
 pub struct Env { tables : Vec<Table>, }
 
 fn builtin_sum(args_sexps : Sexps, root : Root, table : EnvId) -> Sexps {
@@ -147,8 +149,12 @@ impl Env {
       }
    }
    fn table_new(&mut self, parent : EnvId) -> EnvId {
-      self.tables.push(Table { bindings : HashMap::new(), parent: parent });
+      self.tables.push(Table { bindings : HashMap::new(), parent: parent, collect: false });
       self.tables.len()-1
+   }
+   pub fn rm_table(&mut self, table_id : EnvId) {
+      self.tables[table_id].collect = true;
+      self.tables[table_id].bindings = HashMap::new();
    }
    pub fn table_add(&mut self, table_id : EnvId, key : &str, entry : Callable) -> bool {
       let mut i = 0;
@@ -200,6 +206,16 @@ impl Env {
          Int(nano_micro + sec_micro)
       };
       self.table_add_f("get-time-microseconds", get_t);
+
+      //takes number, and how many decimal points
+      let round_ = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         let args = arg_extractor(&args_).unwrap();
+         if args.len() != 2 { return err("round needs 2 arguments") }
+         let n = arg_extract_num(&args, 0).unwrap();
+         let precision = arg_extract_int(&args, 1).unwrap();
+         Float(round(n, precision as u8))
+      };
+      self.table_add_f("round", round_);
 
       let diff = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
          let mut diff = 0.0;
@@ -473,8 +489,8 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
                print_space(3); print!("args: "); print_compact_tree(args);
                print_space(5); print!("exp: "); print_compact_tree(exp);
             }
-            //let borrowed = unsafe { root.as_unsafe_cell().get() };
-            //let lambda_table = unsafe { (*borrowed).table_new(t) };
+            //let borrowed = unsafe { root.as_unsafe_cell().get() }; kkold
+            //let lambda_table = unsafe { (*borrowed).table_new(t) }; kkold
             let lambda_table = t;
             debug_p(2, &format!("new lambda table number {}", lambda_table));
             let lambda = Callable::Lambda(lambda_table, args.clone(), exp.clone());
@@ -482,7 +498,9 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
             unsafe { lambda_num += 1 };
 
             root.borrow_mut().table_add(lambda_table, &*lambda_name, lambda);
+            //root.borrow_mut().table_add(lambda_table, "self", lambda); //kk old
             Lambda(lambda_table, lambda_name)
+            //Lambda(lambda_table, "self".to_string()) //kk old
          } else { err("bad arguments to lambda") }
       },
       "if" => {

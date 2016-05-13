@@ -9,6 +9,9 @@
 (define cdr  (lambda (o2) (o2 (lambda (j i) i))))
 (define cadr (lambda (x) (car (cdr x))))
 
+(define new-line (lambda () (print "")))
+
+(define test-loop (lambda () (do (print "got here ok") (sleep 2))))
 (define repeat (lambda (n lst) (if (= n 1) lst (append lst (repeat (- n 1) lst)))))
 (define loop (lambda (n f) (if (= n 0) nil (cons (f) (loop (- n 1) f)))))
 

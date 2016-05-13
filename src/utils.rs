@@ -83,6 +83,18 @@ pub fn to_int(s : &str) -> i64 {
    s.parse::<i64>().unwrap()
 }
 
+pub fn pow(n : f64, p : u8) -> f64 {
+   let mut ret = 1.0;
+   for i in 0..p {
+      ret *= n;
+   }
+   ret
+}
+pub fn round(n : f64, precision : u8) -> f64 {
+   let p = pow(10.0, precision);
+   (n * p).round() / p
+}
+
 pub fn get_char_ranges(code : &str) -> Vec<(usize, usize)> {
    let mut ranges : Vec<(usize, usize)> = Vec::new();
 

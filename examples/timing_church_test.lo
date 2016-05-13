@@ -1,0 +1,46 @@
+;(l "examples/timing_church_test.lo")
+(define time-before-load-church (get-time))
+(l "examples/church.lo")
+
+
+(define time-start (get-time))
+(print (+ "time to load church: "
+          (round (- time-start time-before-load-church) 0)))
+
+(define four (mul two two))
+(define sixteen (mul four four))
+
+(define n1 (mul sixteen sixteen))
+(define n2 (mul n1 four))
+(define n3 (mul n2 four))
+(define n4 (mul n3 four))
+(define n5 (mul n4 four))
+
+(define time-mid (get-time))
+
+(test-loop)
+(define final (fromc n3))
+(test-loop)
+
+(define time-end (get-time))
+
+(print (+ "final number: " (round final 0)))
+(print (+ "mid: " (round (- time-mid time-start) 0)))
+(print (+ "with converstion " (round (- time-end time-start) 0)))
+
+;before removing extra lambda:
+;loading file examples/timing_test.lo
+;loading file examples/church.lo
+;time to load church: 5
+;final number: 4096
+;mid: 4
+;with converstion 3686
+;second time with conversions: 10338
+
+;after removing extra lambda:
+;time to load church: 6
+;final number: 4096
+;mid: 5
+;with converstion 3151
+;second time: 8508
+

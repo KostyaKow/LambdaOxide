@@ -132,6 +132,9 @@ Differences with standard/SICP Scheme:
    - null?, nil
 
 TODO soon:
+   - [ ] round
+   - [ ] cast arguments
+   - [ ] lower-level language subset with better performance
    - [ ] `(do (define x (lambda () (print "hi")))); x` x is still defined in this scope
    - [ ] fix list-ref and make it built-in and check performance for tictactoe
    - [ ] remove extr tables from Callable
