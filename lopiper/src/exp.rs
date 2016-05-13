@@ -5,6 +5,26 @@ use gentypes::{SharedMut, to_shared_mut};
 use types::QuoteType;
 use errors::ErrInfo;
 
+//TODO: implement loop as a built-in without stack
+
+/*check initial define type, generate c variable with same type
+possibly have a c struct for boxed lisp types, and expose a mechanism
+to use boxed lisp types
+
+struct Sexps { union { } };
+
+(define x 5) (define y 2) (+ x y) => int x = 5; int y = 2; x+y;
+
+(define x "yo") (define x 5) (define y 5) =>
+Sexps* x = SexpsStr("yo"); x = SexpsInt("yo"); int y = 5; sexps_add_exp_int(x, y);
+*/
+fn transcompile_to_c(exp : Sexps) -> String {
+   //assume array of expressions
+   for x in 0..exp.arr_len_fast() {
+
+   }
+}
+
 #[derive(Clone, Debug)]
 pub enum Sexps {
    Str(String), Int(i64), Float(f64), Bool(bool),

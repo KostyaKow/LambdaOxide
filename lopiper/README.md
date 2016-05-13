@@ -16,5 +16,5 @@ TODO:
 - [ ] performance tests
 - [ ] re-write symbol table and make it more robust and faster
 - [ ] macros
-- [ ] start investigating compiler.
-
+- [ ] start investigating compiler
+- [ ] better error debug output
