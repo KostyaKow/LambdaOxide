@@ -18,3 +18,5 @@ TODO:
 - [ ] macros
 - [ ] start investigating compiler
 - [ ] better error debug output
+- [ ] set! set-cell! set-car!
+- [ ] possibly for/while/loop so we don't kill the stack
