@@ -489,18 +489,18 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
                print_space(3); print!("args: "); print_compact_tree(args);
                print_space(5); print!("exp: "); print_compact_tree(exp);
             }
-            let borrowed = unsafe { root.as_unsafe_cell().get() }; //kkold
-            let lambda_table = unsafe { (*borrowed).table_new(t) }; //kkold
-            //let lambda_table = t; //kknew
+            //let borrowed = unsafe { root.as_unsafe_cell().get() }; //kkold
+            //let lambda_table = unsafe { (*borrowed).table_new(t) }; //kkold
+            let lambda_table = t; //kknew
             debug_p(2, &format!("new lambda table number {}", lambda_table));
             let lambda = Callable::Lambda(lambda_table, args.clone(), exp.clone());
-            //let lambda_name = unsafe { lambda_num.to_string() + "__lambda" }; //kknew
-            //unsafe { lambda_num += 1 }; //kknew
+            let lambda_name = unsafe { lambda_num.to_string() + "__lambda" }; //kknew
+            unsafe { lambda_num += 1 }; //kknew
 
-            //root.borrow_mut().table_add(lambda_table, &*lambda_name, lambda); //kknew
-            root.borrow_mut().table_add(lambda_table, "self", lambda); //kk old
-            //Lambda(lambda_table, lambda_name) //kknew
-            Lambda(lambda_table, "self".to_string()) //kk old
+            root.borrow_mut().table_add(lambda_table, &*lambda_name, lambda); //kknew
+            //root.borrow_mut().table_add(lambda_table, "self", lambda); //kk old
+            Lambda(lambda_table, lambda_name) //kknew
+            //Lambda(lambda_table, "self".to_string()) //kk old
          } else { err("bad arguments to lambda") }
       },
       "if" => {
