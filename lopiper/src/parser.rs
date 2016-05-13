@@ -54,7 +54,8 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
       start += 1;
    }
    if nestedness > 0 {
-      return lo_fail(parse_err(ErrCode::NoEndParen, lexemes, end, None));
+      let range = if let Some(s) = child_start { Some((s, end)) } else { None };
+      return lo_fail(parse_err(ErrCode::NoEndParen, lexemes, end, range));
    }
    Ok(children)
 }

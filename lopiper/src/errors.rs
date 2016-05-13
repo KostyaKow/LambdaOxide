@@ -15,7 +15,7 @@ pub enum ErrCode {
    /*NoStartParen,*/ NoEndParen, ExtraCloseParen, //parse_helper
    ChildParseFail, //TODO: tmp, look at parse_helper and fix this to return array of errors instead of just returning one ChildParseFail
    BadLexeme, //parse_lexeme needs Str, Sym, Int or Float
-   Fail2Lexemes, //parse() got 2 lexemes, first needs to be quote, second parse_lexeme()
+   //TODO: removeme, outdated Fail2Lexemes, //parse() got 2 lexemes, first needs to be quote, second parse_lexeme()
    BadRange, //TODO: this should be tmp for parse_helper, fix it once parser works right
 
    //EVAL/RUN fail
@@ -80,8 +80,15 @@ impl fmt::Debug for ErrInfo {
       if let Some(ref r) = self.range_lex {
          write!(f, " lex range: {}-{};", r.0, r.1);
       }
+      if let Some(ref r) = self.lex_i {
+         write!(f, " lex error at: {}; ", r);
+         if let Some(ref origin_lex) = self.origin_lex {
+            write!(f, " bad lexeme: {:?};", origin_lex[*r]);
+         }
+      }
+
       if let Some(ref s) = self.stage {
-         write!(f, "Execution stage: {:?};", s);
+         write!(f, " Execution stage: {:?};", s);
       }
       write!(f, "")
    }
