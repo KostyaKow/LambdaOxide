@@ -1,19 +1,21 @@
 use gentypes::{SizeRange, SizeRanges};
 use errors::{LoResult, ErrInfo, ErrCode, ErrStage, lo_fail};
+use exp::Sexps;
 
 pub type ParseResult = LoResult<Sexps>;
 
+//range_start, range_end, quotes, atom
+type Child = (usize, usize, Vec<QuoteType>, bool);
 
-
-type ChildExpResult = LoResult<Vec<(usize, usize, Some(QuoteType))>>;
+type ChildExpResult = LoResult<Vec<Child>>;
 //TODO: what if unmatched close paren, and different nestedness begin and start. Should it be error?
 //inclusive let i = start; while (i <= end)
-fn child_exp(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildExpResult {
+fn get_child_exps(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildExpResult {
    let mut (start, end) = range;
    let mut nestedness = 0;
-   let mut children : SizeRanges = Vec::new();
+   let mut children : Vec<Child> = Vec::new();
    let mut child_start : Option<usize> = None;
-   let mut last_quote = None;
+   let mut quotes = Vec::new();
 
    while start <= end {
       match &lexemes[start] { //TODO: do we need the address?
@@ -23,27 +25,21 @@ fn child_exp(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildExpResult {
          },
          &Lexeme::CloseParen => {
             nestedness -= 1;
-            if nestedness < 0 {
-               lo_fail(parse_err(ErrCode::ExtraCloseParen, lexemes, start, None));
-            } else if nestedness == 0 {
-               if let Some(c_start) = child_start {
-                  if last_quote {
-                     children.push((c_start, start)); child_start = None;
-                  }
-               }
+            if nestedness == 0 {
+               children.push((child_start.unwrap(), start, quotes, false));
+               quotes = Vec::new();
+               child_start = None;
+            } else if nestedness < 0 {
+               return lo_fail(parse_err(ErrCode::ExtraCloseParen, lexemes, start, None));
             }
          },
          &Lexeme::Quote(q) {
-            last_quote = Some(q);
+            if nestedness == 0 { quotes.push(q); }
          }
          _ => {
             if nestedness == 0 {
-               if last_quote {
-                  children.push((start-1, start));
-                  last_quote = false;
-               } else {
-                  children.push((start, start));
-               }
+               children.push((start, start, quotes, true));
+               quotes = Vec::new();
             }
          }
       }
@@ -128,8 +124,17 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResul
    parse_range(lexemes, start+1, end-1)
 }*/
 
+fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> ParseResult {
+
+
+}
 
 pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
+   let childs = get_child_exps(lexemes, 0, lexemes.len());
+   let ret = Sexps::arr_new();
+   for child in childs {
+      parse_helper(lexemes, 0, lexemes.len())
+   }
    /*if lexemes.len() == 1 {
       if let Some(exp) = parse_lexeme(&lexemes[0]) {
          Ok(exp)
