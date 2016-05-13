@@ -109,7 +109,17 @@ pub fn lex(code : &str) -> LexResult {
    }
 
    if !col.is_empty() { lexemes.push(collect_sym(&col)); }
-   Ok(lexemes)
+
+   if lexemes.len() == 0 {
+      let mut ei = ErrInfo::new();
+      ei.code = Some(ErrCode::UncompleteExp);
+      ei.stage = Some(ErrStage::Lex);
+      ei.origin = Some(code.to_string());
+      ei.char_i = Some(0);
+      lo_fail(ei)
+   } else {
+      Ok(lexemes)
+   }
 }
 
 //TODO replace to_float, to_int with this
