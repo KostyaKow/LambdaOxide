@@ -40,7 +40,8 @@ use gentypes::SizeRange;
 //TODO: line index, or expression index?
 //in repl, char_index and line_index start from beginning of last command
 //TODO: display range, but if it's too long, draw ...
-#[derive(Debug, Clone)]
+//#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ErrInfo {
    pub code : Option<ErrCode>,
    pub stage : Option<ErrStage>,
@@ -68,6 +69,22 @@ impl ErrInfo {
       }
    }
    fn display(&self) {}
+}
+
+use std::fmt;
+impl fmt::Debug for ErrInfo {
+   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+      if let Some(ref err_code) = self.code {
+         write!(f, "err: {:?};", err_code);
+      }
+      if let Some(ref r) = self.range_lex {
+         write!(f, " lex range: {}-{};", r.0, r.1);
+      }
+      if let Some(ref s) = self.stage {
+         write!(f, "Execution stage: {:?};", s);
+      }
+      write!(f, "")
+   }
 }
 
 use std::boxed::Box;

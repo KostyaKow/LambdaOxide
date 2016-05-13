@@ -48,15 +48,17 @@ pub fn display_sexps(exp: &Sexps) {
       Err(..)     => print_compact_tree(exp),
 
       Cons(..)    => {
-         print!("Cons: ");
+         /*print!("Cons: ");
          print_compact_tree(&exp.cons_get_1_fast());
-         print_compact_tree(&exp.cons_get_2_fast());
+         print_compact_tree(&exp.cons_get_2_fast());*/
+         print_compact_tree(exp);
       },
       Array(..)   => { //TODO: fixme
-         print!("Arr: ");
-         for i in 0..exp.arr_len_fast() {
+         //print!("Arr: ");
+         /*for i in 0..exp.arr_len_fast() {
             print!("   "); print_compact_tree(&exp.arr_get_fast(i));
-         }
+         }*/
+         print_compact_tree(exp);
       },
       Quote(ref q, ref exp) => println!("{}", quote_to_str(q.clone())),
       //_                 => println!("bad sexps, cant print")
@@ -76,7 +78,7 @@ fn print_compact_tree_helper(t: &Sexps) {
       Array(..)   => { //TODO: fixme
          print!("(list ");
          for i in 0..t.arr_len_fast() {
-            print!("   "); print_compact_tree_helper(&t.arr_get_fast(i));
+            print!(" "); print_compact_tree_helper(&t.arr_get_fast(i));
          }
          print!(")");
       }

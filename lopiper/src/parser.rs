@@ -93,10 +93,13 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
    while i <= end {
       let child_start = c_it < children.len() && children[c_it].0 == i;
       if child_start {
-         let (c_start, c_end, quotes, is_atom) = children[c_it].clone();
-
-         let parsed_child = parse_helper(lexemes, (c_start+1, c_end-1, quotes, is_atom));
+         let (mut c_start, mut c_end, quotes, is_atom) = children[c_it].clone();
+         if !is_atom {
+            c_start += 1; c_end -= 1;
+         }
+         let parsed_child = parse_helper(lexemes, (c_start, c_end, quotes, is_atom));
          if parsed_child.is_err() {
+            println!("failed child parse: {:?}", parsed_child);
             return parse_exp_err(ErrCode::ChildParseFail, lexemes, c_start, Some((c_start, c_end)));
          }
          sub.push(parsed_child);
@@ -125,8 +128,9 @@ pub fn parse(lexemes : &Vec<Lexeme>) -> (Sexps, bool) {
       let mut ret = Vec::new();
       let mut errs = Vec::new();
 
-      for child in childs {
-         let parsed_child = parse_helper(lexemes, child);
+      //for child in childs {
+      for (start, end, quotes, is_atom) in childs {
+         let parsed_child = parse_helper(lexemes, (start+1, end-1, quotes, is_atom)); //child);
          if let Sexps::Err(ref e) = parsed_child { errs.push(parsed_child.clone()); }
          else { ret.push(parsed_child); }
       }
