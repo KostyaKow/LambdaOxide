@@ -2,9 +2,13 @@
 
 use lexer::lex;
 
+mod utils;
+mod gentypes;
+mod types;
 mod exp;
 mod lexer;
-mod utils;
+mod parser;
+mod errors;
 
 pub fn interpreter() {
    use std::io::{self, BufRead};

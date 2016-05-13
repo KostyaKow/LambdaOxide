@@ -1,56 +1,76 @@
-use list::{Cons, cons, cons_reverse};
-use types::*;
+use gentypes::{SizeRange, SizeRanges};
+use errors::{LoResult, ErrInfo, ErrCode, ErrStage, lo_fail};
 
+pub type ParseResult = LoResult<Sexps>;
+
+
+
+type ChildExpResult = LoResult<Vec<(usize, usize, Some(QuoteType))>>;
+//TODO: what if unmatched close paren, and different nestedness begin and start. Should it be error?
 //inclusive let i = start; while (i <= end)
-fn get_child_sexps(lexemes : &Vec<Lexeme>, start : usize, end : usize)
--> Vec<(usize, usize)>
-{
+fn child_exp(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildExpResult {
+   let mut (start, end) = range;
    let mut nestedness = 0;
-   let mut children : Vec<(usize, usize)> = Vec::new();
+   let mut children : SizeRanges = Vec::new();
    let mut child_start : Option<usize> = None;
+   let mut last_quote = None;
 
-   let mut i = start;
-   while i <= end {
-      match &lexemes[i] {
+   while start <= end {
+      match &lexemes[start] { //TODO: do we need the address?
          &Lexeme::OpenParen => {
             nestedness += 1;
-            if nestedness == 1 { child_start = Some(i); }
+            if nestedness == 1 { child_start = Some(start); }
          },
          &Lexeme::CloseParen => {
             nestedness -= 1;
-            if nestedness == 0 {
-               if let Some(start) = child_start {
-                  children.push((start, i)); child_start = None;
+            if nestedness < 0 {
+               lo_fail(parse_err(ErrCode::ExtraCloseParen, lexemes, start, None));
+            } else if nestedness == 0 {
+               if let Some(c_start) = child_start {
+                  if last_quote {
+                     children.push((c_start, start)); child_start = None;
+                  }
                }
             }
          },
-         _ => {}
+         &Lexeme::Quote(q) {
+            last_quote = Some(q);
+         }
+         _ => {
+            if nestedness == 0 {
+               if last_quote {
+                  children.push((start-1, start));
+                  last_quote = false;
+               } else {
+                  children.push((start, start));
+               }
+            }
+         }
       }
-      i += 1;
+      start += 1;
    }
-   children
-}
-
-fn parse_lexeme(l : &Lexeme) -> Option<Sexps> {
-   use types::Sexps::*;
-
-   let exp = match l {
-         &Lexeme::Str(ref s)  => { Str(s.to_string()) },
-         &Lexeme::Sym(ref s)  => { Var(s.to_string()) },
-         &Lexeme::Int(ref n)  => { Int(*n) },
-         &Lexeme::Float(ref n)=> { Float(*n) },
-         &Lexeme::Quote(ref q)=> { Quote(q.clone()) }
-         _ => { return None; }
-   };
-   Some(exp)
+   if nestedness > 0 {
+      return lo_fail(parse_err(ErrCode::NoEndParen, lexemes, end, None));
+   }
+   Ok(children)
 }
 
 //range without include parenthesis
 fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResult
 {
+   if start == end {
+      let l = parse_lexeme(lexemes[start]);
+      //TODO: **> 'fsdf 3
+      if let Some(exp) = parse_lexeme(&lexemes[start]) {
+         return Ok(exp);
+      } else {
+         return parse_err(ErrCode::BadLexeme, lexemes, start, None);
+      }
+   }
+
    let mut sub : Cons<Sexps> = Cons::Nil; //: Vec<Sexps> = Vec::new()
 
-   let children = get_child_sexps(lexemes, start, end);
+   let children = child_exp(lexemes, (start, end));
    let mut c_it = 0; //current child
    let mut i = start;
    while i <= end {
@@ -76,7 +96,7 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResul
    Ok(cons_to_sexps(cons_reverse(sub)))
 }
 
-fn parse_helper(lexemes : &Vec<Lexeme>) -> ParseResult {
+/*fn parse_helper(lexemes : &Vec<Lexeme>) -> ParseResult {
    let mut start_paren : Option<usize> = None;
    let mut end_paren : Option<usize> = None;
    let mut nestedness : i32 = 0;
@@ -94,6 +114,7 @@ fn parse_helper(lexemes : &Vec<Lexeme>) -> ParseResult {
          _ => {}
       }
       if nestedness < 0 {
+         return lo_fail(parse_err(ErrCode::ExtraCloseParen, 0)
          return Result::Err((ParseFail::ExtraCloseParen, i));
       }
    }
@@ -105,17 +126,55 @@ fn parse_helper(lexemes : &Vec<Lexeme>) -> ParseResult {
    else { return Result::Err((ParseFail::NoEndParen, 0)) }
 
    parse_range(lexemes, start+1, end-1)
-}
+}*/
+
 
 pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
-   if lexemes.len() == 1 {
-      if let Some(exp) = parse_lexeme(&lexemes[0]) { Ok(exp) }
-      else { Result::Err((ParseFail::BadLexeme, 0)) }
-   }
-   /*else if lexemes.len() == 2 {
-      if let Lexeme::Quote(_) = lexemes[0] {
-
+   /*if lexemes.len() == 1 {
+      if let Some(exp) = parse_lexeme(&lexemes[0]) {
+         Ok(exp)
+      } else {
+         //Do we need lexemes range and char_i?
+         lo_fail(parse_err(ErrCode::BadLexeme, lexemes, 0, None))
       }
-   }*/
-   else { parse_helper(lexemes) }
+   }
+   else if lexemes.len() == 2 { //TODO: actually do quote stuff
+      if let Lexeme::Quote(q) = lexemes[0] &&
+         let Some(e) = parse_lexeme(&lexemes[1])
+      {
+         Ok(Sexps::Quote(q, e))
+      }
+      else {
+         //TODO: do we need: ei.char_i = Some(0)
+         lo_fail(parse_err(ErrCode::Fail2Lexemes, lexemes, 0, Some((0, 1))))
+      }
+   }
+   else {
+      let childs = child_exp(lexemes, (0, lexemes.len()));
+      if childs.len() == 0 {
+         parse_err(ErrCode::UnCompleteExp, lexemes, 0, Some((0, lexemes.len())));
+      }
+      for (start, end) in childs {
+         parse_range(lexemes, start, end)
+      }
+      //parse_helper(lexemes)
+   }
+*/
 }
+
+
+fn parse_lexeme(l : &Lexeme) -> Option<Sexps> {
+   use exp::Sexps::*;
+
+   let exp = match l {
+         &Lexeme::Str(ref s)  => { Str(s.to_string()) },
+         &Lexeme::Sym(ref s)  => { Sum(s.to_string()) },
+         &Lexeme::Int(ref n)  => { Int(*n) },
+         &Lexeme::Float(ref n)=> { Float(*n) },
+         //&Lexeme::Quote(ref q)=> { Quote(q.clone()) } //TODO: ??
+         _ => { return None; }
+   };
+   Some(exp)
+}
+
+
