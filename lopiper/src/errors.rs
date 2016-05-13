@@ -19,7 +19,9 @@ pub enum ErrCode {
    BadRange, //TODO: this should be tmp for parse_helper, fix it once parser works right
 
    //EVAL/RUN fail
-   Err(String),
+   //Err(String), //TODO: don't needs this because we have it in the ErrINfo
+   //BadNumArgs(required, provided, funcName) BadArgTypes(required, given)
+   BadNumArgs(u8, u8, String), BadArgTypes(Vec<String>, Vec<String>)
    UncompleteExp, //TODO: is this parse error? we throw this when uncomplete exp
 
    //GENERIC:
@@ -29,6 +31,8 @@ pub enum ErrCode {
 #[derive(Debug, Clone)]
 pub enum ErrStage { Lex, Parse, Eval }
 
+
+//TODO: support this
 #[derive(Debug, Clone)]
 pub struct StackTrace {
    trace : Vec<String>
