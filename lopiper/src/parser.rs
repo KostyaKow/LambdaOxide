@@ -54,8 +54,10 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
       start += 1;
    }
    if nestedness > 0 {
+      //TODO: can't I just do unwrap here safely?
       let range = if let Some(s) = child_start { Some((s, end)) } else { None };
-      return lo_fail(parse_err(ErrCode::NoEndParen, lexemes, end, range));
+      //return lo_fail(parse_err(ErrCode::NoEndParen, lexemes, end, range));
+      return lo_fail(parse_err(ErrCode::NoEndParen, lexemes, range.unwrap().0, range));
    }
    Ok(children)
 }
