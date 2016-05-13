@@ -82,18 +82,20 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
    }
 
    let mut sub : Vec<Sexps> = Vec::new();
-   let children_res = get_child_exps(lexemes, (start, end));
-   if let Err(e) = children_res {
+   let children_ranges_res = get_child_exps(lexemes, (start, end));
+   if let Err(e) = children_ranges_res {
       return Sexps::err_new_box(e.clone());
    }
-   let children = children_res.unwrap();
+   let children_ranges = children_ranges_res.unwrap();
 
+   //TODO: rename children_ranges into ranges
    let mut c_it = 0; //current child
    let mut i = start;
    while i <= end {
-      let child_start = c_it < children.len() && children[c_it].0 == i;
+      let child_start = c_it < children_ranges.len() && children_ranges[c_it].0 == i;
+      //println!("child start? {}", child_start);
       if child_start {
-         let (mut c_start, mut c_end, quotes, is_atom) = children[c_it].clone();
+         let (mut c_start, mut c_end, quotes, is_atom) = children_ranges[c_it].clone();
          if !is_atom {
             c_start += 1; c_end -= 1;
          }
@@ -107,6 +109,10 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
          i = c_end + 1;
          continue;
       }
+      i += 1; //kk inserted
+      continue; //kk inserted
+      //kk skilling stuff below
+
       //TODO: this seems redundant
       //if atom
       let ref l = lexemes[i];
@@ -115,22 +121,33 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
       else { return parse_exp_err(ErrCode::BadLexeme, lexemes, i, None); }
       i += 1;
    }
+   //quotes for complex expressions
+   let mut ret = Sexps::arr_new_from_vec(sub);
 
-   Sexps::arr_new_from_vec(sub)
+   for i in 0..quotes_vec.len() {
+      ret = Sexps::quote_new(quotes_vec[i].clone(), ret);
+   }
+   ret
+   //Sexps::arr_new_from_vec(sub)
 }
 
 //either returns (Sexps::Array of parsed exp's, true)
 //or             (Sexps::Array of Sexps::Err's, false)
 //TODO: if we have recursive error arrays, we would have to flatten it out before returning from parse
 pub fn parse(lexemes : &Vec<Lexeme>) -> (Sexps, bool) {
+   if lexemes.len() == 0 {
+      return (Sexps::arr_new_singleton(parse_exp_err(ErrCode::UncompleteExp, lexemes, 0, None)), false);
+   }
+
    let childs_ret = get_child_exps(lexemes, (0, lexemes.len()-1));
    if let Ok(childs) = childs_ret {
       let mut ret = Vec::new();
       let mut errs = Vec::new();
 
-      //for child in childs {
-      for (start, end, quotes, is_atom) in childs {
-         let parsed_child = parse_helper(lexemes, (start+1, end-1, quotes, is_atom)); //child);
+      //for child in childs
+      for (mut start, mut end, quotes, is_atom) in childs {
+         if !is_atom { start += 1; end -= 1; }
+         let parsed_child = parse_helper(lexemes, (start, end, quotes, is_atom)); //child);
          if let Sexps::Err(ref e) = parsed_child { errs.push(parsed_child.clone()); }
          else { ret.push(parsed_child); }
       }
