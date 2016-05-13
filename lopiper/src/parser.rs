@@ -124,16 +124,27 @@ fn parse_range(lexemes : &Vec<Lexeme>, start : usize, end : usize) -> ParseResul
    parse_range(lexemes, start+1, end-1)
 }*/
 
-fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> ParseResult {
-
-
+fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
+   let (start, end, )
 }
 
-pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
-   let childs = get_child_exps(lexemes, 0, lexemes.len());
-   let ret = Sexps::arr_new();
-   for child in childs {
-      parse_helper(lexemes, 0, lexemes.len())
+//either returns (Sexps::Array of parsed exp's, true)
+//or (Sexps::Array of Sexps::Err's, false)
+pub fn parse(lexemes : &Vec<Lexeme>) -> (Sexps, bool) {
+   let childs_ret = get_child_exps(lexemes, 0, lexemes.len());
+   if let Ok(childs) = childs_ret {
+      let ret = Sexps::arr_new();
+      let errs = Sexps::arr_new();
+
+      for child in childs {
+         let parsed_child = parse_helper(lexemes, child);
+         ret.push(parsed
+         if let Sexps::Err(e) = parsed_child {
+         }
+      }
+      ret
+   } else if let Err(e) = childs_ret {
+      Sexps::arr_new_singleton(Sexps::err_new(e))
    }
    /*if lexemes.len() == 1 {
       if let Some(exp) = parse_lexeme(&lexemes[0]) {

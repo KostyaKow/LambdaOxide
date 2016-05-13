@@ -27,7 +27,10 @@ impl Sexps {
    pub fn arr_new() -> Sexps {
       Sexps::Array(RefCell::new(Vec::new()))
    }
-   pub fn arr_from_vec(arr : Vec<Sexps>) -> Sexps {
+   pub fn arr_new_singleton(exp : Sexps) -> Sexps {
+      Sexps::Array(RefCell::new(vec![exp]))
+   }
+   pub fn arr_new_from_vec(arr : Vec<Sexps>) -> Sexps {
       Sexps::Array(RefCell::new(arr))
    }
    pub fn arr_push(&self, exp : Sexps) -> bool {
