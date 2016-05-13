@@ -50,7 +50,7 @@ fn get_char_ranges(code : &str) -> CharRangeResult {
 }
 
 fn collect_sym(col : &str) -> Lexeme {
-   use utils::{is_int, is_float, to_int, to_float};
+   use genutils::{is_int, is_float, to_int, to_float};
    if is_int(&col) {
       Lexeme::Int(to_int(col))
    } else if is_float(col) {
@@ -60,7 +60,7 @@ fn collect_sym(col : &str) -> Lexeme {
 
 pub type LexResult = LoResult<Vec<Lexeme>>;
 pub fn lex(code : &str) -> LexResult {
-   use utils::{char_at, char_at_fast, contains, slice_str};
+   use genutils::{char_at, char_at_fast, contains, slice_str};
 
    let mut lexemes : Vec<Lexeme> = Vec::new();
    let mut col = String::new(); //symbol collector

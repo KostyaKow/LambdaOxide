@@ -6,3 +6,5 @@ TODO:
 - [ ] go through parser
 - [ ] don't overoptimize lexer and parser because they don't run often
 - [ ] Unit test for every time
+
+- [ ] String::from("blah") or "blah".to_string()?

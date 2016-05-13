@@ -89,7 +89,7 @@ impl Sexps {
 
    pub fn is_quote(&self) {}
    pub fn is_nil(&self) {}
-   pub fn is_err(&self) {}
+   pub fn is_err(&self) -> bool { if let Sexps::Err(_) = self { true } else { false } }
    pub fn is_str(&self) {}
    pub fn is_int(&self) {}
    pub fn is_float(&self) {}

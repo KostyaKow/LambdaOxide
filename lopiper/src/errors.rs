@@ -10,9 +10,10 @@ pub enum ErrCode {
    //PARSE: TODO (do we need all of this?), NoEndParen same as UncompleteExp
    //(UncompleteExp also if user presses enter without typing)
    /*NoStartParen,*/ NoEndParen, ExtraCloseParen, //parse_helper
-   ChildParseFail,
+   ChildParseFail, //TODO: tmp, look at parse_helper and fix this to return array of errors instead of just returning one ChildParseFail
    BadLexeme, //parse_lexeme needs Str, Sym, Int or Float
    Fail2Lexemes, //parse() got 2 lexemes, first needs to be quote, second parse_lexeme()
+   BadRange, //TODO: this should be tmp for parse_helper, fix it once parser works right
 
    //EVAL/RUN fail
    Err(String),
@@ -79,6 +80,15 @@ pub fn display_result<T>(res : &LoResult<T>) {
       Ok(ref exp) => display_sexps(exp),
       _           => println!("error: {:?}", res)
    }*/
+}
+
+
+pub fn parse_exp_err(code : ErrCode, origin_lex : &Vec<Lexeme>,
+                     lex_i : usize, range_lex : Option<SizeRange>)
+-> Sexps
+{
+   use exp::Sexps;
+   Sexps::err_new(parse_err(code, origin_lex, lex_i, range_lex))
 }
 
 pub fn parse_err(code : ErrCode, origin_lex : &Vec<Lexeme>,

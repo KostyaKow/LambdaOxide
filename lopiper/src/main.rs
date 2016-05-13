@@ -3,6 +3,7 @@
 use lexer::lex;
 
 mod utils;
+mod genutils;
 mod gentypes;
 mod types;
 mod exp;
