@@ -1,6 +1,6 @@
 use types::QuoteType;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Lexeme {
    OpenParen, CloseParen, Sym(String), Quote(QuoteType),
    Int(i64), Float(f64), Str(String)

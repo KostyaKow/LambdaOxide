@@ -7,6 +7,6 @@ pub fn to_shared_mut<T>(x : T) -> SharedMut<T> {
    Rc::new(RefCell::new(x))
 }
 
-type SizeRange = (usize, usize);
-type SizeRanges = Vec<SizeRange>;
+pub type SizeRange = (usize, usize);
+pub type SizeRanges = Vec<SizeRange>;
 

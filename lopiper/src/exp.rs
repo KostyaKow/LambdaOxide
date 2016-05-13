@@ -10,15 +10,17 @@ pub enum Sexps {
    Str(String), Int(i64), Float(f64), Bool(bool),
    Sym(String), Lambda(String),
    Cons(SharedMut<(Sexps, Sexps)>), Array(RefCell<Vec<Sexps>>),
-   Quote(QuoteType, Sexps), Nil, Err(Box<ErrInfo>) //TODO: possibly later on
+   Quote(QuoteType, Box<Sexps>), Nil, Err(Box<ErrInfo>) //TODO: possibly later on
 }
 
 //TODO: deadcode
 #[allow(dead_code)]
 impl Sexps {
-   pub fn quote_new(qtype : QuoteType, exp : Sexps) -> Sexps { Sexps::Quote(qtype, exp) }
+   //TODO: quote_new_box? like err_new?
+   pub fn quote_new(qtype : QuoteType, exp : Sexps) -> Sexps { Sexps::Quote(qtype, Box::new(exp)) }
    pub fn nil_new() -> Sexps { Sexps::Nil }
    pub fn err_new(ei : ErrInfo) -> Sexps { Sexps::Err(Box::new(ei)) }
+   pub fn err_new_box(ei : Box<ErrInfo>) -> Sexps { Sexps::Err(ei) } //TODO: is one of this a bad practice?
    pub fn str_new(s : &str) -> Sexps { Sexps::Str(s.to_string()) }
    pub fn int_new(n : i64) -> Sexps { Sexps::Int(n)  }
    pub fn float_new(n : f64) -> Sexps { Sexps::Float(n) }
@@ -89,7 +91,7 @@ impl Sexps {
 
    pub fn is_quote(&self) {}
    pub fn is_nil(&self) {}
-   pub fn is_err(&self) -> bool { if let Sexps::Err(_) = self { true } else { false } }
+   pub fn is_err(&self) -> bool { if let Sexps::Err(_) = *self { true } else { false } }
    pub fn is_str(&self) {}
    pub fn is_int(&self) {}
    pub fn is_float(&self) {}

@@ -1,8 +1,11 @@
 
+use lexer::Lexeme;
+use exp::Sexps;
+
 //TODO: do something like rustc --explain E0123
 //with my error codes
 #[allow(dead_code)] //TODO
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ErrCode {
    //LEX:
    UnterminatedQuote,
@@ -23,10 +26,10 @@ pub enum ErrCode {
    Unimplemented
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ErrStage { Lex, Parse, Eval }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StackTrace {
    trace : Vec<String>
 }
@@ -37,7 +40,7 @@ use gentypes::SizeRange;
 //TODO: line index, or expression index?
 //in repl, char_index and line_index start from beginning of last command
 //TODO: display range, but if it's too long, draw ...
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ErrInfo {
    pub code : Option<ErrCode>,
    pub stage : Option<ErrStage>,
@@ -59,7 +62,7 @@ impl ErrInfo {
    pub fn new() -> ErrInfo {
       ErrInfo {
          code : None, stage : None, file_path : None,
-         origin : None, origin_lex : None range_char : None,
+         origin : None, origin_lex : None, range_char : None,
          range_lex : None, char_i : None, lex_i : None, line : None,
          line_char_i : None, line_lex_i : None, trace : None, msg : None
       }
@@ -98,7 +101,7 @@ pub fn parse_err(code : ErrCode, origin_lex : &Vec<Lexeme>,
    let mut ei = ErrInfo::new();
    ei.code = Some(code);
    ei.stage = Some(ErrStage::Parse);
-   ei.origin_lex = Some(origin_lex.clone());
+   ei.origin_lex = Some((*origin_lex).clone());
    ei.lex_i = Some(lex_i);
    ei.range_lex = range_lex;
    ei
