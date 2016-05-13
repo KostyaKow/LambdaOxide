@@ -1,8 +1,11 @@
 [package]
 
 name = "LambdaOxide"
-version = "0.1.7"
+version = "0.1.8"
 authors = [ "Konstantin Kowalski <kostelkow@gmail.com>" ]
+
+[dependencies]
+time = "0.1.35"
 
 [lib]
 name = "lambda_oxide"

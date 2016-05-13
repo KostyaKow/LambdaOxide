@@ -141,6 +141,7 @@ fn test_run_fib() {
    cmd = "(fib 10)";
    result = run(&root, &cmd).unwrap();
    assert_eq!(result, Sexps::Int(55));
+   println!("fib test succesful");
 }
 
 fn test_run_church() {

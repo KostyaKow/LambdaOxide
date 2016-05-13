@@ -29,6 +29,7 @@ pub enum Lexeme {
 #[derive(Clone, Debug)] //Try to implement copy
 pub enum Sexps {
    Str(String), Int(i64), Float(f64), Err(String), Bool(bool), Var(String),
+   //(envid and name?)
    Lambda(EnvId, String), Quote(QuoteType), Sub(Box<Cons<Sexps>>),
    //Sub(Box<Vec<Sexps>>), Literal(String) //literal is var now
 }

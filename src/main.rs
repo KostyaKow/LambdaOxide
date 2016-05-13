@@ -190,6 +190,17 @@ impl Env {
       self.table_add_f("+", builtin_sum);
       self.table_add_f("*", builtin_mul);
 
+      //time in microseconds (n/1000 for milliseconds)
+      let get_t = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
+         use time::get_time;
+         let t = get_time();
+
+         let nano_micro = t.nsec as i64 / 1000;
+         let sec_micro = t.sec as i64 * 1000000;
+         Int(nano_micro + sec_micro)
+      };
+      self.table_add_f("get-time-microseconds", get_t);
+
       let diff = |args_ : Sexps, root : Root, table : EnvId| -> Sexps {
          let mut diff = 0.0;
          let mut first = true;
@@ -432,11 +443,13 @@ pub fn eval(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
    }
 }
 
+static mut lambda_num : u32 = 0;
+
 fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexps
 {
    debug_p(2, "==applying macro!");
    match &name[..] {
-      "define" => {
+      "define" => { //evaluate second argument and create symTableValue from result, and add it to table
          debug_p(3, "macro define");
          if let Cons::Cons(Var(ref name), ref binding) = *args {
             let eval_result = if let Some(x) = car(binding) {
@@ -447,29 +460,29 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
             root.borrow_mut().table_add(t, name, eval_result);
             Var("success".to_string())
          }
-         /*else if let Cons::Cons(Sub(box Cons::Cons(ref name, ref args)), ref binding) = *args {
+         /*(define (func arg1 arg2) (..)) else if let Cons::Cons(Sub(box Cons::Cons(ref name, ref args)), ref binding) = *args {
             let l = apply_macro("lambda", Cons::Cons(args, binding), root, t);
             apply_macro("define", Cons::Cons(name, l), root, t)
          }*/
          else { err("bad define syntax") }
       }
-      "lambda" => {
+      "lambda" => { //creates new Callable::Lambda, and adds itself to new table
          debug_p(3, "macro lambda");
          if let Cons::Cons(ref args@Sub(_), box Cons::Cons(ref exp, _)) = *args {
             if DEBUG >= 3 {
                print_space(3); print!("args: "); print_compact_tree(args);
                print_space(5); print!("exp: "); print_compact_tree(exp);
             }
-            let borrowed = unsafe { root.as_unsafe_cell().get() };
-            let lambda_table = unsafe { (*borrowed).table_new(t) };
-
+            //let borrowed = unsafe { root.as_unsafe_cell().get() };
+            //let lambda_table = unsafe { (*borrowed).table_new(t) };
+            let lambda_table = t;
             debug_p(2, &format!("new lambda table number {}", lambda_table));
             let lambda = Callable::Lambda(lambda_table, args.clone(), exp.clone());
-            root.borrow_mut().table_add(lambda_table, "self", lambda);
-            Lambda(lambda_table, "self".to_string())
-            //var params = kkzz
-            //if let Cons::Cons(x, xs) = *args {}
-            //Callable::new(args, env)
+            let lambda_name = unsafe { lambda_num.to_string() + "__lambda" };
+            unsafe { lambda_num += 1 };
+
+            root.borrow_mut().table_add(lambda_table, &*lambda_name, lambda);
+            Lambda(lambda_table, lambda_name)
          } else { err("bad arguments to lambda") }
       },
       "if" => {

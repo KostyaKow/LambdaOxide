@@ -127,4 +127,14 @@ Differences with standard/SICP Scheme:
    - no cond
    - no macro system
    - no quote '
+   - no set! (page 220)
+   - print instead of display
+   - null?, nil
+
+TODO soon:
+   - [ ] `(do (define x (lambda () (print "hi")))); x` x is still defined in this scope
+   - [ ] fix list-ref and make it built-in and check performance for tictactoe
+   - [ ] remove extr tables from Callable
+   - [ ] tail call optimization
+   - [ ] stop using err for nil checks and sym table lookups. Panic on err or at least put back drop for exp
 
