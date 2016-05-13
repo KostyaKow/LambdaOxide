@@ -18,9 +18,7 @@
 
 (define time-mid (get-time))
 
-(test-loop)
 (define final (fromc n3))
-(test-loop)
 
 (define time-end (get-time))
 
