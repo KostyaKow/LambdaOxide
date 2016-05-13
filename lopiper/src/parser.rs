@@ -75,7 +75,7 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
          return parse_exp_err(ErrCode::BadLexeme, lexemes, start, None);
       }
       let mut ret_exp = exp_opt.unwrap();
-      for i in 0..quotes_vec.len() {
+      for i in (0..quotes_vec.len()).rev() {
          ret_exp = Sexps::quote_new(quotes_vec[i].clone(), ret_exp);
       }
       return ret_exp;
@@ -124,7 +124,8 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
    //quotes for complex expressions
    let mut ret = Sexps::arr_new_from_vec(sub);
 
-   for i in 0..quotes_vec.len() {
+
+   for i in (0..quotes_vec.len()).rev() {
       ret = Sexps::quote_new(quotes_vec[i].clone(), ret);
    }
    ret
