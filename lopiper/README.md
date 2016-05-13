@@ -20,3 +20,11 @@ TODO:
 - [ ] better error debug output
 - [ ] set! set-cell! set-car!
 - [ ] possibly for/while/loop so we don't kill the stack
+- [ ] support classic scheme define syntax (define (f x) exp exp)
+- [ ] let statemnts
+- [ ] cond
+- [ ] garbage collection
+- [ ] low-level fast operators (+ 4 "blah") (+' 3 3) //+' sum prime optimized version
+- [ ] stack tracing
+- [ ] tail call optimization
+- 
