@@ -1,6 +1,8 @@
 //TODO: check lexer errors (ranges)
 
 use lexer::lex;
+use parser::parse;
+use utils::display_sexps;
 
 mod utils;
 mod genutils;
@@ -23,7 +25,15 @@ pub fn interpreter() {
                       .next().unwrap().unwrap();
 
       let mut acc = line;
-      lex(&*acc);
+      let lexed_ret = lex(&*acc);
+      //print_lexemes(lexed);
+      if let Ok(lexed) = lexed_ret {
+         let (parsed, success) = parse(&lexed);
+         println!("success parse? : {}", success);
+         display_sexps(&parsed);
+      } else if let Err(e) = lexed_ret {
+         println!("lexing error: {:?}",  e);
+      }
 
       //display_run_result(&out);
       //display_sexps(&out);

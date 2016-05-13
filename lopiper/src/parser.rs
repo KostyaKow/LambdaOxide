@@ -120,7 +120,7 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
 //or             (Sexps::Array of Sexps::Err's, false)
 //TODO: if we have recursive error arrays, we would have to flatten it out before returning from parse
 pub fn parse(lexemes : &Vec<Lexeme>) -> (Sexps, bool) {
-   let childs_ret = get_child_exps(lexemes, (0, lexemes.len()));
+   let childs_ret = get_child_exps(lexemes, (0, lexemes.len()-1));
    if let Ok(childs) = childs_ret {
       let mut ret = Vec::new();
       let mut errs = Vec::new();

@@ -5,10 +5,10 @@ use gentypes::{SharedMut, to_shared_mut};
 use types::QuoteType;
 use errors::ErrInfo;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Sexps {
    Str(String), Int(i64), Float(f64), Bool(bool),
-   Sym(String), Lambda(String),
+   Sym(String), Lambda(String), //TODO: lambda
    Cons(SharedMut<(Sexps, Sexps)>), Array(RefCell<Vec<Sexps>>),
    Quote(QuoteType, Box<Sexps>), Nil, Err(Box<ErrInfo>) //TODO: possibly later on
 }
@@ -59,9 +59,28 @@ impl Sexps {
    }
    pub fn arr_set_fast(&self, loc : usize, new : Sexps) {
       if let Sexps::Array(ref vr) = *self {
-         let v = vr.borrow_mut();
          vr.borrow_mut()[loc] = new;
       }
+   }
+   pub fn arr_get(&self, loc : usize) -> Option<Sexps> {
+      if let Sexps::Array(ref vr) = *self {
+         Some(vr.borrow_mut()[loc].clone())
+      } else { None }
+   }
+   pub fn arr_get_fast(&self, loc : usize) -> Sexps {
+      if let Sexps::Array(ref vr) = *self {
+         vr.borrow_mut()[loc].clone()
+      } else { Sexps::Nil }
+   }
+   pub fn arr_len(&self) -> Option<usize> {
+      if let Sexps::Array(ref a) = *self {
+         Some(a.borrow().len())
+      } else { None }
+   }
+   pub fn arr_len_fast(&self) -> usize {
+      if let Sexps::Array(ref a) = *self {
+         a.borrow_mut().len()
+      } else { 0 }
    }
    pub fn cons_new(a : Sexps, b : Sexps) -> Sexps {
       Sexps::Cons(to_shared_mut((a, b)))
@@ -88,6 +107,35 @@ impl Sexps {
          sm.borrow_mut().1 = new;
       }
    }
+   pub fn cons_get_1(&self) -> Option<Sexps> {
+      if let Sexps::Cons(ref x) = *self {
+         Some(x.borrow_mut().0.clone())
+      } else { None }
+   }
+   pub fn cons_get_2(&self) -> Option<Sexps> {
+      if let Sexps::Cons(ref x) = *self {
+         Some(x.borrow_mut().1.clone())
+      } else { None }
+   }
+   pub fn cons_get_1_fast(&self) -> Sexps {
+      if let Sexps::Cons(ref x) = *self {
+         x.borrow_mut().0.clone()
+      } else { Sexps::Nil }
+   }
+   pub fn cons_get_2_fast(&self) -> Sexps {
+      if let Sexps::Cons(ref x) = *self {
+         x.borrow_mut().1.clone()
+      } else { Sexps::Nil }
+   }
+   /* TODO:
+      pub fn map() => should map stuff on every element or only for cons, etc?
+   pub fn cons_map<O, F>(&self, f : F) -> Option<Sexps>
+      where F : Fn(&Sexps) -> O
+   {
+      if let Sexps(Cons(ref x)) = *self {
+         x.borrow_mut()
+      }
+   }*/
 
    pub fn is_quote(&self) {}
    pub fn is_nil(&self) {}
