@@ -133,18 +133,17 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : Child) -> Sexps {
 pub fn parse(lexemes : &Vec<Lexeme>) -> (Sexps, bool) {
    let childs_ret = get_child_exps(lexemes, 0, lexemes.len());
    if let Ok(childs) = childs_ret {
-      let ret = Sexps::arr_new();
-      let errs = Sexps::arr_new();
+      let ret = Vec::new();
+      let errs = Vec::new();
 
       for child in childs {
          let parsed_child = parse_helper(lexemes, child);
-         ret.push(parsed
-         if let Sexps::Err(e) = parsed_child {
-         }
+         if let Sexps::Err(e) = parsed_child { errs.push(parsed_child); }
+         else { ret.push(parsed_child); }
       }
-      ret
+      Sexps::arr_new_from_vec(if errs.len() == 0 { ret } else { errs })
    } else if let Err(e) = childs_ret {
-      Sexps::arr_new_singleton(Sexps::err_new(e))
+      (Sexps::arr_new_singleton(Sexps::err_new(e)), false)
    }
    /*if lexemes.len() == 1 {
       if let Some(exp) = parse_lexeme(&lexemes[0]) {
