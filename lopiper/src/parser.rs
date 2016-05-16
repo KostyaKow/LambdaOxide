@@ -15,7 +15,7 @@ type ChildRangesResult = LoResult<Vec<ChildRange>>;
       start and end are inclusive: let i = start; while (i <= end) ..
    collects top-level quotes
    collects top-level atoms
-   if nestedness < 0, throws ExtraCloseParen error
+   if nestedness < 0, throws NoStartParen error
    if at the end of loop, nestedness > 0, throws NoEndParen
    TODO: (don't understand what this means) what if we have unmatched close paren, and different nestedness begin and start. Should it be error?*/
 fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesResult {
@@ -38,7 +38,7 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
                quotes = Vec::new();
                child_start = None;
             } else if nestedness < 0 {
-               return lo_fail(parse_err(ErrCode::ExtraCloseParen, lexemes, start, None));
+               return lo_fail(parse_err(ErrCode::NoStartParen, lexemes, start, None));
             }
          },
          &Lexeme::Quote(ref q) => {

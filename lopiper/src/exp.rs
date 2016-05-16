@@ -23,14 +23,16 @@ fn transcompile_to_c(exp : Sexps) -> String {
    for x in 0..exp.arr_len_fast() {
 
    }
+   "done".to_string()
 }
 
 #[derive(Clone, Debug)]
 pub enum Sexps {
    Str(String), Int(i64), Float(f64), Bool(bool),
    Sym(String), Lambda(String), //TODO: lambda
-   Cons(SharedMut<(Sexps, Sexps)>), Array(RefCell<Vec<Sexps>>),
-   Quote(QuoteType, Box<Sexps>), Nil, Err(Box<ErrInfo>) //TODO: possibly later on
+   Cons(SharedMut<(Sexps, Sexps)>), Array(SharedMut<Vec<Sexps>>),
+   Quote(QuoteType, Box<Sexps>), Nil, Err(Box<ErrInfo>), //TODO: possibly later on
+   //StackInfo(Box<Vec<StackInfo>>)
 }
 
 //TODO: deadcode
@@ -47,13 +49,13 @@ impl Sexps {
    pub fn bool_new(b : bool) -> Sexps { Sexps::Bool(b) }
 
    pub fn arr_new() -> Sexps {
-      Sexps::Array(RefCell::new(Vec::new()))
+      Sexps::Array(to_shared_mut(Vec::new()))
    }
    pub fn arr_new_singleton(exp : Sexps) -> Sexps {
-      Sexps::Array(RefCell::new(vec![exp]))
+      Sexps::Array(to_shared_mut((vec![exp])))
    }
    pub fn arr_new_from_vec(arr : Vec<Sexps>) -> Sexps {
-      Sexps::Array(RefCell::new(arr))
+      Sexps::Array(to_shared_mut(arr))
    }
    pub fn arr_push(&self, exp : Sexps) -> bool {
       if let Sexps::Array(ref v) = *self {
@@ -177,7 +179,7 @@ fn main() {
    let mut v = Vec::new();
    v.push(n1.clone());
    v.push(n2);
-   let c = Sexps::Array(RefCell::new(v));
+   let c = Sexps::Array(to_shared_mut(v));
 
    //modify(&mut c, Sexps::Int(10));
 

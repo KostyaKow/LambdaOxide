@@ -3,6 +3,23 @@ Left on Crates and Modules
 README/MISC:
    rustc --explain E0507
    RUST_BACKTRACE=1 cargo run
+   type sizes //use std::mem::size_of<Type>();
+      Vec<String> = 24
+      String = 24
+      &str = 16
+      Box<u32> = 8
+      RefCell<u32> = 16
+      RefCell<Vec<u32>> = 32
+      Rc<u32> = 8
+      i64 = 8
+      Sexps = 40 //without Array, only 32 (changed Array to remove RefCell)
+         pub enum Sexps {
+            Str(String), Int(i64), Float(f64), Bool(bool),
+            Sym(String), Lambda(String),
+            Cons(SharedMut<(Sexps, Sexps)>), Array(RefCell<Vec<Sexps>>), //this takes out 8
+            Quote(QuoteType, Box<Sexps>), Nil, Err(Box<u32>)
+         }
+
 
 misc notes:
    iter

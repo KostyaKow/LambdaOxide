@@ -9,10 +9,15 @@ use exp::Sexps;
 pub enum ErrCode {
    //LEX:
    UnterminatedQuote,
+   MisformedInt, //bad format like 543a //TODO
+   MisformedFloat, //bad format like 0.3sd //TODO
+   BadChar, //TODO: add characters
 
-   //PARSE: TODO (do we need all of this?), NoEndParen same as UncompleteExp
-   //(UncompleteExp also if user presses enter without typing)
-   /*NoStartParen,*/ NoEndParen, ExtraCloseParen, //parse_helper
+
+   //TODO: probably remove UncompleteExp because it's same as NoEndParen
+   //UncompleteExp also if user presses enter without finishing the expression
+
+   NoStartParen, NoEndParen,
    ChildParseFail, //TODO: tmp, look at parse_helper and fix this to return array of errors instead of just returning one ChildParseFail
    BadLexeme, //parse_lexeme needs Str, Sym, Int or Float
    //TODO: removeme, outdated Fail2Lexemes, //parse() got 2 lexemes, first needs to be quote, second parse_lexeme()
@@ -21,7 +26,7 @@ pub enum ErrCode {
    //EVAL/RUN fail
    //Err(String), //TODO: don't needs this because we have it in the ErrINfo
    //BadNumArgs(required, provided, funcName) BadArgTypes(required, given)
-   BadNumArgs(u8, u8, String), BadArgTypes(Vec<String>, Vec<String>)
+   BadNumArgs(u8, u8, String), BadArgTypes(Vec<String>, Vec<String>),
    UncompleteExp, //TODO: is this parse error? we throw this when uncomplete exp
 
    //GENERIC:
