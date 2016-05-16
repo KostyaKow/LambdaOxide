@@ -32,7 +32,7 @@ pub enum Sexps {
    Sym(String), Lambda(String), //TODO: lambda
    Cons(SharedMut<(Sexps, Sexps)>), Array(SharedMut<Vec<Sexps>>),
    Quote(QuoteType, Box<Sexps>), Nil, Err(Box<ErrInfo>), //TODO: possibly later on
-   //StackInfo(Box<Vec<StackInfo>>)
+   //StackInfo(Box<Vec<ErrInfo>>)
 }
 
 //TODO: deadcode

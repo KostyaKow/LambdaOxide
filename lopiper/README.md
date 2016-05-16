@@ -1,5 +1,8 @@
 
+
+
 TODO:
+- [ ] stack trace display
 - [ ] Make new generic library/crate utils with stuff for skomakare/lo/new lo/other rust stuff.
 - [ ] Go throw lexer
 - [ ] go through utils
@@ -27,4 +30,4 @@ TODO:
 - [ ] low-level fast operators (+ 4 "blah") (+' 3 3) //+' sum prime optimized version
 - [ ] stack tracing
 - [ ] tail call optimization
-- 
+-

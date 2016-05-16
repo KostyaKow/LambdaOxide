@@ -58,11 +58,13 @@ fn collect_sym(col : &str) -> Lexeme {
    } else { Lexeme::Sym(col.to_string()) }
 }
 
-pub type LexResult = LoResult<Vec<Lexeme>>;
-pub fn lex(code : &str) -> LexResult {
+pub type LexResult = LoResult<(Vec<Lexeme>, Option<Vec<StackTrace>>)>;
+pub fn lex(code : &str, need_trace : bool) -> LexResult {
    use genutils::{char_at, char_at_fast, contains, slice_str};
 
    let mut lexemes : Vec<Lexeme> = Vec::new();
+   let mut stack : Vec<StackTrace> = Vec::new();
+
    let mut col = String::new(); //symbol collector
 
    //range of strings
