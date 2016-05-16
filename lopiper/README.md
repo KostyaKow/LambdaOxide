@@ -2,6 +2,9 @@
 
 
 TODO:
+- [ ] do something like rustc --explain E0123 with my error codes
+- [ ] implement ErrCode::{MisformedFloat, MisformedInt, BadChar}
+- [ ] add single character ''
 - [ ] stack trace display
 - [ ] Make new generic library/crate utils with stuff for skomakare/lo/new lo/other rust stuff.
 - [ ] Go throw lexer

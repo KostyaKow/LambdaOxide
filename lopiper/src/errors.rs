@@ -1,21 +1,18 @@
 use lexer::Lexeme;
 use exp::Sexps;
 use std::fmt;
+use gentypes::SizeRange;
 
 #[derive(Debug, Clone)]
 pub enum ExecStage { Lex, Parse, Eval }
 
-//TODO: do something like rustc --explain E0123
-//with my error codes
-#[allow(dead_code)] //TODO
 #[derive(Debug, Clone)]
 pub enum ErrCode {
    //LEX:
    UnterminatedQuote,
-   MisformedInt, //bad format like 543a //TODO
-   MisformedFloat, //bad format like 0.3sd //TODO
-   BadChar, //TODO: add characters
-
+   MisformedInt, //bad format like 543a
+   MisformedFloat, //bad format like 0.3sd
+   BadChar,
 
    //TODO: probably remove UncompleteExp because it's same as NoEndParen
    //UncompleteExp also if user presses enter without finishing the expression
@@ -75,16 +72,10 @@ pub struct StackInfo {
    pub stage : Option<ExecStage>, //current execution stage
    pub file_path : Option<String>, //path to file in which error occured (None means repl)
    pub origin : Option<String>, //original file text or repl input
-   pub lines : Option<Vec<String>>,
+   pub lines : Option<Vec<(String, usize, usize)>>, //has every line & and start and end of line in origin
    pub lexemes : Option<Vec<Lexeme>>, //original lexemes
    //map of lexemes indices to character indices (start and end)
-   pub char_to_lex_map : HashMap<usize, (usize, usize)>,
-}
-use std::fmt;
-impl fmt::Debug for StackInfo {
-   /*fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f, " {:?}", self.stage);
-   }*/
+   pub lex_to_char : Vec<(usize, usize)>,
 }
 
 pub struct FuncInfo {
@@ -93,21 +84,14 @@ pub struct FuncInfo {
    arg_types : Vec<String>,
    def_loc_char_range : SizeRange //location where function is defined
 }
-impl fmt::Debug for FuncInfo {
-   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      write!(f, "{:?}", name);
-   }
-}
 
-//TODO: this gets constantly modified
+//this gets constantly modified
 #[derive(Debug, Clone)]
 pub struct StackTrace {
-   pub funcs : Option<Vec<FuncInfo>>,
-   pub char_i : Option<usize>, //char index from start of origin
+   pub funcs : Option<Vec<FuncInfo>>, //empty means haven't called anything yet
+   pub char_i : Option<usize>, //char index from start of origin in StackInfo
    pub lex_i : Option<usize>, //index into lexemes of StackInfo
 }
-
-use gentypes::SizeRange;
 
 //TODO: map lexemes to input
 //TODO: line index, or expression index?
@@ -117,14 +101,12 @@ use gentypes::SizeRange;
 #[derive(Clone)]
 pub struct ErrInfo {
    pub stack : Box<StackInfo>,
-   pub trace : StackTrace,
+   pub trace : Box<StackTrace>,
    pub code : ErrCode,
 
-   //char/lex range relative to origin
-   pub range_lex_print : Option<SizeRange>, //range into lexemes to print
-   pub range_char_print : Option<SizeRange>, //character range into origin to print
+   pub range_line_print : SizeRange, //line range to print from origin
 
-   pub highlight_ranges : Option<Vec<SizeRange>>, //ranges to underline
+   pub highlight_char_ranges : Vec<SizeRange>, //ranges to underline
 
    /*
    //character/lex range relative to origin (gets converted to line_range_underlines[0])
@@ -151,6 +133,8 @@ impl ErrInfo {
          msg : None
       }
    }
+   fn set_
+
    fn display(&self, f: &mut fmt::Formatter) -> fmt::Result {
       use ExecStage::*;
       let stage_name = match self.stack.stage {
