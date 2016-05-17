@@ -1,4 +1,6 @@
 use types::QuoteType;
+use errors::{LoResult, ErrInfo, ErrCode, ErrStage, lo_fail};
+use gentypes::{SizeRanges, SizeRange};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Lexeme {
@@ -6,11 +8,8 @@ pub enum Lexeme {
    Int(i64), Float(f64), Str(String)
 }
 
-use errors::{LoResult, ErrInfo, ErrCode, ErrStage, lo_fail};
-use gentypes::{SizeRanges, SizeRange};
-
 type CharRangeResult = LoResult<SizeRanges>;
-fn get_char_ranges(code : &str) -> CharRangeResult {
+fn get_char_ranges(code : &str, stack_info : SharedMut<StackInfo>) -> CharRangeResult {
    let mut ranges : Vec<(usize, usize)> = Vec::new();
 
    let mut start_quote : Option<usize> = None;
@@ -19,6 +18,8 @@ fn get_char_ranges(code : &str) -> CharRangeResult {
    let code_chars = code.chars();
    let mut len = 0;
    for (i, c) in code_chars.enumerate() {
+      stack_info.borrow_mut().char_i = i;
+
       if c == '"' {
          match start_quote {
             //if we have start
@@ -38,12 +39,12 @@ fn get_char_ranges(code : &str) -> CharRangeResult {
    }
 
    if let Some(c) = start_quote {
-      let mut ei = ErrInfo::new();
-      ei.code = Some(ErrCode::UnterminatedQuote);
-      ei.stage = Some(ErrStage::Lex);
+      let mut ei = ErrInfo::new(stack_info, ErrCode::UnterminatedQuote);
+      /*TODO: removeme
       ei.origin = Some(code.to_string());
       ei.range_char = Some((c, len));
-      ei.char_i = Some(len);
+      ei.char_i = Some(len);*/
+      ei.char_highlight_ranges.push((c, len));
       lo_fail(ei)
    }
    else { Ok(ranges) }
@@ -58,11 +59,13 @@ fn collect_sym(col : &str) -> Lexeme {
    } else { Lexeme::Sym(col.to_string()) }
 }
 
-pub type LexResult = LoResult<(Vec<Lexeme>, SizeRanges)>;
+pub type LexResult = LoResult<Vec<(Lexeme, SizeRange)>>;
 pub fn lex(code : &str, stack_info : SharedMut<StackInfo>, debug : bool) -> LexResult {
    use genutils::{char_at, char_at_fast, contains, slice_str};
 
-   let mut lexemes : Vec<Lexeme> = Vec::new();
+   stack_info.borrow_mut().stage = ExecStage::Lex;
+
+   let mut lexemes : Vec<(Lexeme, SizeRange)> = Vec::new();
 
    let mut col = String::new(); //symbol collector
 
@@ -124,7 +127,7 @@ pub fn lex(code : &str, stack_info : SharedMut<StackInfo>, debug : bool) -> LexR
 }
 
 //TODO replace to_float, to_int with this
-pub fn get_str_type(s : &str) -> Lexeme { Lexeme::Int(0) }
+//pub fn get_str_type(s : &str) -> LexemeType { Lexeme::Int(0) }
 
 fn char_to_quote(c : char) -> Option<QuoteType> {
    match c {

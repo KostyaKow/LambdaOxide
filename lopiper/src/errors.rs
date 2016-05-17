@@ -113,18 +113,20 @@ pub struct ErrInfo {
    pub code : ErrCode,
 
    pub line_print_range : Option<SizeRange>, //line range to print from origin
-   pub char_highlight_ranges : Vec<SizeRange>, //ranges to underline
+   pub char_highlight_ranges : SizeRanges, //ranges to underline
 
    pub msg : Option<String>, //custom message
 
-   pub char_i : usize //char index from start of origin of error
+   //TODO: need char_i in err_info?
+   //different from StackInfo char_i
+   //pub char_i : usize //char index from start of origin of error
 }
 
 impl ErrInfo {
    pub fn new(stack : SharedMut<StackInfo>, err_code : ErrCode) -> ErrInfo {
       ErrInfo {
          stack : stack, code : err_code, line_print_range : None,
-         char_highlight_ranges : Vec::new(), msg : None, char_i : 0
+         char_highlight_ranges : Vec::new(), msg : None
       }
    }
 
