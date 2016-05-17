@@ -20,13 +20,13 @@ README/MISC:
             Quote(QuoteType, Box<Sexps>), Nil, Err(Box<u32>)
          }
 
-
 misc notes:
    iter
       let a1 = [1, 2, 3];
       let mut iter = a1.iter();
       assert_eq(iter.next(), Some(&1));
       assert_eq(iter.next(), Some(&2));
+      TODO: https://doc.rust-lang.org/book/iterators.html
    links:
       compiler to llvm assembly and runner online
          https://play.rust-lang.org/
@@ -455,6 +455,7 @@ syntax and semantics
             x => println!("x: {}", x),
          }
       destructuring 1
+         let Point { x : x1, y: y1 } = p;
          match point {
             Point {x: x1, y: y1} => println!("{} {}", x1, y1),
          }

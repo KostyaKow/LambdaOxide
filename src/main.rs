@@ -622,15 +622,13 @@ pub fn interpreter(env : Option<RefCell<Env>>) {
    loop {
       print!("**> ");
       use std::io::{self, Write};
-      io::stdout().flush().unwrap();
-      let line = stdin.lock().lines().next().unwrap().unwrap();
 
-      let mut acc = line;
-      let mut out = run(&root, &acc);
+      let mut acc = "".to_string();
+      let mut out = Result::Err((RunFail::UncompleteExp, 0));
       while let Result::Err((RunFail::UncompleteExp, _)) = out {
          io::stdout().flush().unwrap();
-         let line2 = stdin.lock().lines().next().unwrap().unwrap();
-         acc = acc + &line2;
+         let line = stdin.lock().lines().next().unwrap().unwrap();
+         acc = acc + " " + &line;
          out = run(&root, &acc);
       }
 

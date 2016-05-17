@@ -1,6 +1,7 @@
 use lexer::Lexeme;
 use exp::Sexps;
 use std::fmt;
+use std::boxed::Box;
 use gentypes::SizeRange;
 
 #[derive(Debug, Clone)]
@@ -15,6 +16,7 @@ pub enum ErrCode {
    BadChar,
 
    //TODO: probably remove UncompleteExp because it's same as NoEndParen
+   //but also same as UnterminatedQuote
    //UncompleteExp also if user presses enter without finishing the expression
 
    NoStartParen, NoEndParen,
@@ -27,7 +29,7 @@ pub enum ErrCode {
    //Err(String), //TODO: don't needs this because we have it in the ErrINfo
    //BadNumArgs(num_provided) BadArgTypes(given_types)
    BadNumArgs(u8), BadArgTypes(Vec<String>),
-   //UncompleteExp, //TODO: is this parse error? we throw this when uncomplete exp
+   UncompleteExp, //TODO: is this parse error? we throw this when uncomplete exp
 
    //GENERIC:
    Unimplemented
@@ -165,7 +167,6 @@ impl ErrInfo {
    }
 }
 
-use std::fmt;
 impl fmt::Debug for ErrInfo {
    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       /*if let Some(ref err_code) = self.code {
@@ -189,11 +190,12 @@ impl fmt::Debug for ErrInfo {
    }
 }
 
-use std::boxed::Box;
-pub fn lo_fail<T>(ei : ErrInfo) -> LoResult<T> { Err(Box::new(ei)) }
 
-//TODO: make sure this doesn't take any space if not being used
-//(is box a good idea?)
+
+//lambdaoxide result fail
+pub fn lo_res_fail<T>(ei : ErrInfo) -> LoResult<T> { Err(Box::new(ei)) }
+
+//TODO: is box a good idea?
 pub type LoResult<T> = Result<T, Box<ErrInfo>>;
 
 //TODO
@@ -204,25 +206,35 @@ pub fn display_result<T>(res : &LoResult<T>) {
    }*/
 }
 
+use types::LexResult;
+pub fn lex_err(code : ErrCode, stack : SharedMut<StackInfo>, range : SizeRange) -> LexResult {
+   let mut ei = ErrInfo::new(stack, ErrCode::UnterminatedQuote);
+   /*TODO: removeme
+   ei.origin = Some(code.to_string());
+   ei.range_char = Some((c, len));
+   ei.char_i = Some(len);*/
+   ei.char_highlight_ranges.push(range);
+   lo_res_fail(ei)
+}
 
-pub fn parse_exp_err(code : ErrCode, origin_lex : &Vec<Lexeme>,
-                     lex_i : usize, range_lex : Option<SizeRange>)
+pub fn parse_exp_err(code : ErrCode, stack : SharedMut<StackInfo>, //origin_lex : &Vec<Lexeme>, lex_i : usize,
+                     range_lex : Option<SizeRange>)
 -> Sexps
 {
    use exp::Sexps;
    Sexps::err_new(parse_err(code, origin_lex, lex_i, range_lex))
 }
 
-pub fn parse_err(code : ErrCode, origin_lex : &Vec<Lexeme>,
-                 lex_i : usize, range_lex : Option<SizeRange>)
+pub fn parse_err(code : ErrCode, stack : SharedMut<StackInfo>, //origin_lex : &Vec<Lexeme>, //lex_i : usize,
+                 range_lex : Option<SizeRange>)
 -> ErrInfo
 {
-   let mut ei = ErrInfo::new();
-   ei.code = Some(code);
-   ei.stage = Some(ErrStage::Parse);
-   ei.origin_lex = Some((*origin_lex).clone());
-   ei.lex_i = Some(lex_i);
-   ei.range_lex = range_lex;
+   let mut ei = ErrInfo::new(stack, code);
+//   ei.code = Some(code);
+//   ei.stage = Some(ErrStage::Parse);
+//   ei.origin_lex = Some((*origin_lex).clone());
+//   ei.lex_i = Some(lex_i);
+//   ei.range_lex = range_lex;
    ei
 }
 
