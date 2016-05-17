@@ -4,7 +4,7 @@ use std::fmt;
 use gentypes::SizeRange;
 
 #[derive(Debug, Clone)]
-pub enum ExecStage { Lex, Parse, Eval }
+pub enum ExecStage { Unknown, Lex, Parse, Eval }
 
 #[derive(Debug, Clone)]
 pub enum ErrCode {
@@ -34,6 +34,7 @@ pub enum ErrCode {
 }
 
 fn get_err_desc(code : ErrCode, func_opt : Option<FuncInfo>) -> String {
+   use ErrCode::*;
    match code {
       UnterminatedQuote => "unterminated string",
       MisformedInt => "bad format integer such as 543a",
@@ -44,7 +45,7 @@ fn get_err_desc(code : ErrCode, func_opt : Option<FuncInfo>) -> String {
       ChildParseFail => "failed to parse subexpressions",
       BadLexeme => "expected lexeme of type String, Symbol, Integer or Float",
       BadRange => "parse_helper got is_atom, but start != end",
-      Unimplemented => "this feature hasn't yet been implemented"
+      Unimplemented => "this feature hasn't yet been implemented",
       BadNumArgs(num_args_provided) => {
          if let Some(func) = func_opt {
             format!("wrong number of arguments to {} (needed: {}, got: {})",
@@ -68,14 +69,30 @@ fn get_err_desc(code : ErrCode, func_opt : Option<FuncInfo>) -> String {
    }.to_string()
 }
 
+#[derive(Debug, Clone)]
 pub struct StackInfo {
-   pub stage : Option<ExecStage>, //current execution stage
-   pub file_path : Option<String>, //path to file in which error occured (None means repl)
-   pub origin : Option<String>, //original file text or repl input
-   pub lines : Option<Vec<(String, usize, usize)>>, //has every line & and start and end of line in origin
-   pub lexemes : Option<Vec<Lexeme>>, //original lexemes
+   pub stage : ExecStage, //current execution stage
+   pub file_path : String, //path to file in which error occured (None means repl)
+   pub origin : String, //original file text or repl input
+   pub lines : Vec<(String, usize, usize)>, //has every line & and start and end of line in origin
+   pub lexemes : Vec<Lexeme>, //original lexemes
    //map of lexemes indices to character indices (start and end)
    pub lex_to_char : Vec<(usize, usize)>,
+
+   //trace value get constantly modified (stack trace)
+   pub funcs : Vec<FuncInfo>, //empty means haven't called anything yet
+   pub char_i : usize, //char index from start of origin of current iteration
+}
+impl StackInfo {
+   fn new(origin : &str) -> StackInfo {
+      StackInfo {
+         stage : ExecStage::Unknown,
+         file_path : "<repl>".to_string(),
+         origin : origin.to_string(), lines : Vec::new(),
+         lexemes : Vec::new(), lex_to_char : Vec::new(),
+         funcs : Vec::new(), char_i : 0
+      }
+   }
 }
 
 pub struct FuncInfo {
@@ -85,14 +102,6 @@ pub struct FuncInfo {
    def_loc_char_range : SizeRange //location where function is defined
 }
 
-//this gets constantly modified
-#[derive(Debug, Clone)]
-pub struct StackTrace {
-   pub funcs : Option<Vec<FuncInfo>>, //empty means haven't called anything yet
-   pub char_i : Option<usize>, //char index from start of origin in StackInfo
-   pub lex_i : Option<usize>, //index into lexemes of StackInfo
-}
-
 //TODO: map lexemes to input
 //TODO: line index, or expression index?
 //in repl, char_index and line_index start from beginning of last command
@@ -100,65 +109,47 @@ pub struct StackTrace {
 //#[derive(Debug, Clone)]
 #[derive(Clone)]
 pub struct ErrInfo {
-   pub stack : Box<StackInfo>,
-   pub trace : Box<StackTrace>,
+   pub stack : SharedMut<StackInfo>,
    pub code : ErrCode,
 
-   pub range_line_print : SizeRange, //line range to print from origin
+   pub line_print_range : Option<SizeRange>, //line range to print from origin
+   pub char_highlight_ranges : Vec<SizeRange>, //ranges to underline
 
-   pub highlight_char_ranges : Vec<SizeRange>, //ranges to underline
+   pub msg : Option<String>, //custom message
 
-   /*
-   //character/lex range relative to origin (gets converted to line_range_underlines[0])
-   pub range_char : Option<SizeRange>,
-   pub range_lex : Option<SizeRange>, //TODO: do conversions early, don't need this
-
-   pub line_range : Option<SizeRange>, //range of lines to print
-   pub line_range_underlines : Option<Vec<SizeRange>>, //range to underline
-
-   pub line : Option<usize>, //TODO: need this? line number
-   pub line_char_i : Option<usize>, //TODO: need this? character from beginning of line
-   pub line_lex_i : Option<usize>, //TODO: need this? lexeme index from line beginning
-   */
-
-   pub msg : Option<String> //custom message
+   pub char_i : usize //char index from start of origin of error
 }
 
 impl ErrInfo {
-   pub fn new(stack : Box<StackInfo>, trace : StackTrace, err_code : ErrCode) -> ErrInfo {
+   pub fn new(stack : SharedMut<StackInfo>, err_code : ErrCode) -> ErrInfo {
       ErrInfo {
-         stack : stack, trace : trace, code : err_code,
-         range_char : None, range_lex : None,
-         line : None, line_char_i : None, line_lex_i : None,
-         msg : None
+         stack : stack, code : err_code, line_print_range : None,
+         char_highlight_ranges : Vec::new(), msg : None, char_i : 0
       }
    }
-   fn set_
 
    fn display(&self, f: &mut fmt::Formatter) -> fmt::Result {
       use ExecStage::*;
-      let stage_name = match self.stack.stage {
-         Lex => "lexing", Parse => "parsing", Eval => "evaluating"
+
+      let s = self.stack.borrow();
+
+      let stage_name = match s.stage {
+         Lex => "lexing", Parse => "parsing",
+         Eval => "evaluating", Unknown => "unknown"
       }.to_string();
 
-      let file = if let Some(path) = self.stack.file_path { path } else { "repl" };
+      let f_vec_len = s.func_vec.len();
+      let func = if if l > 0 { s.func_vec[f_vec_len - 1] } else { None };
 
-      let func = if let Some(func_vec) = self.trace.funcs {
-         let l = func_vec.len();
-         if l > 0 { func_vec[l - 1] }
-         else { None }
-      } else { None };
-
-      write!(f, "Encountered an error while {:?}", stage_name);
+      /*write!(f, "Encountered an error while {:?}", stage_name);
       write!(f, "\n{}:{}:{}: error code: {:?} error: ",
-            file, self.line, self.line_char_i, self.code,
+            s.file_path, self.line, self.line_char_i, self.code, //todo calculate line
             get_err_desc(self.code, func));
 
       if let Some(msg) = self.msg {
          write!(f, "additional info: {}", msg);
       }
 
-      write!(
       if let Some(ref r) = self.range_lex {
          write!(f, " lex range: {}-{};", r.0, r.1);
       }
@@ -167,20 +158,15 @@ impl ErrInfo {
          if let Some(ref origin_lex) = self.origin_lex {
             write!(f, " bad lexeme: {:?};", origin_lex[*r]);
          }
-      }
-
-      if let Some(ref s) = self.stage {
-         write!(f, " Execution stage: {:?};", s);
-      }
+      }*/
       write!(f, "")
-
    }
 }
 
 use std::fmt;
 impl fmt::Debug for ErrInfo {
    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      if let Some(ref err_code) = self.code {
+      /*if let Some(ref err_code) = self.code {
          write!(f, "err: {:?};", err_code);
       }
       if let Some(ref r) = self.range_lex {
@@ -196,7 +182,8 @@ impl fmt::Debug for ErrInfo {
       if let Some(ref s) = self.stage {
          write!(f, " Execution stage: {:?};", s);
       }
-      write!(f, "")
+      write!(f, "")*/
+      self.display(f)
    }
 }
 
