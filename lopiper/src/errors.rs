@@ -2,7 +2,8 @@ use lexer::Lexeme;
 use exp::Sexps;
 use std::fmt;
 use std::boxed::Box;
-use gentypes::{SizeRange, SizeRanges, SharedMut};
+use gentypes::{SizeRange, SizeRanges, SharedMut, to_shared_mut};
+use types::{Lexemes, LexErr};
 
 #[derive(Debug, Clone)]
 pub enum ExecStage { Unknown, Lex, Parse, Eval }
@@ -11,9 +12,8 @@ pub enum ExecStage { Unknown, Lex, Parse, Eval }
 pub enum ErrCode {
    //LEX:
    UnterminatedQuote,
-   MisformedInt, //bad format like 543a
-   MisformedFloat, //bad format like 0.3sd
-   BadChar,
+   MisformedNum, //bad format like 543a or 0.3sd
+   BadChar, //TODO: doesn't exist yet
 
    //TODO: probably remove UncompleteExp because it's same as NoEndParen
    //but also same as UnterminatedQuote
@@ -39,9 +39,9 @@ fn get_err_desc(code : ErrCode, func_opt : Option<FuncInfo>) -> String {
    use self::ErrCode::*;
    match code {
       UnterminatedQuote => "unterminated string",
-      MisformedInt => "bad format integer such as 543a",
-      MisformedFloat => "bad format float such as 0.3sd or --0.3 or 0.32.",
-      BadChar => "badly formatted character",
+      MisformedNum => "bad format number such as 543a or 0.3sd or --0.3 or 0.32",
+      _ => "unknown"
+      /*BadChar => "badly formatted character",
       NoStartParen => "extra close parenthesis",
       NoEndParen => "not close parenthesis",
       ChildParseFail => "failed to parse subexpressions",
@@ -67,7 +67,7 @@ fn get_err_desc(code : ErrCode, func_opt : Option<FuncInfo>) -> String {
             format!("get_err_desc called with code=BadArgTypes but func_opt = None; given args ({})",
                     given)
          }
-      }
+      }*/
    }.to_string()
 }
 
@@ -85,7 +85,7 @@ pub struct StackInfo {
    pub funcs : Vec<FuncInfo>, //empty means haven't called anything yet
 }
 impl StackInfo {
-   fn new() -> StackInfo {
+   pub fn new() -> StackInfo {
       StackInfo {
          stage : ExecStage::Unknown,
          file_path : "<repl>".to_string(),
@@ -95,6 +95,7 @@ impl StackInfo {
    }
 }
 
+#[derive(Debug, Clone)]
 pub struct FuncInfo {
    name : String,
    args : Vec<String>,
@@ -131,7 +132,7 @@ impl ErrInfo {
    }
 
    fn display(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      use self::ExecStage::*;
+      /*use self::ExecStage::*;
 
       let s = self.stack.borrow();
 
@@ -141,7 +142,7 @@ impl ErrInfo {
       }.to_string();
 
       let f_vec_len = s.func_vec.len();
-      let func = if f_vec_len > 0 { s.func_vec[f_vec_len - 1] } else { None };
+      let func = if f_vec_len > 0 { s.func_vec[f_vec_len - 1] } else { None };*/
 
       /*write!(f, "Encountered an error while {:?}", stage_name);
       write!(f, "\n{}:{}:{}: error code: {:?} error: ",
@@ -189,38 +190,37 @@ impl fmt::Debug for ErrInfo {
 }
 
 //TODO
-pub fn display_result<T>(res : &Result<T, Box<ErrInfo>) {
+pub fn display_result<T>(res : &Result<T, Box<ErrInfo>>) {
    /*match *res {
       Ok(ref exp) => display_sexps(exp),
       _           => println!("error: {:?}", res)
    }*/
 }
 
-use types::LexResult;
 pub fn lex_err(code : ErrCode, stack : SharedMut<StackInfo>, range : SizeRange)
--> LexResult
+-> Result<Lexemes, LexErr>
 {
-   let mut ei = ErrInfo::new(stack, ErrCode::UnterminatedQuote);
+   //let mut ei = ErrInfo::new(stack, ErrCode::UnterminatedQuote);
    /*TODO: removeme
    ei.origin = Some(code.to_string());
    ei.range_char = Some((c, len));
    ei.char_i = Some(len);*/
-   ei.char_highlight_ranges.push(range);
-   lo_res_fail(ei)
+   //ei.char_highlight_ranges.push(range);
+   Err((code, range.0, range.1))
 }
 
-pub fn parse_exp_err(code : ErrCode, stack : SharedMut<StackInfo>, //origin_lex : &Vec<Lexeme>, lex_i : usize,
+pub fn parse_exp_err(code : ErrCode, //stack : SharedMut<StackInfo>, //origin_lex : &Vec<Lexeme>, lex_i : usize,
                      range_lex : Option<SizeRange>)
 -> Sexps
 {
-   use exp::Sexps;
-   Sexps::err_new(parse_err(code, origin_lex, lex_i, range_lex))
+   Sexps::err_new(parse_err(code, range_lex))
 }
 
-pub fn parse_err(code : ErrCode, stack : SharedMut<StackInfo>, //origin_lex : &Vec<Lexeme>, //lex_i : usize,
+pub fn parse_err(code : ErrCode, //stack : SharedMut<StackInfo>, //origin_lex : &Vec<Lexeme>, //lex_i : usize,
                  range_lex : Option<SizeRange>)
 -> ErrInfo
 {
+   let stack = to_shared_mut(StackInfo::new());
    let mut ei = ErrInfo::new(stack, code);
 //   ei.code = Some(code);
 //   ei.stage = Some(ErrStage::Parse);

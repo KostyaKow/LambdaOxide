@@ -1,7 +1,6 @@
-use types::QuoteType;
+use types::{QuoteType, Lexemes, LexErr};
 use errors::{ErrInfo, ErrCode, ExecStage, StackInfo, lex_err};
 use gentypes::{SizeRanges, SizeRange, SharedMut};
-use types::LexResult;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Lexeme {
@@ -9,11 +8,8 @@ pub enum Lexeme {
    Int(i64), Float(f64), Str(String)
 }
 
-pub type Lexemes = Vec<(Lexeme, SizeRange)>;
-
-//Ok(range-of-chars), Err((start-highlight, end-highlight))
-type CharRangeResult = Result<SizeRanges, SizeRange>;
-fn get_char_ranges(code : &str) -> CharRangeResult {
+//Ok(range-of-chars), Err((type, start-highlight, end-highlight))
+fn get_char_ranges(code : &str) -> Result<SizeRanges, LexErr> {
    let mut ranges : Vec<(usize, usize)> = Vec::new();
 
    let mut start_quote : Option<usize> = None;
@@ -41,26 +37,20 @@ fn get_char_ranges(code : &str) -> CharRangeResult {
    }
 
    if let Some(c) = start_quote {
-      Err((c, len))
+      Err((ErrCode::UnterminatedQuote, c, len))
    }
    else { Ok(ranges) }
 }
 
-pub fn lex(code : &str, stack : SharedMut<StackInfo>, debug : bool)
--> Result<Lexemes, ErrInfo>
-{
+pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
    use genutils::{char_at, char_at_fast, contains, slice_str};
 
-   stack.borrow_mut().stage = ExecStage::Lex;
-
-   let mut lexemes : Vec<(Lexeme, SizeRange)> = Vec::new();
+   let mut lexemes : Lexemes = Vec::new();
    let mut col = String::new(); //symbol collector
 
    //range of strings
    let range_opt = get_char_ranges(code);
-   if let Err(range) = range_opt {
-      return lex_err(ErrCode::UnterminatedQuote, stack, range);
-   }
+   if let Err(lex_err) = range_opt { return Err(lex_err); }
 
    let ranges = range_opt.unwrap();
    let mut r_it = 0; //current string range
@@ -79,21 +69,23 @@ pub fn lex(code : &str, stack : SharedMut<StackInfo>, debug : bool)
       let is_special = start_of_str || contains(c, vec![' ', '(', ')', '\'', '`', ',']);
 
       if is_special && !col.is_empty() { //push float, int and sym
-         lexemes.push((collect_sym(&col), (collect_start, collect_end)));
+         if let Some(lexeme) = collect_sym(&col) {
+            lexemes.push((lexeme, collect_start, collect_end));
+         } else { return Err((ErrCode::MisformedNum, collect_start, collect_end)); }
          col = String::new();
       }
       if start_of_str { //push string if we have one
          let l = Lexeme::Str(slice_str(code, start_str+1, end_str-1));
-         lexemes.push(l);
+         lexemes.push((l, start_str, end_str)); //TODO: check all ranges
          i = end_str + 1; //TODO: blah? does this ever run
          r_it += 1; //next string range
       }
       if let Some(c) = char_at(code, i) {
          match c {
-            ',' | '`' | '\'' => lexemes.push((Lexeme::Quote(char_to_quote(c).unwrap()), (i, i))),
-            '(' => lexemes.push((Lexeme::OpenParen, (i, i))),
-            ')' => lexemes.push((Lexeme::CloseParen, (i, i))),
-            '"' => { println!("error, should get here"); i-=1; }, //"string""s2" //TODO: blah never runs?
+            ',' | '`' | '\'' => lexemes.push((Lexeme::Quote(char_to_quote(c).unwrap()), i, i)),
+            '(' => lexemes.push((Lexeme::OpenParen, i, i)),
+            ')' => lexemes.push((Lexeme::CloseParen, i, i)),
+            '"' => { println!("error, should get here"); i-=1; }, //TODO: blah never runs? check this: "string""s2"
             ' ' => {}, //skip
             _   => {
                if col.is_empty() { collect_start = i; }
@@ -105,10 +97,14 @@ pub fn lex(code : &str, stack : SharedMut<StackInfo>, debug : bool)
       i += 1;
    }
 
-   if !col.is_empty() { lexemes.push((collect_sym(&col), (collect_start, collect_end))); }
+   if !col.is_empty() {
+      if let Some(lexeme) = collect_sym(&col) {
+         lexemes.push((lexeme, collect_start, collect_end));
+      } else { return Err((ErrCode::MisformedNum, collect_start, collect_end)); }
+   }
 
    if lexemes.len() == 0 {
-      lex_err((ErrCode::UncompleteExp, stack, (0, 0)))
+      Err((ErrCode::UncompleteExp, 0, 0))
    } else {
       Ok(lexemes)
    }
@@ -117,13 +113,18 @@ pub fn lex(code : &str, stack : SharedMut<StackInfo>, debug : bool)
 //TODO replace to_float, to_int with this
 //pub fn get_str_type(s : &str) -> LexemeType { Lexeme::Int(0) }
 //TODO: have is_bad_num for 234asdf or 342.23432 which will cause lex error
-fn collect_sym(col : &str) -> Lexeme {
+fn collect_sym(col : &str) -> Option<Lexeme> {
    use genutils::{is_int, is_float, to_int, to_float};
+   use utils::check_num;
+
    if is_int(&col) {
-      Lexeme::Int(to_int(col))
+      Some(Lexeme::Int(to_int(col)))
    } else if is_float(col) {
-      Lexeme::Float(to_float(col))
-   } else { Lexeme::Sym(col.to_string()) }
+      Some(Lexeme::Float(to_float(col)))
+   } else {
+      if check_num(col) { None }
+      else { Some(Lexeme::Sym(col.to_string())) }
+   }
 }
 
 fn char_to_quote(c : char) -> Option<QuoteType> {

@@ -3,6 +3,8 @@
 use lexer::lex;
 use parser::parse;
 use utils::display_sexps;
+use exp::Sexps;
+use errors::{ExecStage, ErrCode};
 
 mod utils;
 mod genutils;
@@ -27,6 +29,10 @@ impl Driver {
          stacks : Vec::new(),
       }
    }
+   pub fn run(&mut self, code : &str) -> Sexps { Sexps::nil_new()
+   }
+   pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::nil_new() }
+   pub fn eval(&mut self, exp : &Sexps) -> Sexps { Sexps::nil_new() }
 
    pub fn interpreter(&mut self) {
       use std::io::{self, BufRead, Write};
@@ -36,26 +42,32 @@ impl Driver {
          print!("**> ");
 
          let mut stack = StackInfo::new();
+         stack.stage = ExecStage::Lex;
 
          let err_code = ErrCode::UncompleteExp;
-         let mut out = Err(ErrInfo::new(stack, err_code));
+         let mut out = Err((err_code, 0, 0));
 
-         while let Err(ErrInfo { code : err_code, ..}) = out {
+         while let Err((err_code, _, _)) = out {
             io::stdout().flush().unwrap();
-            let line = stdin.lock().lines().next().uwrap().unwrap();
+            let line = stdin.lock().lines().next().unwrap().unwrap();
 
             let old_orig_len = stack.origin.len();
             stack.origin = stack.origin + " " + &line;
             let new_orig_len = stack.origin.len();
 
-            stack.lines.push((line, old_orig_len, new_orig_len));
+            stack.lines.push((line.to_string(), old_orig_len, new_orig_len));
 
             out = lex(&*stack.origin);
          }
          if let Ok(lexed) = out {
             //print_lexemes(lexed);
             stack.lexemes = lexed;
-            let (parsed, success) = parse(&stack.lexemes);
+
+            let mut new_l = Vec::new();
+            for (l, start, end) in stack.lexemes {
+               new_l.push(l);
+            }
+            let (parsed, success) = parse(&new_l);
             println!("success parse? : {}", success);
             display_sexps(&parsed);
          } else if let Err(e) = out {
@@ -68,7 +80,7 @@ impl Driver {
    }
 
    pub fn eval_str(&self, code : &str) -> Sexps {
-
+      Sexps::nil_new()
    }
 }
 
@@ -76,6 +88,7 @@ impl Driver {
 
 fn main() {
    //let lexemes = lex("hi");
-   interpreter();
+   let mut d = Driver::new();
+   d.interpreter();
 }
 

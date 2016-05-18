@@ -1,5 +1,5 @@
-use gentypes::{SizeRange, SizeRanges};
-use errors::{ErrInfo, ErrCode, ExecStage, err_to_result, parse_exp_err, parse_err};
+use gentypes::{SizeRange, SizeRanges, SharedMut};
+use errors::{ErrInfo, ErrCode, ExecStage, StackInfo, parse_exp_err, parse_err};
 use types::QuoteType;
 use lexer::Lexeme;
 use exp::Sexps;
@@ -36,7 +36,7 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
                quotes = Vec::new();
                child_start = None;
             } else if nestedness < 0 {
-               return err_to_result(parse_err(ErrCode::NoStartParen, lexemes, start, None));
+               return Err(parse_err(ErrCode::NoStartParen, None));
             }
          },
          &Lexeme::Quote(ref q) => {
@@ -55,7 +55,7 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
       //TODO: can't I just do unwrap here safely?
       let range = if let Some(s) = child_start { Some((s, end)) } else { None };
       //return err_to_exp(parse_err(ErrCode::NoEndParen, lexemes, end, range));
-      return err_to_result(parse_err(ErrCode::NoEndParen, lexemes, range.unwrap().0, range));
+      return Err(parse_err(ErrCode::NoEndParen, range));
    }
    Ok(children)
 }
@@ -69,11 +69,11 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
    let (start, end, quotes_vec, is_atom) = child;
    if is_atom {
       if start != end { //TODO: I don't think we need this
-         return err_to_exp(parse_err(ErrCode::BadRange, lexemes, start, Some((start, end))));
+         return Sexps::err_new(parse_err(ErrCode::BadRange, Some((start, end))));
       }
       let exp_opt = parse_lexeme(&lexemes[start]);
       if is_none(exp_opt.clone()) {
-         return err_to_exp(parse_err(ErrCode::BadLexeme, lexemes, start, None));
+         return Sexps::err_new(parse_err(ErrCode::BadLexeme, None));
       }
       let mut ret_exp = exp_opt.unwrap();
       for i in (0..quotes_vec.len()).rev() {
@@ -85,7 +85,7 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
    let mut sub : Vec<Sexps> = Vec::new();
    let children_ranges_res = get_child_ranges(lexemes, (start, end));
    if let Err(e) = children_ranges_res {
-      return err_to_exp(e.clone());
+      return Sexps::err_new(e.clone());
    }
    let children_ranges = children_ranges_res.unwrap();
 
@@ -103,7 +103,7 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
          let parsed_child = parse_helper(lexemes, (c_start, c_end, quotes, is_atom));
          if parsed_child.is_err() {
             println!("failed child parse: {:?}", parsed_child);
-            return parse_exp_err(ErrCode::ChildParseFail, lexemes, c_start, Some((c_start, c_end)));
+            return parse_exp_err(ErrCode::ChildParseFail, Some((c_start, c_end)));
          }
          sub.push(parsed_child);
          c_it += 1;
@@ -119,7 +119,7 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
       let ref l = lexemes[i];
       let exp_opt = parse_lexeme(&l);
       if let Some(exp) = exp_opt { sub.push(exp); }
-      else { return parse_exp_err(ErrCode::BadLexeme, lexemes, i, None); }
+      else { return parse_exp_err(ErrCode::BadLexeme, None); }
       i += 1;
    }
    //quotes for complex expressions
@@ -136,9 +136,9 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
 //either returns (Sexps::Array of parsed exp's, true)
 //or             (Sexps::Array of Sexps::Err's, false)
 //TODO: if we have recursive error arrays, we would have to flatten it out before returning from parse
-pub fn parse(lexemes : &Vec<Lexeme>) -> (Sexps, bool) {
+pub fn parse(lexemes : &Vec<Lexeme>, /*stack : SharedMut<StackInfo>*/) -> (Sexps, bool) {
    if lexemes.len() == 0 {
-      return (Sexps::arr_new_singleton(parse_exp_err(ErrCode::UncompleteExp, lexemes, 0, None)), false);
+      return (Sexps::arr_new_singleton(parse_exp_err(ErrCode::UncompleteExp, None)), false);
    }
 
    let childs_ret = get_child_ranges(lexemes, (0, lexemes.len()-1));
@@ -157,7 +157,7 @@ pub fn parse(lexemes : &Vec<Lexeme>) -> (Sexps, bool) {
       let good = errs.len() == 0;
       (Sexps::arr_new_from_vec(if good { ret } else { errs }), good)
    } else if let Err(e) = childs_ret {
-      (Sexps::arr_new_singleton(Sexps::err_new_box(e)), false)
+      (Sexps::arr_new_singleton(Sexps::err_new(e)), false)
    } else { (Sexps::Nil, false) } //TODO: fixme
 }
 
