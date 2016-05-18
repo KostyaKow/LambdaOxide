@@ -2,6 +2,7 @@
 #![feature(as_unsafe_cell)]
 
 extern crate time;
+extern crate oxicloak;
 
 mod utils;
 pub mod types;

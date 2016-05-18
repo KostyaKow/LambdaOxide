@@ -1,4 +1,5 @@
-//TODO: check lexer errors (ranges)
+extern crate oxicloak;
+use oxicloak::*;
 
 use lexer::lex;
 use parser::parse;
@@ -18,6 +19,7 @@ mod errors;
 use gentypes::{SharedMut, to_shared_mut};
 use errors::{StackInfo};
 
+//TODO: check lexer errors (ranges)
 struct Driver {
    //every file gets it's own stack (what about repl input?)
    stacks : Vec<StackInfo>,

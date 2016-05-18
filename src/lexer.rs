@@ -1,11 +1,12 @@
-use types::{Lexeme, QuoteType, char_to_quote};
+use oxicloak::*;
+use types::{Lexeme, char_to_quote};
 use utils::*;
 
 fn collect_sym(col : &str) -> Lexeme {
    if is_int(&col) {
-      Lexeme::Int(to_int(col))
+      Lexeme::Int(from_str(col).unwrap())
    } else if is_float(col) {
-      Lexeme::Float(to_float(col))
+      Lexeme::Float(from_str(col).unwrap())
    } else { Lexeme::Sym(col.to_string()) }
 }
 

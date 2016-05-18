@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 
+use oxicloak::*;
 use err::DEBUG;
 use std::boxed::Box;
 use list::{Cons, cons_map, cons};
-use utils::{print_space, print_nest};
+use utils::print_nest;
 use self::Sexps::*;
 use main::{Env, Callable};
 use std::cell::RefCell;
@@ -182,6 +183,7 @@ pub fn arg_extract_bool(args : &Vec<Sexps>, index : usize) -> Option<bool> {
    if let Sexps::Bool(ref b) = args[index] { Some(b.clone()) } else { None }
 }
 
+#[allow(unused_variables)]
 pub fn make_sym_table_val(exp : Sexps) -> Callable {
    //let root = Env::new();
    let ret : Box<Fn(Sexps, Root, EnvId) -> Sexps> = Box::new(move |args, root, env| -> Sexps {
@@ -259,7 +261,7 @@ pub fn print_tree(t: &Sexps, deepness: u8) {
          cons_map(sub, |x| print_tree(x, deepness+4));
          print_nest(")", deepness, None);
       },
-      _ => { print_space(deepness); println!("{:?}", t) }
+      _ => { print_spaces(deepness); println!("{:?}", t) }
    }
 }
 pub fn cons_to_sexps(c : Cons<Sexps>) -> Sexps { Sub(Box::new(c)) }

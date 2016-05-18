@@ -1,5 +1,7 @@
 #![allow(unused_variables)]
 
+use oxicloak::*;
+
 use std::collections::HashMap;
 use std::boxed::Box;
 
@@ -79,7 +81,7 @@ fn builtin_sum(args_sexps : Sexps, root : Root, table : EnvId) -> Sexps {
          } else if let Some(x) = arg_extract_bool(&args, i) {
             if x { "true".to_string() } else { "false".to_string() }
          } else {
-            return err("bad argument to sum"); "error"
+            return err("bad argument to sum");
          };
          ret = ret + &*s_val;
       }
@@ -123,6 +125,7 @@ fn builtin_mul(args_ : Sexps, root : Root, table : EnvId) -> Sexps {
    if has_float { Float(ret) } else { Int(ret as i64) }
 }
 
+#[allow(deprecated)]
 impl Env {
    pub fn new() -> Env {
       let mut env = Env { tables : Vec::new() };
@@ -137,12 +140,12 @@ impl Env {
          i+=1;
          for (ref key, ref binding) in &table.bindings {
             //println!("key: {}, binding: {}", key, binding);
-            print_space(3); println!("key: {}", key);
+            print_spaces(3); println!("key: {}", key);
             let b = Some(*binding);
             let is_var = sym_table_is_var(b);
-            print_space(6); println!("is_var: {}", is_var);
+            print_spaces(6); println!("is_var: {}", is_var);
             if is_var {
-               print_space(6); print!("val: ");
+               print_spaces(6); print!("val: ");
                display_sexps(&get_sym_table_val(b));
             }
          };
@@ -469,7 +472,7 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
          debug_p(3, "macro define");
          if let Cons::Cons(Var(ref name), ref binding) = *args {
             let eval_result = if let Some(x) = car(binding) {
-               if DEBUG >= 3 { print_space(3); print!("defining {}: ", &*name); print_compact_tree(x); }
+               if DEBUG >= 3 { print_spaces(3); print!("defining {}: ", &*name); print_compact_tree(x); }
                make_sym_table_val(eval(x, root, t))
             }
             else { make_sym_table_val(err("bad define")) };
@@ -486,8 +489,8 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
          debug_p(3, "macro lambda");
          if let Cons::Cons(ref args@Sub(_), box Cons::Cons(ref exp, _)) = *args {
             if DEBUG >= 3 {
-               print_space(3); print!("args: "); print_compact_tree(args);
-               print_space(5); print!("exp: "); print_compact_tree(exp);
+               print_spaces(3); print!("args: "); print_compact_tree(args);
+               print_spaces(5); print!("exp: "); print_compact_tree(exp);
             }
             //let borrowed = unsafe { root.as_unsafe_cell().get() }; //kkold
             //let lambda_table = unsafe { (*borrowed).table_new(t) }; //kkold

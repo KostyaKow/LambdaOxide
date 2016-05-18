@@ -1,11 +1,5 @@
 //non-generic utilities (langauge specific stuff)
 
-pub fn check_num(s : &str) -> bool {
-   use genutils::char_at_fast;
-   //checks if first character is number
-   s.len() > 0 && char_at_fast(s, 0).is_digit(10)
-}
-
 //TODO: print sexps, print lexed, print parsed tree
 //TODO: re-write display_sexps, print_compact_tree, etc.
 

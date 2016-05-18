@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use utils::vec_eq;
-use types::{Lexeme, QuoteType, print_lexemes, Sexps};
+use oxicloak::vec_eq;
+use types::{Lexeme, print_lexemes, Sexps};
 use lexer::lex;
 use parser::parse;
 //use err::PRINT_TESTS;
@@ -132,6 +132,7 @@ fn test_floats_ints() {
    assert_eq!(result, Sexps::Int(42));
 }
 
+#[allow(unused_assignments)]
 fn test_run_fib() {
    let root = setup_env();
 
@@ -144,6 +145,7 @@ fn test_run_fib() {
    println!("fib test succesful");
 }
 
+#[allow(unused_assignments)]
 fn test_run_church() {
    let root = setup_env();
    let mut cmd = "(load_file \"examples/church.lo\")";
