@@ -1,14 +1,12 @@
 use gentypes::{SizeRange, SizeRanges};
-use errors::{LoResult, ErrInfo, ErrCode, ErrStage, lo_fail, parse_exp_err, parse_err};
+use errors::{ErrInfo, ErrCode, ExecStage, err_to_result, parse_exp_err, parse_err};
 use types::QuoteType;
 use lexer::Lexeme;
 use exp::Sexps;
 
-pub type ParseResult = LoResult<Sexps>;
-
-//range_start, range_end, quotes, atom
+//range_start, range_end, quotes, is_atom
 type ChildRange = (usize, usize, Vec<QuoteType>, bool);
-type ChildRangesResult = LoResult<Vec<ChildRange>>;
+type ChildRangesResult = Result<Vec<ChildRange>, ErrInfo>;
 
 /*get_child_ranges
    returns starting and ending location of parenthesis
@@ -38,7 +36,7 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
                quotes = Vec::new();
                child_start = None;
             } else if nestedness < 0 {
-               return lo_fail(parse_err(ErrCode::NoStartParen, lexemes, start, None));
+               return err_to_result(parse_err(ErrCode::NoStartParen, lexemes, start, None));
             }
          },
          &Lexeme::Quote(ref q) => {
@@ -56,8 +54,8 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
    if nestedness > 0 {
       //TODO: can't I just do unwrap here safely?
       let range = if let Some(s) = child_start { Some((s, end)) } else { None };
-      //return lo_fail(parse_err(ErrCode::NoEndParen, lexemes, end, range));
-      return lo_fail(parse_err(ErrCode::NoEndParen, lexemes, range.unwrap().0, range));
+      //return err_to_exp(parse_err(ErrCode::NoEndParen, lexemes, end, range));
+      return err_to_result(parse_err(ErrCode::NoEndParen, lexemes, range.unwrap().0, range));
    }
    Ok(children)
 }
@@ -71,11 +69,11 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
    let (start, end, quotes_vec, is_atom) = child;
    if is_atom {
       if start != end { //TODO: I don't think we need this
-         return parse_exp_err(ErrCode::BadRange, lexemes, start, Some((start, end)));
+         return err_to_exp(parse_err(ErrCode::BadRange, lexemes, start, Some((start, end))));
       }
       let exp_opt = parse_lexeme(&lexemes[start]);
       if is_none(exp_opt.clone()) {
-         return parse_exp_err(ErrCode::BadLexeme, lexemes, start, None);
+         return err_to_exp(parse_err(ErrCode::BadLexeme, lexemes, start, None));
       }
       let mut ret_exp = exp_opt.unwrap();
       for i in (0..quotes_vec.len()).rev() {
@@ -87,7 +85,7 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
    let mut sub : Vec<Sexps> = Vec::new();
    let children_ranges_res = get_child_ranges(lexemes, (start, end));
    if let Err(e) = children_ranges_res {
-      return Sexps::err_new_box(e.clone());
+      return err_to_exp(e.clone());
    }
    let children_ranges = children_ranges_res.unwrap();
 

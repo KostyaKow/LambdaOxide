@@ -1,6 +1,7 @@
 //non-generic utilities (langauge specific stuff)
 
 //TODO: print sexps, print lexed, print parsed tree
+//TODO: re-write display_sexps, print_compact_tree, etc.
 
 /*pub fn display_run_result(res : &RunResult) {
    match *res {

@@ -598,7 +598,7 @@ pub fn setup_env() -> RefCell<Env> {
 }
 
 pub fn interpreter(env : Option<RefCell<Env>>) {
-   use std::io::{self, BufRead};
+   use std::io::{self, BufRead, Write};
    let stdin = io::stdin();
 
    let root = if let Some(root_) = env { root_ }
@@ -621,7 +621,6 @@ pub fn interpreter(env : Option<RefCell<Env>>) {
 
    loop {
       print!("**> ");
-      use std::io::{self, Write};
 
       let mut acc = "".to_string();
       let mut out = Result::Err((RunFail::UncompleteExp, 0));

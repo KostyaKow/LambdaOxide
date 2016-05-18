@@ -19,10 +19,3 @@ comma = unquote
 #[derive(Debug, PartialEq, Clone)]
 pub enum QuoteType { BackQuote, Comma, Q }
 
-
-use lexer::Lexeme;
-use gentypes::SizeRange;
-use errors::LoResult;
-
-pub type LexResult = LoResult<Vec<(Lexeme, SizeRange)>>;
-

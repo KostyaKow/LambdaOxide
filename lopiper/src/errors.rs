@@ -2,7 +2,7 @@ use lexer::Lexeme;
 use exp::Sexps;
 use std::fmt;
 use std::boxed::Box;
-use gentypes::SizeRange;
+use gentypes::{SizeRange, SizeRanges, SharedMut};
 
 #[derive(Debug, Clone)]
 pub enum ExecStage { Unknown, Lex, Parse, Eval }
@@ -36,7 +36,7 @@ pub enum ErrCode {
 }
 
 fn get_err_desc(code : ErrCode, func_opt : Option<FuncInfo>) -> String {
-   use ErrCode::*;
+   use self::ErrCode::*;
    match code {
       UnterminatedQuote => "unterminated string",
       MisformedInt => "bad format integer such as 543a",
@@ -77,22 +77,20 @@ pub struct StackInfo {
    pub file_path : String, //path to file in which error occured (None means repl)
    pub origin : String, //original file text or repl input
    pub lines : Vec<(String, usize, usize)>, //has every line & and start and end of line in origin
-   pub lexemes : Vec<Lexeme>, //original lexemes
-   //map of lexemes indices to character indices (start and end)
-   pub lex_to_char : Vec<(usize, usize)>,
+
+   //original lexemes and their char indices (start and end)
+   pub lexemes : Lexemes, //original lexemes
 
    //trace value get constantly modified (stack trace)
    pub funcs : Vec<FuncInfo>, //empty means haven't called anything yet
-   pub char_i : usize, //char index from start of origin of current iteration
 }
 impl StackInfo {
-   fn new(origin : &str) -> StackInfo {
+   fn new() -> StackInfo {
       StackInfo {
          stage : ExecStage::Unknown,
          file_path : "<repl>".to_string(),
-         origin : origin.to_string(), lines : Vec::new(),
-         lexemes : Vec::new(), lex_to_char : Vec::new(),
-         funcs : Vec::new(), char_i : 0
+         origin : "".to_string(), lines : Vec::new(),
+         lexemes : Vec::new(), funcs : Vec::new()
       }
    }
 }
@@ -133,7 +131,7 @@ impl ErrInfo {
    }
 
    fn display(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      use ExecStage::*;
+      use self::ExecStage::*;
 
       let s = self.stack.borrow();
 
@@ -143,7 +141,7 @@ impl ErrInfo {
       }.to_string();
 
       let f_vec_len = s.func_vec.len();
-      let func = if if l > 0 { s.func_vec[f_vec_len - 1] } else { None };
+      let func = if f_vec_len > 0 { s.func_vec[f_vec_len - 1] } else { None };
 
       /*write!(f, "Encountered an error while {:?}", stage_name);
       write!(f, "\n{}:{}:{}: error code: {:?} error: ",
@@ -190,16 +188,8 @@ impl fmt::Debug for ErrInfo {
    }
 }
 
-
-
-//lambdaoxide result fail
-pub fn lo_res_fail<T>(ei : ErrInfo) -> LoResult<T> { Err(Box::new(ei)) }
-
-//TODO: is box a good idea?
-pub type LoResult<T> = Result<T, Box<ErrInfo>>;
-
 //TODO
-pub fn display_result<T>(res : &LoResult<T>) {
+pub fn display_result<T>(res : &Result<T, Box<ErrInfo>) {
    /*match *res {
       Ok(ref exp) => display_sexps(exp),
       _           => println!("error: {:?}", res)
@@ -207,7 +197,9 @@ pub fn display_result<T>(res : &LoResult<T>) {
 }
 
 use types::LexResult;
-pub fn lex_err(code : ErrCode, stack : SharedMut<StackInfo>, range : SizeRange) -> LexResult {
+pub fn lex_err(code : ErrCode, stack : SharedMut<StackInfo>, range : SizeRange)
+-> LexResult
+{
    let mut ei = ErrInfo::new(stack, ErrCode::UnterminatedQuote);
    /*TODO: removeme
    ei.origin = Some(code.to_string());

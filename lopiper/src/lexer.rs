@@ -1,6 +1,6 @@
 use types::QuoteType;
-use errors::{LoResult, ErrInfo, ErrCode, ErrStage, lo_fail};
-use gentypes::{SizeRanges, SizeRange};
+use errors::{ErrInfo, ErrCode, ExecStage, StackInfo, lex_err};
+use gentypes::{SizeRanges, SizeRange, SharedMut};
 use types::LexResult;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -8,6 +8,9 @@ pub enum Lexeme {
    OpenParen, CloseParen, Sym(String), Quote(QuoteType),
    Int(i64), Float(f64), Str(String)
 }
+
+pub type Lexemes = Vec<(Lexeme, SizeRange)>;
+
 //Ok(range-of-chars), Err((start-highlight, end-highlight))
 type CharRangeResult = Result<SizeRanges, SizeRange>;
 fn get_char_ranges(code : &str) -> CharRangeResult {
@@ -43,10 +46,12 @@ fn get_char_ranges(code : &str) -> CharRangeResult {
    else { Ok(ranges) }
 }
 
-pub fn lex(code : &str, stack_info : SharedMut<StackInfo>, debug : bool) -> LexResult {
+pub fn lex(code : &str, stack : SharedMut<StackInfo>, debug : bool)
+-> Result<Lexemes, ErrInfo>
+{
    use genutils::{char_at, char_at_fast, contains, slice_str};
 
-   stack_info.borrow_mut().stage = ExecStage::Lex;
+   stack.borrow_mut().stage = ExecStage::Lex;
 
    let mut lexemes : Vec<(Lexeme, SizeRange)> = Vec::new();
    let mut col = String::new(); //symbol collector
@@ -54,7 +59,7 @@ pub fn lex(code : &str, stack_info : SharedMut<StackInfo>, debug : bool) -> LexR
    //range of strings
    let range_opt = get_char_ranges(code);
    if let Err(range) = range_opt {
-      return lex_err(ErrCode::UnterminatedQuote, stack_info, range);
+      return lex_err(ErrCode::UnterminatedQuote, stack, range);
    }
 
    let ranges = range_opt.unwrap();
