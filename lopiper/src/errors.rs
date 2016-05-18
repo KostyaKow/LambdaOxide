@@ -2,7 +2,7 @@ use lexer::Lexeme;
 use exp::Sexps;
 use std::fmt;
 use std::boxed::Box;
-use gentypes::{SizeRange, SizeRanges, SharedMut, to_shared_mut};
+use oxicloak::{SizeRange, SizeRanges, SharedMut, to_shared_mut};
 use types::{Lexemes, LexErr};
 
 #[derive(Debug, Clone)]

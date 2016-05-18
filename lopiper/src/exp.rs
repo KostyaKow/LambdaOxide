@@ -1,7 +1,7 @@
 //#![feature(box_patterns)]
 
 use std::cell::RefCell;
-use gentypes::{SharedMut, to_shared_mut};
+use oxicloak::{SharedMut, to_shared_mut};
 use types::QuoteType;
 use errors::ErrInfo;
 

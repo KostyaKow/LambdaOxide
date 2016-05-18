@@ -8,15 +8,12 @@ use exp::Sexps;
 use errors::{ExecStage, ErrCode};
 
 mod utils;
-mod genutils;
-mod gentypes;
 mod types;
 mod exp;
 mod lexer;
 mod parser;
 mod errors;
 
-use gentypes::{SharedMut, to_shared_mut};
 use errors::{StackInfo};
 
 //TODO: check lexer errors (ranges)

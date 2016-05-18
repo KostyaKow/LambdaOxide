@@ -1,4 +1,4 @@
-use gentypes::{SizeRange, SizeRanges, SharedMut};
+use oxicloak::{SizeRange, SizeRanges, SharedMut, is_none};
 use errors::{ErrInfo, ErrCode, ExecStage, StackInfo, parse_exp_err, parse_err};
 use types::QuoteType;
 use lexer::Lexeme;
@@ -65,7 +65,6 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
 //TODO:::::::::::::::::::::::fix parse to not include parenthesis
 //returns either Sexps::Err() or parsed body
 fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
-   use genutils::is_none;
    let (start, end, quotes_vec, is_atom) = child;
    if is_atom {
       if start != end { //TODO: I don't think we need this

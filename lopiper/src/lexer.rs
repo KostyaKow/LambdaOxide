@@ -1,6 +1,6 @@
 use types::{QuoteType, Lexemes, LexErr};
 use errors::{ErrInfo, ErrCode, ExecStage, StackInfo, lex_err};
-use gentypes::{SizeRanges, SizeRange, SharedMut};
+use oxicloak::*;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Lexeme {
@@ -43,7 +43,7 @@ fn get_char_ranges(code : &str) -> Result<SizeRanges, LexErr> {
 }
 
 pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
-   use genutils::{char_at, char_at_fast, contains, slice_str};
+   use oxicloak::{char_at, char_at_fast, contains, slice_str};
 
    let mut lexemes : Lexemes = Vec::new();
    let mut col = String::new(); //symbol collector
@@ -103,26 +103,20 @@ pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
       } else { return Err((ErrCode::MisformedNum, collect_start, collect_end)); }
    }
 
-   if lexemes.len() == 0 {
-      Err((ErrCode::UncompleteExp, 0, 0))
-   } else {
-      Ok(lexemes)
-   }
+   if lexemes.len() == 0 { Err((ErrCode::UncompleteExp, 0, 0)) }
+   else { Ok(lexemes) }
 }
 
 //TODO replace to_float, to_int with this
 //pub fn get_str_type(s : &str) -> LexemeType { Lexeme::Int(0) }
 //TODO: have is_bad_num for 234asdf or 342.23432 which will cause lex error
 fn collect_sym(col : &str) -> Option<Lexeme> {
-   use genutils::{is_int, is_float, to_int, to_float};
-   use utils::check_num;
-
    if is_int(&col) {
-      Some(Lexeme::Int(to_int(col)))
+      Some(Lexeme::Int(from_str(col).unwrap()))
    } else if is_float(col) {
-      Some(Lexeme::Float(to_float(col)))
+      Some(Lexeme::Float(from_str(col).unwrap()))
    } else {
-      if check_num(col) { None }
+      if is_number_like(col) { None }
       else { Some(Lexeme::Sym(col.to_string())) }
    }
 }
