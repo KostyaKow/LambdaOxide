@@ -40,15 +40,14 @@ fn get_err_desc(code : ErrCode, func_opt : Option<FuncInfo>) -> String {
    match code {
       UnterminatedQuote => "unterminated string",
       MisformedNum => "bad format number such as 543a or 0.3sd or --0.3 or 0.32",
-      _ => "unknown"
-      /*BadChar => "badly formatted character",
+      BadChar => "badly formatted character",
       NoStartParen => "extra close parenthesis",
       NoEndParen => "not close parenthesis",
       ChildParseFail => "failed to parse subexpressions",
       BadLexeme => "expected lexeme of type String, Symbol, Integer or Float",
       BadRange => "parse_helper got is_atom, but start != end",
       Unimplemented => "this feature hasn't yet been implemented",
-      BadNumArgs(num_args_provided) => {
+      /*BadNumArgs(num_args_provided) => {
          if let Some(func) = func_opt {
             format!("wrong number of arguments to {} (needed: {}, got: {})",
                      func.name, func.args.len(), num_args_provided)
@@ -68,6 +67,7 @@ fn get_err_desc(code : ErrCode, func_opt : Option<FuncInfo>) -> String {
                     given)
          }
       }*/
+   _ => "unknown"
    }.to_string()
 }
 
@@ -110,7 +110,7 @@ pub struct FuncInfo {
 //#[derive(Debug, Clone)]
 #[derive(Clone)]
 pub struct ErrInfo {
-   pub stack : SharedMut<StackInfo>,
+   pub stack : Option<SharedMut<StackInfo>>,
    pub code : ErrCode,
 
    pub line_print_range : Option<SizeRange>, //line range to print from origin
@@ -120,49 +120,54 @@ pub struct ErrInfo {
 
    //TODO: need char_i in err_info?
    //different from StackInfo char_i
-   //pub char_i : usize //char index from start of origin of error
+   //(false!!!) char index from start of origin of error
+   pub char_i : usize, //index from start of line
+   pub line_n : usize,
 }
 
 impl ErrInfo {
-   pub fn new(stack : SharedMut<StackInfo>, err_code : ErrCode) -> ErrInfo {
+   pub fn new(err_code : ErrCode, stack : Option<SharedMut<StackInfo>>) -> ErrInfo {
       ErrInfo {
          stack : stack, code : err_code, line_print_range : None,
-         char_highlight_ranges : Vec::new(), msg : None
+         char_highlight_ranges : Vec::new(), msg : None,
+         char_i : 0, line_n : 0
       }
    }
 
    fn display(&self, f: &mut fmt::Formatter) -> fmt::Result {
-      /*use self::ExecStage::*;
+      use self::ExecStage::*;
 
-      let s = self.stack.borrow();
+      let s = self.stack.clone().unwrap();
 
-      let stage_name = match s.stage {
+      let stage_name = match s.borrow().stage {
          Lex => "lexing", Parse => "parsing",
          Eval => "evaluating", Unknown => "unknown"
       }.to_string();
 
-      let f_vec_len = s.func_vec.len();
-      let func = if f_vec_len > 0 { s.func_vec[f_vec_len - 1] } else { None };*/
+      let f_len = s.borrow().funcs.len();
+      let func = if f_len > 0 {
+         Some(s.borrow().funcs[f_len - 1].clone())
+      } else { None };
 
-      /*write!(f, "Encountered an error while {:?}", stage_name);
-      write!(f, "\n{}:{}:{}: error code: {:?} error: ",
-            s.file_path, self.line, self.line_char_i, self.code, //todo calculate line
-            get_err_desc(self.code, func));
+      write!(f, "Encountered an error while {:?}", stage_name);
+      write!(f, "\n{}:{}:{}: error code: {:?} error: {}",
+            s.borrow().file_path, self.line_n, self.char_i, self.code.clone(), //todo calculate line
+            get_err_desc(self.code.clone(), func));
 
-      if let Some(msg) = self.msg {
-         write!(f, "additional info: {}", msg);
+      if let Some(str) = self.msg.clone() {
+         write!(f, "additional info: {}", str);
       }
 
-      if let Some(ref r) = self.range_lex {
-         write!(f, " lex range: {}-{};", r.0, r.1);
+      for r in self.char_highlight_ranges.clone() {
+         write!(f, " range: {}-{};", r.0, r.1);
       }
-      if let Some(ref r) = self.lex_i {
+      /*if let Some(ref r) = self.lex_i {
          write!(f, " lex error at: {}; ", r);
          if let Some(ref origin_lex) = self.origin_lex {
             write!(f, " bad lexeme: {:?};", origin_lex[*r]);
          }
       }*/
-      write!(f, "")
+      write!(f, "\n...........")
    }
 }
 
@@ -220,8 +225,9 @@ pub fn parse_err(code : ErrCode, //stack : SharedMut<StackInfo>, //origin_lex : 
                  range_lex : Option<SizeRange>)
 -> ErrInfo
 {
-   let stack = to_shared_mut(StackInfo::new());
-   let mut ei = ErrInfo::new(stack, code);
+   let mut stack = StackInfo::new();
+   stack.stage = ExecStage::Parse;
+   let mut ei = ErrInfo::new(code, Some(to_shared_mut(stack)));
 //   ei.code = Some(code);
 //   ei.stage = Some(ErrStage::Parse);
 //   ei.origin_lex = Some((*origin_lex).clone());

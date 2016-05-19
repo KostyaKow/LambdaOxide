@@ -4,6 +4,8 @@ use types::QuoteType;
 use lexer::Lexeme;
 use exp::Sexps;
 
+//TODO: track ranges
+
 //range_start, range_end, quotes, is_atom
 type ChildRange = (usize, usize, Vec<QuoteType>, bool);
 type ChildRangesResult = Result<Vec<ChildRange>, ErrInfo>;
@@ -17,22 +19,22 @@ type ChildRangesResult = Result<Vec<ChildRange>, ErrInfo>;
    if at the end of loop, nestedness > 0, throws NoEndParen
    TODO: (don't understand what this means) what if we have unmatched close paren, and different nestedness begin and start. Should it be error?*/
 fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesResult {
-   let (mut start, mut end) = range;
+   let (mut i, mut end) = range;
    let mut nestedness = 0;
    let mut children : Vec<ChildRange> = Vec::new();
    let mut child_start : Option<usize> = None;
    let mut quotes = Vec::new();
 
-   while start <= end {
-      match &lexemes[start] { //TODO: do we need the address & thingy?
+   while i <= end {
+      match &lexemes[i] { //TODO: do we need the address & thingy?
          &Lexeme::OpenParen => {
             nestedness += 1;
-            if nestedness == 1 { child_start = Some(start); }
+            if nestedness == 1 { child_start = Some(i); }
          },
          &Lexeme::CloseParen => {
             nestedness -= 1;
             if nestedness == 0 {
-               children.push((child_start.unwrap(), start, quotes, false));
+               children.push((child_start.unwrap(), i, quotes, false));
                quotes = Vec::new();
                child_start = None;
             } else if nestedness < 0 {
@@ -44,12 +46,12 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
          }
          _ => {
             if nestedness == 0 {
-               children.push((start, start, quotes, true));
+               children.push((i, i, quotes, true));
                quotes = Vec::new();
             }
          }
       }
-      start += 1;
+      i += 1;
    }
    if nestedness > 0 {
       //TODO: can't I just do unwrap here safely?
@@ -61,6 +63,7 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
 }
 
 
+//TODO: combine parser into 1 function and remove helper
 //when passing child/range, don't include parenthesis
 //TODO:::::::::::::::::::::::fix parse to not include parenthesis
 //returns either Sexps::Err() or parsed body
@@ -137,27 +140,32 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
 //TODO: if we have recursive error arrays, we would have to flatten it out before returning from parse
 pub fn parse(lexemes : &Vec<Lexeme>, /*stack : SharedMut<StackInfo>*/) -> (Sexps, bool) {
    if lexemes.len() == 0 {
-      return (Sexps::arr_new_singleton(parse_exp_err(ErrCode::UncompleteExp, None)), false);
+      //return (Sexps::arr_new_singleton(parse_exp_err(ErrCode::UncompleteExp, None)), false);
+      return (parse_exp_err(ErrCode::UncompleteExp, None), false);
    }
 
    let childs_ret = get_child_ranges(lexemes, (0, lexemes.len()-1));
-   if let Ok(childs) = childs_ret {
-      let mut ret = Vec::new();
-      let mut errs = Vec::new();
+   match get_child_ranges(lexemes, (0, lexemes.len()-1)) {
+      Ok(childs) => {
+         let mut ret = Vec::new();
+         let mut errs = Vec::new();
 
-      //for child in childs
-      for (mut start, mut end, quotes, is_atom) in childs {
-         if !is_atom { start += 1; end -= 1; }
-         let parsed_child = parse_helper(lexemes, (start, end, quotes, is_atom)); //child);
-         if let Sexps::Err(ref e) = parsed_child { errs.push(parsed_child.clone()); }
-         else { ret.push(parsed_child); }
+         //for child in childs
+         for (mut start, mut end, quotes, is_atom) in childs {
+            if !is_atom { start += 1; end -= 1; }
+            let parsed_child = parse_helper(lexemes, (start, end, quotes, is_atom)); //child);
+            if let Sexps::Err(ref e) = parsed_child { errs.push(parsed_child.clone()); }
+            else { ret.push(parsed_child); }
+         }
+
+         let good = errs.len() == 0;
+         (Sexps::arr_new_from_vec(if good { ret } else { errs }), good)
+      },
+      Err(e) => {
+         //(Sexps::arr_new_singleton(Sexps::err_new(e)), false)
+         (Sexps::err_new(e), false)
       }
-
-      let good = errs.len() == 0;
-      (Sexps::arr_new_from_vec(if good { ret } else { errs }), good)
-   } else if let Err(e) = childs_ret {
-      (Sexps::arr_new_singleton(Sexps::err_new(e)), false)
-   } else { (Sexps::Nil, false) } //TODO: fixme
+   }
 }
 
 fn parse_lexeme(l : &Lexeme) -> Option<Sexps> {

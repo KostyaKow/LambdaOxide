@@ -1,3 +1,6 @@
+//#![feature(box_syntax)]
+#![feature(box_patterns)]
+
 extern crate oxicloak;
 use oxicloak::*;
 
@@ -5,7 +8,7 @@ use lexer::lex;
 use parser::parse;
 use utils::display_sexps;
 use exp::Sexps;
-use errors::{ExecStage, ErrCode};
+use errors::{ExecStage, ErrCode, ErrInfo};
 
 mod utils;
 mod types;
@@ -37,49 +40,65 @@ impl Driver {
       let stdin = io::stdin();
 
       loop {
+         let mut out = Sexps::nil_new();
          print!("**> ");
 
          let mut stack = StackInfo::new();
          stack.stage = ExecStage::Lex;
 
-         let mut parsed : Result<u8, (ErrCode, usize, usize)> = Err((ErrCode::UncompleteExp, 0, 0));
+         //let mut parsed : Result<u8, (ErrCode, usize, usize)> = Err((ErrCode::UncompleteExp, 0, 0));
+         use errors::parse_exp_err;
+         let mut parsed = parse_exp_err(ErrCode::UncompleteExp, None);
 
-         while let Err((ErrCode::UncompleteExp, _, _)) = parsed {
+         let mut line_n = 0;
+
+         //while let Err((ErrCode::UncompleteExp, _, _)) = parsed {
+         loop {
+            if let Sexps::Err(box ErrInfo { code : ErrCode::UncompleteExp, .. }) = parsed {
+
+            } else { break; }
+
             io::stdout().flush().unwrap();
             let line = stdin.lock().lines().next().unwrap().unwrap();
 
             let old_orig_len = stack.origin.len();
             stack.origin = stack.origin + &line; // + " "; //TODO: with + " ", lexing is wrong
-            let new_orig_len = stack.origin.len();
+            let new_orig_len = stack.origin.len()-1;
 
+            //println!("line ({}, {})", old_orig_len, new_orig_len);
             stack.lines.push((line.to_string(), old_orig_len, new_orig_len)); //TODO: check this
 
-            let lexed = lex(&*stack.origin);
             match lex(&*stack.origin) {
                Ok(lexed) => {
-                  use utils::print_lexemes;
-                  print_lexemes(&lexed);
-
+                  //Use this to debug lexer:
+                  //use utils::print_lexemes;
+                  //print_lexemes(&lexed);
+                  //break;
                   stack.lexemes = lexed;
 
-                  let mut new_l = Vec::new();
-                  for (l, start, end) in stack.lexemes {
-                     new_l.push(l);
+                  let mut new_lexemes = Vec::new();
+                  for (l, start, end) in stack.lexemes.clone() {
+                     new_lexemes.push(l);
                   }
-                  let (parsed, success) = parse(&new_l);
+                  let (parsed, success) = parse(&new_lexemes);
                   println!("success parse? : {}", success);
                   display_sexps(&parsed);
+                  if success { break; }
                },
-               Err(e) => {
-                  println!("lexing error: {:?}", e);
-
-
+               Err((code, start, end)) => {
+                  //println!("lexing error: {:?}", e);
+                  let mut ei = ErrInfo::new(code, Some(to_shared_mut(stack)));
+                  ei.char_i = start;
+                  ei.line_n = line_n;
+                  ei.char_highlight_ranges.push((start, end));
+                  out = Sexps::err_new(ei);
+                  break;
                }
             }
-
-
+            line_n += 1;
          }
 
+         display_sexps(&out);
          //display_run_result(&out);
          //display_sexps(&out);
          //root.borrow().print();

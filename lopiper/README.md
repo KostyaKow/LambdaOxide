@@ -4,12 +4,13 @@
 TODO:
 - [ ] do something like rustc --explain E0123 with my error codes
 - [ ] implement ErrCode::{MisformedFloat, MisformedInt, BadChar}
+   - [x] MisFormedNum
 - [ ] add single character ''
 - [ ] stack trace display
-- [ ] Make new generic library/crate utils with stuff for skomakare/lo/new lo/other rust stuff.
-- [ ] Go throw lexer
-- [ ] go through utils
-- [ ] go through parser
+- [x] Make new generic library/crate utils with generic rust stuff.
+- [x] check lexer lexer
+- [ ] check utils code
+- [ ] check parser code
 - [ ] don't overoptimize lexer and parser because they don't run often
 - [ ] Unit test for every time
 - [ ] comments in middle of a line

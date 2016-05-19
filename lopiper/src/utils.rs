@@ -41,6 +41,9 @@ pub fn print_lexemes(lexemes: &Lexemes) {
       _           => println!("error: {:?}", res)
    }
 }*/
+//TODO: figure out when I need to print debug, and when not
+//display sexps should print real sexps,
+//print_tree should debug print with types of Sexps {:?}
 
 pub fn display_sexps(exp: &Sexps) {
    use exp::Sexps::*;
@@ -71,31 +74,40 @@ pub fn display_sexps(exp: &Sexps) {
       //_                 => println!("bad sexps, cant print")
    }
 }
-fn print_compact_tree_helper(t: &Sexps) {
+
+fn print_compact_tree_helper(t: &Sexps, is_square : bool) {
    use exp::Sexps::*;
+   let (o_paren, c_paren) = if is_square { ("[", "]") } else { ("(", ")") };
+   let is_square = !is_square;
+
    match *t {
       Cons(..) => { //box ref sexps
-         print!("(cons ");
+         print!("{}cons ", o_paren);
          //kk for x in sub { print_tree(&x, deepness+4); }
          //cons_map(sub, |x| print_compact_tree_helper(x));
-         print_compact_tree_helper(&t.cons_get_1_fast());
-         print_compact_tree_helper(&t.cons_get_2_fast());
-         print!(")");
+         print_compact_tree_helper(&t.cons_get_1_fast(), is_square);
+         print_compact_tree_helper(&t.cons_get_2_fast(), is_square);
+         print!("{}", c_paren);
       },
-      Array(..)   => { //TODO: fixme
-         print!("(list ");
+      Array(..) => { //TODO: fixme
+         print!("{}list ", o_paren);
          for i in 0..t.arr_len_fast() {
-            print!(" "); print_compact_tree_helper(&t.arr_get_fast(i));
+            if i != 0 { print!(" "); }
+            print_compact_tree_helper(&t.arr_get_fast(i), is_square);
          }
-         print!(")");
-      }
-      _ => { print!("{:?} ", t) }
+         print!("{}", c_paren);
+      },
+      Err(..) => { print!("{:?} ", t) },
+      _ => { print!("{:?}", t) },
+      //_ => print_sexps
    }
 }
+
 pub fn print_compact_tree(t: &Sexps) {
-   print_compact_tree_helper(t);
+   print_compact_tree_helper(t, false);
    println!("");
 }
+
 /*pub fn print_tree(t: &Sexps, deepness: u8) {
    match *t {
       Sub(box ref sub) => { //box ref sexps
