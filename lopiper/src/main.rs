@@ -16,7 +16,6 @@ mod errors;
 
 use errors::{StackInfo};
 
-//TODO: check lexer errors (ranges)
 struct Driver {
    //every file gets it's own stack (what about repl input?)
    stacks : Vec<StackInfo>,
@@ -43,35 +42,44 @@ impl Driver {
          let mut stack = StackInfo::new();
          stack.stage = ExecStage::Lex;
 
-         let err_code = ErrCode::UncompleteExp;
-         let mut out = Err((err_code, 0, 0));
+         let mut parsed : Result<u8, (ErrCode, usize, usize)> = Err((ErrCode::UncompleteExp, 0, 0));
 
-         while let Err((err_code, _, _)) = out {
+         while let Err((ErrCode::UncompleteExp, _, _)) = parsed {
             io::stdout().flush().unwrap();
             let line = stdin.lock().lines().next().unwrap().unwrap();
 
             let old_orig_len = stack.origin.len();
-            stack.origin = stack.origin + " " + &line;
+            stack.origin = stack.origin + &line; // + " "; //TODO: with + " ", lexing is wrong
             let new_orig_len = stack.origin.len();
 
-            stack.lines.push((line.to_string(), old_orig_len, new_orig_len));
+            stack.lines.push((line.to_string(), old_orig_len, new_orig_len)); //TODO: check this
 
-            out = lex(&*stack.origin);
-         }
-         if let Ok(lexed) = out {
-            //print_lexemes(lexed);
-            stack.lexemes = lexed;
+            let lexed = lex(&*stack.origin);
+            match lex(&*stack.origin) {
+               Ok(lexed) => {
+                  use utils::print_lexemes;
+                  print_lexemes(&lexed);
 
-            let mut new_l = Vec::new();
-            for (l, start, end) in stack.lexemes {
-               new_l.push(l);
+                  stack.lexemes = lexed;
+
+                  let mut new_l = Vec::new();
+                  for (l, start, end) in stack.lexemes {
+                     new_l.push(l);
+                  }
+                  let (parsed, success) = parse(&new_l);
+                  println!("success parse? : {}", success);
+                  display_sexps(&parsed);
+               },
+               Err(e) => {
+                  println!("lexing error: {:?}", e);
+
+
+               }
             }
-            let (parsed, success) = parse(&new_l);
-            println!("success parse? : {}", success);
-            display_sexps(&parsed);
-         } else if let Err(e) = out {
-            println!("lexing error: {:?}", e);
+
+
          }
+
          //display_run_result(&out);
          //display_sexps(&out);
          //root.borrow().print();

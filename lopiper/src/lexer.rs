@@ -76,8 +76,8 @@ pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
       }
       if start_of_str { //push string if we have one
          let l = Lexeme::Str(slice_str(code, start_str+1, end_str-1));
-         lexemes.push((l, start_str, end_str)); //TODO: check all ranges
-         i = end_str + 1; //TODO: blah? does this ever run
+         lexemes.push((l, start_str, end_str));
+         i = end_str + 1; //TODO: maybe continue
          r_it += 1; //next string range
       }
       if let Some(c) = char_at(code, i) {
@@ -85,10 +85,10 @@ pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
             ',' | '`' | '\'' => lexemes.push((Lexeme::Quote(char_to_quote(c).unwrap()), i, i)),
             '(' => lexemes.push((Lexeme::OpenParen, i, i)),
             ')' => lexemes.push((Lexeme::CloseParen, i, i)),
-            '"' => { println!("error, should get here"); i-=1; }, //TODO: blah never runs? check this: "string""s2"
+            '"' => i-=1, //gets triggered if you type in """" in repl
             ' ' => {}, //skip
             _   => {
-               if col.is_empty() { collect_start = i; }
+               if col.is_empty() { collect_start = i; collect_end = i; }
                else { collect_end = i; }
                col.push(c);
             }
@@ -103,13 +103,13 @@ pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
       } else { return Err((ErrCode::MisformedNum, collect_start, collect_end)); }
    }
 
-   if lexemes.len() == 0 { Err((ErrCode::UncompleteExp, 0, 0)) }
-   else { Ok(lexemes) }
+   Ok(lexemes)
+   //if lexemes.len() == 0 { Err((ErrCode::UncompleteExp, 0, 0)) }
+   //else { Ok(lexemes) }
 }
 
 //TODO replace to_float, to_int with this
-//pub fn get_str_type(s : &str) -> LexemeType { Lexeme::Int(0) }
-//TODO: have is_bad_num for 234asdf or 342.23432 which will cause lex error
+//pub fn get_str_type(s : &str) -> LexemeType { }
 fn collect_sym(col : &str) -> Option<Lexeme> {
    if is_int(&col) {
       Some(Lexeme::Int(from_str(col).unwrap()))

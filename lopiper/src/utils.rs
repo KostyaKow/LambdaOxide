@@ -1,15 +1,6 @@
-//non-generic utilities (langauge specific stuff)
+//non-generic utilities (loscript specific stuff)
 
-//TODO: print sexps, print lexed, print parsed tree
-//TODO: re-write display_sexps, print_compact_tree, etc.
-
-/*pub fn display_run_result(res : &RunResult) {
-   match *res {
-      Ok(ref exp) => display_sexps(exp),
-      _           => println!("error: {:?}", res)
-   }
-}*/
-use types::QuoteType;
+use types::{QuoteType, Lexemes};
 use lexer::Lexeme;
 use exp::Sexps;
 
@@ -21,21 +12,36 @@ pub fn quote_to_str(q : QuoteType) -> String {
    }.to_string()
 }
 
-//works well, but we have derive(Debug) on lexemes so we can just debug print them
-pub fn print_lexemes(lexemes: &Vec<Lexeme>) {
+//works
+pub fn print_lexemes(lexemes: &Lexemes) {
    for l in lexemes.iter() {
-      match *l {
+      let (ref lexeme, ref start, ref end) = *l;
+      print!("({}, {})  \t", start, end);
+
+      match *lexeme {
          /*_ => {} empty match */
-         Lexeme::OpenParen    => println!("open paren"),
-         Lexeme::CloseParen   => println!("close paren"),
-         Lexeme::Str(ref s)   => println!("string {}", s),
+         Lexeme::OpenParen    => println!("open ("),
+         Lexeme::CloseParen   => println!("close )"),
+         Lexeme::Str(ref s)   => println!("str {}", s),
          Lexeme::Sym(ref s)   => println!("sym {}", s),
-         Lexeme::Int(ref n)   => println!("integer {}", n),
+         Lexeme::Int(ref n)   => println!("int {}", n),
          Lexeme::Float(ref n) => println!("float {}", n),
-         Lexeme::Quote(ref q) => println!("quote: {}", quote_to_str(q.clone()))
+         Lexeme::Quote(ref q) => println!("quote {}", quote_to_str(q.clone()))
       }
    }
 }
+
+
+//TODO: print sexps, print lexed, print parsed tree
+//TODO: re-write display_sexps, print_compact_tree, etc.
+
+/*pub fn display_run_result(res : &RunResult) {
+   match *res {
+      Ok(ref exp) => display_sexps(exp),
+      _           => println!("error: {:?}", res)
+   }
+}*/
+
 pub fn display_sexps(exp: &Sexps) {
    use exp::Sexps::*;
    match *exp {
