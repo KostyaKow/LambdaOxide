@@ -94,8 +94,7 @@ impl Driver {
                   out = Sexps::err_new(ei);
                   break;
                }
-            }
-            line_n += 1;
+            } line_n += 1;
          }
 
          display_sexps(&out);

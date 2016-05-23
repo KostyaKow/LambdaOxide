@@ -38,7 +38,7 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
                quotes = Vec::new();
                child_start = None;
             } else if nestedness < 0 {
-               return Err(parse_err(ErrCode::NoStartParen, None));
+               return Err(parse_err(ErrCode::NoStartParen, Some((end, end))));
             }
          },
          &Lexeme::Quote(ref q) => {
