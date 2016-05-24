@@ -6,3 +6,13 @@ authors = [ "Konstantin Kowalski <kostelkow@gmail.com>" ]
 
 [dependencies]
 OxiCloak = { git = "https://github.com/KostyaKow/OxiCloak.git", version = "0.0.1" }
+
+#TODO: document pacman -S gtest and find other distro instructions
+#llvm-sys = "0.2.1"
+#iron_llvm = { git = "https://github.com/jauhien/iron-llvm.git", version = "0.0.1" }
+
+#[dependencies.iron_llvm]
+#git = "https://github.com/jauhien/iron-llvm.git"
+
+llvm-sys = "*"
+iron_llvm = { git = "https://github.com/jauhien/iron-llvm.git" }

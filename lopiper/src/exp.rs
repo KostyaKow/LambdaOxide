@@ -36,6 +36,10 @@ pub enum Sexps {
 }
 
 //TODO: deadcode
+//TODO: rename arr_new, quote_new, bool_new, to new_arr, new_quote, new_bool
+//TODO: rename arr_get, arr_set to get_arr, set_arr
+//TODO: arr_get_fast() return Sexps::Nil if bad, get_str_fast() .unwraps().
+//Should it unwrap or return empty string or something else?
 #[allow(dead_code)]
 impl Sexps {
    //TODO: quote_new_box? like err_new?
@@ -159,14 +163,20 @@ impl Sexps {
       }
    }*/
 
+   pub fn get_str(&self) -> Option<String> { if let Sexps::Str(ref s) = *self { Some(s.clone()) } else { None } }
+   pub fn get_str_fast(&self) -> String { self.get_str().unwrap() }
+
+   pub fn get_sym(&self) -> Option<String> { if let Sexps::Sym(ref s) = *self { Some(s.clone()) } else { None } }
+   pub fn get_sym_fast(&self) -> String { self.get_sym().unwrap() }
+
    pub fn is_quote(&self) {}
    pub fn is_nil(&self) {}
    pub fn is_err(&self) -> bool { if let Sexps::Err(_) = *self { true } else { false } }
-   pub fn is_str(&self) {}
+   pub fn is_str(&self)  -> bool { if let Sexps::Str(_) = *self { true } else { false } }
    pub fn is_int(&self) {}
    pub fn is_float(&self) {}
    pub fn is_bool(&self) {}
-   pub fn is_sym(&self) {}
+   pub fn is_sym(&self) -> bool { if let Sexps::Sym(_) = *self { true } else { false } }
    pub fn is_lambda(&self) {}
    pub fn is_cons(&self) {}
    pub fn is_arr(&self) {}

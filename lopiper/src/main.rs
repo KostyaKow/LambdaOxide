@@ -2,6 +2,10 @@
 #![feature(box_patterns)]
 
 extern crate oxicloak;
+
+extern crate iron_llvm;
+extern crate llvm_sys;
+
 use oxicloak::*;
 
 use lexer::lex;
@@ -16,6 +20,7 @@ mod exp;
 mod lexer;
 mod parser;
 mod errors;
+mod comp;
 
 use errors::{StackInfo};
 
