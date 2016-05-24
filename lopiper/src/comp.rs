@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use llvm_sys::prelude::LLVMValueRef;
+use std::iter;
 
 use iron_llvm::core;
-use iron_llvm::core::types::{RealTypeCtor, RealTypeRef};
-use iron_llvm::core::value::{Function, FunctionRef};
+use iron_llvm::core::types::{RealTypeCtor, RealTypeRef, FunctionTypeRef, FunctionTypeCtor};
+use iron_llvm::core::value::{Function, FunctionRef, FunctionCtor, Value};
 use iron_llvm::{LLVMRef, LLVMRefCtor};
 
 //context
@@ -79,47 +80,57 @@ fn error(message : &str) -> IRBuildingResult {
 pub trait IRBuilder {
     fn codegen(&self, context: &mut Context, module_provider: &mut ModuleProvider) -> IRBuildingResult;
 }
-
 //
 
 use exp::Sexps;
 pub struct ExpCompInfo {
    exp : Sexps,
    lambda_i : usize, //lambdaIndex //TODO: unneeded until I remove names from lambda
-   args : Vec<String>,
 }
 
 impl ExpCompInfo {
-   fn new(exp_opt : Option<Sexps>) -> ExpCompInfo {
+   pub fn new(exp_opt : Option<Sexps>) -> ExpCompInfo {
       let exp = if let Some(exp_) = exp_opt { exp_ }
       else { Sexps::nil_new() };
 
-      ExpCompInfo {
-         exp : exp, lambda_i : 0, args : Vec::new()
-      }
+      ExpCompInfo { exp : exp, lambda_i : 0 }
    }
-   fn set_exp(&mut self, exp : Sexps) { self.exp = exp; }
-   fn inc_i(&mut self) { self.lambda_i += 1; }
-   fn get_i(&self) -> usize { self.lambda_i }
+   pub fn set_exp(&mut self, exp : Sexps) { self.exp = exp; }
+   pub fn inc_i(&mut self) { self.lambda_i += 1; }
+   pub fn get_i(&self) -> usize { self.lambda_i }
 
-   fn codegen_lambda(&self, name : String,
-                     context : &mut Context,
-                     module_p : &mut ModuleProvider)
-   -> IrBuildingsResult
+   fn codegen_lambda(&self, name : String, args : Vec<String>, exp : Sexps,
+                     context : &mut Context, module_p : &mut ModuleProvider)
+   -> IRBuildingResult
    {
+      if let Some((prev_def, redef)) = module_p.get_function(&*name) {
+         return error("re-declaring functions isn't allowed");
+      }
 
+      let mut param_types = iter::repeat(context.ty.to_ref())
+                              .take(args.len())
+                              .collect::<Vec<_>>();
+      let fty = FunctionTypeRef::get(&context.ty, param_types.as_mut_slice(), false);
+
+      let function = FunctionRef::new(&mut module_p.get_module(), &name, &fty);
+
+      for (param, arg) in function.params_iter().zip(args) {
+         param.set_name(&*arg);
+      }
+      Ok((function.to_ref(), false))
    }
+
 }
 
 impl IRBuilder for ExpCompInfo {
    fn codegen(&self, context: &mut Context, module_p : &mut ModuleProvider) -> IRBuildingResult {
       match self.exp {
          Sexps::Nil => error("nil passed to ExpCompInfo.codegen()"),
-         Sexps::Array(arr_mref) => {
+         Sexps::Array(ref arr_mref) => {
             let arr_borr = arr_mref.borrow();
             let arr_len = arr_borr.len();
             if arr_len < 1 { return error("codegen exp needs array with at least 1 item"); }
-            if arr_bor[0].is_sym() {
+            if arr_borr[0].is_sym() {
                let func_name = arr_borr[0].get_sym_fast();
 
                if func_name == "lambda" {
@@ -131,10 +142,23 @@ impl IRBuilder for ExpCompInfo {
 
                   let args_len_opt = arr_borr[2].arr_len();
                   if let Some(args_len) = args_len_opt {
-
-
+                     let mut args = Vec::new();
+                     for i in 0..args_len {
+                        let curr_arg = arr_borr[2].arr_get_fast(i);
+                        if !curr_arg.is_sym() { return error("every argument name to lambda needs to be a sym"); }
+                        args.push(curr_arg.get_sym_fast());
+                     }
+                     self.codegen_lambda(new_func_name, args, arr_borr[3].clone(), context, module_p)
                   } else {
+                     return error("lambda's 2nd argument needs to be list of args: (lambda name (args) (exp))");
+                  }
                }
+               else {
+                  error("unsupported. right now you can only define lambda's in this language")
+               }
+            }
+            else {
+               error("(x ...) x needs to be symbol")
             }
          },
          _ => error("ExpCompInfo.exp has to be an expression of type Array() (returned from parser)")

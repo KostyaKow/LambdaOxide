@@ -44,6 +44,9 @@ impl Driver {
       use std::io::{self, BufRead, Write};
       let stdin = io::stdin();
 
+      use comp::ExpCompInfo;
+      let mut compiler = ExpCompInfo::new(None);
+
       loop {
          let mut out = Sexps::nil_new();
          print!("**> ");
@@ -87,7 +90,10 @@ impl Driver {
                   }
                   let (parsed, success) = parse(&new_lexemes);
                   println!("success parse? : {}", success);
-                  display_sexps(&parsed);
+                  //display_sexps(&parsed); //TODO: temporary
+
+                  out = parsed; //TODO: temporary, only for compiler tests
+
                   if success { break; }
                },
                Err((code, start, end)) => {
@@ -106,6 +112,25 @@ impl Driver {
          //display_run_result(&out);
          //display_sexps(&out);
          //root.borrow().print();
+
+         if let Some(len) = out.arr_len() {
+            if len != 1 { println!("compiler works with single expression on each line"); }
+            compiler.set_exp(out.arr_get_fast(0));
+
+            use comp::IRBuilder;
+
+            let mut context = comp::Context::new();
+            let mut module_p = comp::SimpleModuleProvider::new("main_module");
+
+            let llvm_res = IRBuilder::codegen(&compiler, &mut context, &mut module_p);
+            if let Ok(val) = llvm_res {
+               println!("compilation success");
+            } else if let Err(s) = llvm_res {
+               println!("bad compilation: {}", s);
+            }
+
+         } else { println!("can't compile because not arr"); }
+
       }
    }
 

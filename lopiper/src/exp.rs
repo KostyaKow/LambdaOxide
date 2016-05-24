@@ -179,7 +179,7 @@ impl Sexps {
    pub fn is_sym(&self) -> bool { if let Sexps::Sym(_) = *self { true } else { false } }
    pub fn is_lambda(&self) {}
    pub fn is_cons(&self) {}
-   pub fn is_arr(&self) {}
+   pub fn is_arr(&self) {} //use arr_len and check Option<>
 }
 
 fn main() {

@@ -90,7 +90,7 @@ fn print_compact_tree_helper(t: &Sexps, is_square : bool) {
          print!("{}", c_paren);
       },
       Array(..) => { //TODO: fixme
-         print!("{}list ", o_paren);
+         print!("{}arr ", o_paren);
          for i in 0..t.arr_len_fast() {
             if i != 0 { print!(" "); }
             print_compact_tree_helper(&t.arr_get_fast(i), is_square);
