@@ -41,6 +41,13 @@ pub trait ModuleProvider {
     fn get_function(&mut self, name: &str) -> Option<(FunctionRef, bool)>;
 }
 
+/*pub trait JITter : ModuleProvider {
+    // TODO: fix https://github.com/rust-lang/rust/issues/5665
+    fn get_module_provider(&mut self) -> &mut builder::ModuleProvider;
+
+    fn run_function(&mut self, f: LLVMValueRef) -> f64;
+}*/
+
 pub struct SimpleModuleProvider {
     module: core::Module
 }
@@ -136,7 +143,6 @@ impl ExpCompInfo {
       Ok((function.to_ref(), name == ""))
    }
 
-
    fn codegen_lambda_proto(&self, name : String, args : Vec<String>,
                            context : &mut Context, module_p : &mut ModuleProvider)
    -> IRBuildingResult
@@ -205,16 +211,17 @@ impl IRBuilder for ExpCompInfo {
                      rec_comp.exp = arr_borr[2].clone();
                      let (right_val, _) = try!(IRBuilder::codegen(&rec_comp, context, module_p));
 
-                     if func_name == "+" {
-                        Ok((context.builder.build_fadd(left_val, right_val, "addtmp"), false))
-                     } else if func_name == "-" {
-                        Ok((context.builder.build_fsub(left_val, right_val, "addtmp"), false))
-                     } else if func_name == "*" {
-                        Ok((context.builder.build_mul(left_val, right_val, "addtmp"), false))
-                     } else if func_name == "<" {
-                        let cmp = context.builder.build_fcmp(LLVMRealOLT, left_val, right_val, "cmptmp");
-                        Ok((context.builder.build_ui_to_fp(cmp, context.ty.to_ref(), "booltmp"), false))
-                     } else { error("if/else for testing primitive operators doesn't match builtin assignment") }
+                     match &*func_name {
+                        "+" => Ok((context.builder.build_fadd(left_val, right_val, "addtmp"), false)),
+                        "-" => Ok((context.builder.build_fsub(left_val, right_val, "addtmp"), false)),
+                        "*" => Ok((context.builder.build_fmul(left_val, right_val, "addtmp"), false)),
+                        "<" => {
+                           let cmp = context.builder.build_fcmp(LLVMRealOLT, left_val, right_val, "cmptmp");
+                           Ok((context.builder.build_ui_to_fp(cmp, context.ty.to_ref(), "booltmp"), false))
+                        },
+                        _ => error("if/else for testing primitive operators doesn't match builtin assignment")
+                     }
+
                   }
                   else { //this is function call
                      if let Some((function, _)) = module_p.get_function(&*func_name) {
@@ -258,6 +265,5 @@ impl IRBuilder for ExpCompInfo {
       result*/
    }
 }
-
 
 

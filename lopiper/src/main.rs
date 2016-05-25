@@ -38,6 +38,7 @@ impl Driver {
    pub fn run(&mut self, code : &str) -> Sexps { Sexps::nil_new() }
    //pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::nil_new() }
    //pub fn eval(&mut self, exp : &Sexps) -> Sexps { Sexps::nil_new() }
+   //pub fn eval_str(&self, code : &str) -> Sexps { Sexps::nil_new() }
 
    pub fn interpreter(&mut self) {
       use std::io::{self, BufRead, Write};
@@ -45,6 +46,12 @@ impl Driver {
 
       use comp::ExpCompInfo;
       let mut compiler = ExpCompInfo::new(None);
+      use comp::IRBuilder;
+      use iron_llvm::core::value::Value;
+
+      let mut context = comp::Context::new();
+      let mut module_p = comp::SimpleModuleProvider::new("main_module");
+
 
       loop {
          let mut out = Sexps::nil_new();
@@ -116,35 +123,28 @@ impl Driver {
             if len != 1 { println!("compiler works with single expression on each line"); }
             compiler.set_exp(out.arr_get_fast(0));
 
-            use comp::IRBuilder;
-            use std::io;
-            use std::io::Write;
-            use iron_llvm::core::value::Value;
-
-            let mut context = comp::Context::new();
-            let mut module_p = comp::SimpleModuleProvider::new("main_module");
-
             let llvm_res = IRBuilder::codegen(&compiler, &mut context, &mut module_p);
 
             match llvm_res {
                Ok((val, _)) => {
-                  print!("compilation success: ===="); val.dump(); print!("====");
+                  println!("===compilation success: ===="); val.dump();
+                  println!("====end compilaion===");
                },
                Err(s) => {
                   println!("bad compilation: {}", s);
                }
             }
+
             use comp::ModuleProvider;
-            println!("module ir: {:?}", ModuleProvider::dump(&module_p));
+            println!("====module ir: ====\n");
+            ModuleProvider::dump(&module_p);
+            println!("====end module ir ====\n");
 
          } else { println!("can't compile because not arr"); }
 
       }
    }
 
-   pub fn eval_str(&self, code : &str) -> Sexps {
-      Sexps::nil_new()
-   }
 }
 
 

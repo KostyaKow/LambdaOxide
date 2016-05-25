@@ -1,7 +1,11 @@
 
 
+(lambda x (a b) (+ (+ 3 5) b))
+(x 3 5)
 
 TODO:
+- [ ] JIT/llvm
+   - [x] in progress
 - [ ] do something like rustc --explain E0123 with my error codes
 - [ ] implement ErrCode::{MisformedFloat, MisformedInt, BadChar}
    - [x] MisFormedNum
