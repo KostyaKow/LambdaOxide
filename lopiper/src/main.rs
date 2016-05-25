@@ -128,8 +128,7 @@ impl Driver {
 
             match llvm_res {
                Ok((val, _)) => {
-                  println!("compilation success: ===={:?}====", val.dump());
-                  val.dump(); print!("====");
+                  print!("compilation success: ===="); val.dump(); print!("====");
                },
                Err(s) => {
                   println!("bad compilation: {}", s);

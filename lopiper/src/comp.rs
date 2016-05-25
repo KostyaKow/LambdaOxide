@@ -4,6 +4,8 @@ use std::iter;
 
 use iron_llvm::core;
 use llvm_sys::LLVMRealPredicate::LLVMRealOLT;
+use llvm_sys::core::LLVMDeleteFunction;
+use llvm_sys::analysis::LLVMVerifierFailureAction::LLVMAbortProcessAction;
 use iron_llvm::core::types::{RealTypeCtor, RealTypeRef, FunctionTypeRef, FunctionTypeCtor};
 use iron_llvm::core::value::{Function, FunctionRef, FunctionCtor, Value, RealConstRef, RealConstCtor};
 use iron_llvm::{LLVMRef, LLVMRefCtor};
@@ -45,11 +47,7 @@ pub struct SimpleModuleProvider {
 
 impl SimpleModuleProvider {
     pub fn new(name: &str) -> SimpleModuleProvider {
-        let module = core::Module::new(name);
-
-        SimpleModuleProvider {
-            module: module
-        }
+        SimpleModuleProvider { module: core::Module::new(name) }
     }
 }
 
@@ -106,6 +104,43 @@ impl ExpCompInfo {
                      context : &mut Context, module_p : &mut ModuleProvider)
    -> IRBuildingResult
    {
+      //no global variables, so we can clear all the previously
+      //defined named values as they come from other functions
+      context.named_values.clear();
+
+      let (f, _) = try!(self.codegen_lambda_proto(name.clone(), args.clone(), context, module_p));
+      let mut function = unsafe {FunctionRef::from_ref(f)};
+
+      //basic block will contain generated instrs
+      let mut bb = function.append_basic_block_in_context(&mut context.context, "entry");
+      context.builder.position_at_end(&mut bb);
+
+      //set function params
+      for (param, arg) in function.params_iter().zip(&args) {
+         context.named_values.insert(arg.clone(), param.to_ref());
+      }
+
+      //emit function body. if error, remove function so user can redefine
+      let rec_comp = ExpCompInfo::new(Some(exp));
+      let body = match IRBuilder::codegen(&rec_comp, context, module_p) {
+         Ok((val, _)) => val,
+         Err(msg) => { unsafe { LLVMDeleteFunction(function.to_ref()) }; return Err(msg); }
+      };
+
+      //the last instruction should be return
+      context.builder.build_ret(&body);
+      function.verify(LLVMAbortProcessAction);
+
+      //clear local variables
+      context.named_values.clear();
+      Ok((function.to_ref(), name == ""))
+   }
+
+
+   fn codegen_lambda_proto(&self, name : String, args : Vec<String>,
+                           context : &mut Context, module_p : &mut ModuleProvider)
+   -> IRBuildingResult
+   {
       if let Some((prev_def, redef)) = module_p.get_function(&*name) {
          return error("re-declaring functions isn't allowed");
       }
@@ -137,7 +172,7 @@ impl IRBuilder for ExpCompInfo {
                let func_name = arr_borr[0].get_sym_fast();
 
                if func_name == "lambda" {
-                  if arr_len != 4 { return error("lambda needs 3 arguments: (lambda name (args) (exp))"); }
+                  if arr_len != 4 && arr_len != 3 { return error("lambda needs 3 or 4 arguments: (lambda name (args) (exp))"); }
                   if !arr_borr[1].is_sym() {
                      return error("lambda's 1st argument needs to be function name: (lambda name (args) (exp))");
                   }
@@ -151,7 +186,11 @@ impl IRBuilder for ExpCompInfo {
                         if !curr_arg.is_sym() { return error("every argument name to lambda needs to be a sym"); }
                         args.push(curr_arg.get_sym_fast());
                      }
-                     self.codegen_lambda(new_func_name, args, arr_borr[3].clone(), context, module_p)
+                     if arr_len == 3 {
+                        self.codegen_lambda_proto(new_func_name, args, context, module_p)
+                     } else {
+                       self.codegen_lambda(new_func_name, args, arr_borr[3].clone(), context, module_p)
+                     }
                   } else {
                      return error("lambda's 2nd argument needs to be list of args: (lambda name (args) (exp))");
                   }
@@ -190,7 +229,7 @@ impl IRBuilder for ExpCompInfo {
                         }
                         Ok((context.builder.build_call(function.to_ref(), args_value.as_mut_slice(), "calltmp"), false))
                      }
-                     else { error("unknown function name") }
+                     else { error(&*format!("unknown function name: {}", func_name)) }
                   }
                }
             }
