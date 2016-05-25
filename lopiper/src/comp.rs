@@ -3,8 +3,9 @@ use llvm_sys::prelude::LLVMValueRef;
 use std::iter;
 
 use iron_llvm::core;
+use llvm_sys::LLVMRealPredicate::LLVMRealOLT;
 use iron_llvm::core::types::{RealTypeCtor, RealTypeRef, FunctionTypeRef, FunctionTypeCtor};
-use iron_llvm::core::value::{Function, FunctionRef, FunctionCtor, Value};
+use iron_llvm::core::value::{Function, FunctionRef, FunctionCtor, Value, RealConstRef, RealConstCtor};
 use iron_llvm::{LLVMRef, LLVMRefCtor};
 
 //context
@@ -88,6 +89,8 @@ pub struct ExpCompInfo {
    lambda_i : usize, //lambdaIndex //TODO: unneeded until I remove names from lambda
 }
 
+//TODO: finish function prototype and calling, recursive +/-/*/<
+
 impl ExpCompInfo {
    pub fn new(exp_opt : Option<Sexps>) -> ExpCompInfo {
       let exp = if let Some(exp_) = exp_opt { exp_ }
@@ -154,12 +157,57 @@ impl IRBuilder for ExpCompInfo {
                   }
                }
                else {
-                  error("unsupported. right now you can only define lambda's in this language")
+                  let built_in = func_name == "+" || func_name == "-" || func_name == "*" || func_name == "<";
+                  if built_in {
+                     if arr_len != 3 { return error("build-in operators take 2 argument"); }
+
+                     let mut rec_comp = ExpCompInfo::new(Some(arr_borr[1].clone()));
+                     let (left_val, _) = try!(IRBuilder::codegen(&rec_comp, context, module_p));
+                     rec_comp.exp = arr_borr[2].clone();
+                     let (right_val, _) = try!(IRBuilder::codegen(&rec_comp, context, module_p));
+
+                     if func_name == "+" {
+                        Ok((context.builder.build_fadd(left_val, right_val, "addtmp"), false))
+                     } else if func_name == "-" {
+                        Ok((context.builder.build_fsub(left_val, right_val, "addtmp"), false))
+                     } else if func_name == "*" {
+                        Ok((context.builder.build_mul(left_val, right_val, "addtmp"), false))
+                     } else if func_name == "<" {
+                        let cmp = context.builder.build_fcmp(LLVMRealOLT, left_val, right_val, "cmptmp");
+                        Ok((context.builder.build_ui_to_fp(cmp, context.ty.to_ref(), "booltmp"), false))
+                     } else { error("if/else for testing primitive operators doesn't match builtin assignment") }
+                  }
+                  else { //this is function call
+                     if let Some((function, _)) = module_p.get_function(&*func_name) {
+                        if function.count_params() as usize != arr_len-1 {
+                           return error("incorrect number of arguments");
+                        }
+                        let mut args_value = Vec::new();
+                        for i in 1..arr_len {
+                           let mut rec_comp = ExpCompInfo::new(Some(arr_borr[i].clone()));
+                           let (arg_val, _) = try!(IRBuilder::codegen(&rec_comp, context, module_p));
+                           args_value.push(arg_val);
+                        }
+                        Ok((context.builder.build_call(function.to_ref(), args_value.as_mut_slice(), "calltmp"), false))
+                     }
+                     else { error("unknown function name") }
+                  }
                }
             }
             else {
                error("(x ...) x needs to be symbol")
             }
+         },
+         Sexps::Sym(ref s) => {
+            if let Some(value) = context.named_values.get(s) {
+               Ok((*value, false))
+            } else { error("unknown variable name") }
+         },
+         Sexps::Int(ref n) => {
+            Ok((RealConstRef::get(&context.ty, *n as f64).to_ref(), false))
+         },
+         Sexps::Float(ref n) => {
+            Ok((RealConstRef::get(&context.ty, *n).to_ref(), false))
          },
          _ => error("ExpCompInfo.exp has to be an expression of type Array() (returned from parser)")
       }

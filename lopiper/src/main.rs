@@ -35,10 +35,9 @@ impl Driver {
          stacks : Vec::new(),
       }
    }
-   pub fn run(&mut self, code : &str) -> Sexps { Sexps::nil_new()
-   }
-   pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::nil_new() }
-   pub fn eval(&mut self, exp : &Sexps) -> Sexps { Sexps::nil_new() }
+   pub fn run(&mut self, code : &str) -> Sexps { Sexps::nil_new() }
+   //pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::nil_new() }
+   //pub fn eval(&mut self, exp : &Sexps) -> Sexps { Sexps::nil_new() }
 
    pub fn interpreter(&mut self) {
       use std::io::{self, BufRead, Write};
@@ -118,16 +117,26 @@ impl Driver {
             compiler.set_exp(out.arr_get_fast(0));
 
             use comp::IRBuilder;
+            use std::io;
+            use std::io::Write;
+            use iron_llvm::core::value::Value;
 
             let mut context = comp::Context::new();
             let mut module_p = comp::SimpleModuleProvider::new("main_module");
 
             let llvm_res = IRBuilder::codegen(&compiler, &mut context, &mut module_p);
-            if let Ok(val) = llvm_res {
-               println!("compilation success");
-            } else if let Err(s) = llvm_res {
-               println!("bad compilation: {}", s);
+
+            match llvm_res {
+               Ok((val, _)) => {
+                  println!("compilation success: ===={:?}====", val.dump());
+                  val.dump(); print!("====");
+               },
+               Err(s) => {
+                  println!("bad compilation: {}", s);
+               }
             }
+            use comp::ModuleProvider;
+            println!("module ir: {:?}", ModuleProvider::dump(&module_p));
 
          } else { println!("can't compile because not arr"); }
 
