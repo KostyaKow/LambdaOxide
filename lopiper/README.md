@@ -1,7 +1,12 @@
 
 
-(lambda x (a b) (+ (+ 3 5) b))
-(x 3 5)
+(lambda f (a b) (+ (+ 3 5) (+ a b)))
+(lambda printf (x))
+(lambda main () (print (f 30 4)))
+
+cat output > test.bc
+//http://stackoverflow.com/questions/29180737/how-to-generate-executable-from-llvm-ir
+llc -march=x86-64 test.bc -o test.s
 
 TODO:
 - [ ] JIT/llvm
