@@ -83,9 +83,6 @@ fn error(message : &str) -> IRBuildingResult {
     Err(message.to_string())
 }
 
-pub trait IRBuilder {
-    fn codegen(&self, context: &mut Context, module_provider: &mut ModuleProvider) -> IRBuildingResult;
-}
 //
 
 use exp::Sexps;
@@ -129,7 +126,7 @@ impl ExpCompInfo {
 
       //emit function body. if error, remove function so user can redefine
       let rec_comp = ExpCompInfo::new(Some(exp));
-      let body = match IRBuilder::codegen(&rec_comp, context, module_p) {
+      let body = match self.codegen(&rec_comp, context, module_p) {
          Ok((val, _)) => val,
          Err(msg) => { unsafe { LLVMDeleteFunction(function.to_ref()) }; return Err(msg); }
       };
@@ -164,10 +161,9 @@ impl ExpCompInfo {
       Ok((function.to_ref(), false))
    }
 
-}
-
-impl IRBuilder for ExpCompInfo {
-   fn codegen(&self, context: &mut Context, module_p : &mut ModuleProvider) -> IRBuildingResult {
+   fn codegen(&self, context: &mut Context, module_p : &mut ModuleProvider)
+   -> IRBuildingResult
+   {
       match self.exp {
          Sexps::Nil => error("nil passed to ExpCompInfo.codegen()"),
          Sexps::Array(ref arr_mref) => {
@@ -178,7 +174,9 @@ impl IRBuilder for ExpCompInfo {
                let func_name = arr_borr[0].get_sym_fast();
 
                if func_name == "lambda" {
-                  if arr_len != 4 && arr_len != 3 { return error("lambda needs 3 or 4 arguments: (lambda name (args) (exp))"); }
+                  if arr_len != 4 && arr_len != 3 {
+                     return error("lambda needs 3 or 4 arguments: (lambda name (args) (exp))");
+                  }
                   if !arr_borr[1].is_sym() {
                      return error("lambda's 1st argument needs to be function name: (lambda name (args) (exp))");
                   }

@@ -7,6 +7,8 @@
 cat output > test.bc
 //http://stackoverflow.com/questions/29180737/how-to-generate-executable-from-llvm-ir
 llc -march=x86-64 test.bc -o test.s
+//as test.s
+gcc test.s -o a.out
 
 TODO:
 - [ ] JIT/llvm

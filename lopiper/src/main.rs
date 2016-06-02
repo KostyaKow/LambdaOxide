@@ -46,7 +46,6 @@ impl Driver {
 
       use comp::ExpCompInfo;
       let mut compiler = ExpCompInfo::new(None);
-      use comp::IRBuilder;
       use iron_llvm::core::value::Value;
 
       let mut context = comp::Context::new();
@@ -68,9 +67,7 @@ impl Driver {
 
          //while let Err((ErrCode::UncompleteExp, _, _)) = parsed {
          loop {
-            if let Sexps::Err(box ErrInfo { code : ErrCode::UncompleteExp, .. }) = parsed {
-
-            } else { break; }
+            if !utils::is_uncomplete_exp(parsed) { break; }
 
             io::stdout().flush().unwrap();
             let line = stdin.lock().lines().next().unwrap().unwrap();
