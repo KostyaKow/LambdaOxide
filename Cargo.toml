@@ -1,12 +1,12 @@
 [package]
 
 name = "LambdaOxide"
-version = "0.1.11"
+version = "0.1.12"
 authors = [ "Konstantin Kowalski <kostelkow@gmail.com>" ]
 
 [dependencies]
 time = "0.1.35"
-OxiCloak = { git = "https://github.com/KostyaKow/OxiCloak.git", version = "0.0.1" }
+OxiCloak = { git = "https://github.com/KostyaKow/OxiCloak.git", version = "0.0.2" }
 
 [lib]
 name = "lambda_oxide"
