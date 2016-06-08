@@ -35,18 +35,56 @@ impl Driver {
          stacks : Vec::new(),
       }
    }
-   pub fn run(&mut self, code : &str) -> Sexps { Sexps::nil_new() }
-   //pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::nil_new() }
-   //pub fn eval(&mut self, exp : &Sexps) -> Sexps { Sexps::nil_new() }
-   //pub fn eval_str(&self, code : &str) -> Sexps { Sexps::nil_new() }
 
-   //pub fn load_lisp_file(&self, path : String) -> Sexps {}
+   //use this in repl to parse 1 line
+   pub fn parse_str(code : &str) -> (Sexps, bool) {
+      let lex_res = lex(code);
+      //let parsed = parse_wrapper(lexemes);
+      pub fn parse_wrapper(&mut self, lex_res : Result<Lexemes, LexErr>) {}
 
-   pub fn scheme_interpreter() {
-      //pass this function to repl with repl_eval for normal normal lisp interpreter
+      if let Err((code, start, end)) = lex_res {
+         //println!("lexing error: {:?}", e);
+         let mut ei = ErrInfo::new(code, Some(to_shared_mut(stack)));
+         ei.char_i = start;
+         ei.line_n = line_n;
+         ei.char_highlight_ranges.push((start, end));
+         return (Sexps::err_new(ei), false);
+      }
+
+      if let Ok(lexed) = lex_res {
+         //Use this to debug lexer:
+         //use utils::print_lexemes;
+         //print_lexemes(&lexed);
+         //break;
+         stack.lexemes = lexed;
+
+         let mut new_lexemes = Vec::new();
+         for (l, start, end) in stack.lexemes.clone() {
+            new_lexemes.push(l);
+         }
+         let (parsed, success) = parse(&new_lexemes);
+         println!("success parse? : {}", success);
+         //display_sexps(&parsed); //TODO: temporary
+
+         out = parsed; //TODO: temporary, only for compiler tests
+
+         if success { break; }
+
+      }
+
+         Err((code, start, end)) => {
+            break;
+         }
+      }
+
+
    }
 
-
+   //pub fn run(&mut self, code : &str) -> Sexps { Sexps::nil_new() }
+   //pub fn eval(&mut self, exp : &Sexps) -> Sexps { Sexps::nil_new() }
+   //pub fn eval_str(&self, code : &str) -> Sexps { Sexps::nil_new() }
+   //pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::nil_new() }
+   //pub fn load_lisp_file(&self, path : String) -> Sexps {}
 
    /*test main can use this as repl_eval
       fn lex_printer(parsed_exp : Sexps, lex_res : Result<Lexemes, LexErr>) {
@@ -55,6 +93,7 @@ impl Driver {
             //print_lexemes(&lexed);
             //break;
       }
+      pub fn scheme_interpreter() {} //pass this function to repl with repl_eval for normal normal lisp interpreter
       parse_printer
       jitter
       jit_printer
@@ -80,7 +119,7 @@ impl Driver {
             let line = stdin.lock().lines().next().unwrap().unwrap();
 
             let old_origin_len = stack.origin.len();
-            stack.origin = stack.origin + &line;  // + " "; //TODO: with + " ", lexing is wrong
+            stack.origin = stack.origin + &line;  //TODO: if we do + " ", does it mess up lexing?
             let new_origin_len = stack.origin.len()-1;
 
              //println!("line ({}, {})", old_orig_len, new_orig_len);

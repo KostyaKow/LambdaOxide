@@ -38,8 +38,7 @@ fn get_char_ranges(code : &str) -> Result<SizeRanges, LexErr> {
 
    if let Some(c) = start_quote {
       Err((ErrCode::UnterminatedQuote, c, len))
-   }
-   else { Ok(ranges) }
+   } else { Ok(ranges) }
 }
 
 pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
@@ -66,7 +65,8 @@ pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
       //character, then push previously collected
       let c = char_at_fast(code, i);
       //TODO: maybe manual comparison (c == ' ' || c == '(')
-      let is_special = start_of_str || contains(c, vec![' ', '(', ')', '\'', '`', ',']);
+      let special_chars = vec![' ', '(', ')', '\'', '`', ',', '[', ']']
+      let is_special = start_of_str || contains(c, special_chars);
 
       if is_special && !col.is_empty() { //push float, int and sym
          if let Some(lexeme) = collect_sym(&col) {
@@ -83,8 +83,8 @@ pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
       if let Some(c) = char_at(code, i) {
          match c {
             ',' | '`' | '\'' => lexemes.push((Lexeme::Quote(char_to_quote(c).unwrap()), i, i)),
-            '(' => lexemes.push((Lexeme::OpenParen, i, i)),
-            ')' => lexemes.push((Lexeme::CloseParen, i, i)),
+            '(' | '[' => lexemes.push((Lexeme::OpenParen, i, i)),
+            ')' | ']' => lexemes.push((Lexeme::CloseParen, i, i)),
             '"' => i-=1, //gets triggered if you type in """" in repl
             ' ' => {}, //skip
             _   => {
@@ -100,7 +100,9 @@ pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
    if !col.is_empty() {
       if let Some(lexeme) = collect_sym(&col) {
          lexemes.push((lexeme, collect_start, collect_end));
-      } else { return Err((ErrCode::MisformedNum, collect_start, collect_end)); }
+      } else {
+         return Err((ErrCode::MisformedNum, collect_start, collect_end));
+      }
    }
 
    Ok(lexemes)

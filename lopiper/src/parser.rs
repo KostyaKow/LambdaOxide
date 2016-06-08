@@ -8,7 +8,8 @@ use exp::Sexps;
 
 //range_start, range_end, quotes, is_atom
 type ChildRange = (usize, usize, Vec<QuoteType>, bool);
-type ChildRangesResult = Result<Vec<ChildRange>, ErrInfo>;
+type ChildRangesResult = Result<Vec<ChildRange>, ParseErr>;
+type ParseResult = Result<Sexps, ParseErr>;
 
 /*get_child_ranges
    returns starting and ending location of parenthesis
@@ -38,7 +39,7 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
                quotes = Vec::new();
                child_start = None;
             } else if nestedness < 0 {
-               return Err(parse_err(ErrCode::NoStartParen, Some((end, end))));
+               return Err((ErrCode::NoStartParen, end, end));
             }
          },
          &Lexeme::Quote(ref q) => {
@@ -54,10 +55,7 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
       i += 1;
    }
    if nestedness > 0 {
-      //TODO: can't I just do unwrap here safely?
-      let range = if let Some(s) = child_start { Some((s, end)) } else { None };
-      //return err_to_exp(parse_err(ErrCode::NoEndParen, lexemes, end, range));
-      return Err(parse_err(ErrCode::NoEndParen, range));
+      return Err((ErrCode::NoEndParen, child_start.unwrap(), end));
    }
    Ok(children)
 }
@@ -67,7 +65,7 @@ fn get_child_ranges(lexemes : &Vec<Lexeme>, range : SizeRange) -> ChildRangesRes
 //when passing child/range, don't include parenthesis
 //TODO:::::::::::::::::::::::fix parse to not include parenthesis
 //returns either Sexps::Err() or parsed body
-fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> Sexps {
+fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> ParseResult {
    let (start, end, quotes_vec, is_atom) = child;
    if is_atom {
       if start != end { //TODO: I don't think we need this

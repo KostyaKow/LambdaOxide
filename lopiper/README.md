@@ -1,5 +1,4 @@
 
-
 (lambda f (a b) (+ (+ 3 5) (+ a b)))
 (lambda printf (x))
 (lambda main () (print (f 30 4)))
@@ -45,4 +44,21 @@ TODO:
 - [ ] low-level fast operators (+ 4 "blah") (+' 3 3) //+' sum prime optimized version
 - [ ] stack tracing
 - [ ] tail call optimization
--
+
+
+/*TODO: copy guile with $3 = last eval result
+comma = unquote
+//BackQuote = quasiquote
+//Q = quote
+//(+ 3 5) => 8
+//'(+ 3 5) => (+ 3 5)
+//(car '(f)) => f
+//`((+ 1 2) '(+ 1 2) ,(+ 1 2)) => ((+ 1 2) (quote (+ 1 2)) 3)
+//(eval '(+ 3 5)) => 8
+//(eval (+ 3 5)) => 8
+//(eval ''(+ 3 5)) => '(+ 3 5)
+//(eval (eval ''(+ 3 5))) => 8
+//'''3 => '''3 or (quote (uqote (quote 3)))
+//'fsdf 3 => fsdf 3
+*/
+

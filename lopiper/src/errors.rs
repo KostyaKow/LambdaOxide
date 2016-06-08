@@ -202,17 +202,18 @@ pub fn display_result<T>(res : &Result<T, Box<ErrInfo>>) {
    }*/
 }
 
+/*TODO: remove this
 pub fn lex_err(code : ErrCode, stack : SharedMut<StackInfo>, range : SizeRange)
 -> Result<Lexemes, LexErr>
 {
    //let mut ei = ErrInfo::new(stack, ErrCode::UnterminatedQuote);
-   /*TODO: removeme
+   /TODO: removeme
    ei.origin = Some(code.to_string());
    ei.range_char = Some((c, len));
-   ei.char_i = Some(len);*/
+   ei.char_i = Some(len);/
    //ei.char_highlight_ranges.push(range);
    Err((code, range.0, range.1))
-}
+}*/
 
 pub fn parse_exp_err(code : ErrCode, //stack : SharedMut<StackInfo>, //origin_lex : &Vec<Lexeme>, lex_i : usize,
                      range_lex : Option<SizeRange>)
