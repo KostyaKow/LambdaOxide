@@ -10,7 +10,9 @@ use iron_llvm::core::types::{RealTypeCtor, RealTypeRef, FunctionTypeRef, Functio
 use iron_llvm::core::value::{Function, FunctionRef, FunctionCtor, Value, RealConstRef, RealConstCtor};
 use iron_llvm::{LLVMRef, LLVMRefCtor};
 
-//context
+use exp::Sexps;
+
+//context stores IR
 pub struct Context {
     context: core::Context,
     builder: core::Builder,
@@ -34,7 +36,7 @@ impl Context {
 }
 //end context
 
-//module
+//module stores functions and stuff
 pub trait ModuleProvider {
     fn dump(&self);
     fn get_module(&mut self) -> &mut core::Module;
@@ -83,9 +85,7 @@ fn error(message : &str) -> IRBuildingResult {
     Err(message.to_string())
 }
 
-//
-
-use exp::Sexps;
+//this struct has member functions for code generation
 pub struct ExpCompInfo {
    exp : Sexps,
    lambda_i : usize, //lambdaIndex //TODO: unneeded until I remove names from lambda
@@ -126,7 +126,7 @@ impl ExpCompInfo {
 
       //emit function body. if error, remove function so user can redefine
       let rec_comp = ExpCompInfo::new(Some(exp));
-      let body = match self.codegen(&rec_comp, context, module_p) {
+      let body = match rec_comp.codegen(context, module_p) {
          Ok((val, _)) => val,
          Err(msg) => { unsafe { LLVMDeleteFunction(function.to_ref()) }; return Err(msg); }
       };
@@ -161,7 +161,7 @@ impl ExpCompInfo {
       Ok((function.to_ref(), false))
    }
 
-   fn codegen(&self, context: &mut Context, module_p : &mut ModuleProvider)
+   pub fn codegen(&self, context: &mut Context, module_p : &mut ModuleProvider)
    -> IRBuildingResult
    {
       match self.exp {
@@ -205,9 +205,9 @@ impl ExpCompInfo {
                      if arr_len != 3 { return error("build-in operators take 2 argument"); }
 
                      let mut rec_comp = ExpCompInfo::new(Some(arr_borr[1].clone()));
-                     let (left_val, _) = try!(IRBuilder::codegen(&rec_comp, context, module_p));
+                     let (left_val, _) = try!(rec_comp.codegen(context, module_p));
                      rec_comp.exp = arr_borr[2].clone();
-                     let (right_val, _) = try!(IRBuilder::codegen(&rec_comp, context, module_p));
+                     let (right_val, _) = try!(rec_comp.codegen(context, module_p));
 
                      match &*func_name {
                         "+" => Ok((context.builder.build_fadd(left_val, right_val, "addtmp"), false)),
@@ -229,7 +229,7 @@ impl ExpCompInfo {
                         let mut args_value = Vec::new();
                         for i in 1..arr_len {
                            let mut rec_comp = ExpCompInfo::new(Some(arr_borr[i].clone()));
-                           let (arg_val, _) = try!(IRBuilder::codegen(&rec_comp, context, module_p));
+                           let (arg_val, _) = try!(rec_comp.codegen(context, module_p));
                            args_value.push(arg_val);
                         }
                         Ok((context.builder.build_call(function.to_ref(), args_value.as_mut_slice(), "calltmp"), false))

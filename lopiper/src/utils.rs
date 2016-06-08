@@ -124,8 +124,8 @@ pub fn cons_to_sexps(c : Cons<Sexps>) -> Sexps { Sub(Box::new(c)) }
 pub fn err(s : &str) -> Sexps { Err(s.to_string()) } //or String::from(s)*/
 
 
-fn is_uncomplete_exp(exp : Sexps) -> bool {
-   if let Sexps::Err(box ErrInfo { code : ErrCode::UncompleteExp, ..}) = exp
+pub fn is_uncomplete_exp(exp : &Sexps) -> bool {
+   if let Sexps::Err(box ErrInfo { code : ErrCode::UncompleteExp, ..}) = *exp
    { true } else { false }
 }
 
