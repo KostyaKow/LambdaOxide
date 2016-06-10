@@ -9,6 +9,10 @@ llc -march=x86-64 test.bc -o test.s
 //as test.s
 gcc test.s -o a.out
 
+Quick TODO:
+- [ ] remove all old code for parse when it returned Sexps
+- [ ] remove child_parse error
+
 TODO:
 - [ ] JIT/llvm
    - [x] in progress

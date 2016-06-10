@@ -1,6 +1,6 @@
 use oxicloak::{SizeRange, SizeRanges, SharedMut, is_none};
 use errors::{ErrInfo, ErrCode, ExecStage, StackInfo, parse_exp_err, parse_err};
-use types::QuoteType;
+use types::{QuoteType, RangeErr, ParseResult};
 use lexer::Lexeme;
 use exp::Sexps;
 
@@ -8,8 +8,7 @@ use exp::Sexps;
 
 //range_start, range_end, quotes, is_atom
 type ChildRange = (usize, usize, Vec<QuoteType>, bool);
-type ChildRangesResult = Result<Vec<ChildRange>, ParseErr>;
-type ParseResult = Result<Sexps, ParseErr>;
+type ChildRangesResult = Result<Vec<ChildRange>, RangeErr>;
 
 /*get_child_ranges
    returns starting and ending location of parenthesis
@@ -104,14 +103,17 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> ParseResult {
          if !is_atom {
             c_start += 1; c_end -= 1;
          }
-         let parsed_child = parse_helper(lexemes, (c_start, c_end, quotes, is_atom));
-         if parsed_child.is_err() {
-            println!("failed child parse: {:?}", parsed_child);
+         let child_data = (c_start, c_end, quotes, is_atom);
+         let parsed_child_opt = parse_helper(lexemes, child_data);
+         if let Ok(parsed_child) = parsed_child_opt {
+            sub.push(parsed_child);
+         } else {
+            //println!("failed child parse: {:?}", parsed_child);
             //TODO: removeme
             //return parse_exp_err(ErrCode::ChildParseFail, Some((c_start, c_end)));
-            return Err(ErrCode::ChildParseFail, c_start, c_end);
+            //return Err(ErrCode::ChildParseFail, c_start, c_end);
+            return parsed_child_opt;
          }
-         sub.push(parsed_child);
          c_it += 1;
          i = c_end + 1;
          continue;
@@ -157,22 +159,24 @@ pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
    match childs_ret {
       Ok(childs) => {
          let mut ret = Vec::new();
-         let mut errs = Vec::new();
+         //TODO: removeme //let mut errs = Vec::new();
 
          //for child in childs
          for (mut start, mut end, quotes, is_atom) in childs {
             if !is_atom { start += 1; end -= 1; }
             let parsed_child = parse_helper(lexemes, (start, end, quotes, is_atom)); //child);
-            if let Sexps::Err(ref e) = parsed_child { errs.push(parsed_child.clone()); }
+            if let Sexps::Err(ref e) = parsed_child {
+               return Err(e.clone());
+            }
             else { ret.push(parsed_child); }
          }
 
-         let good = errs.len() == 0;
-         (Sexps::arr_new_from_vec(if good { ret } else { errs }), good)
+         Ok(Sexps::arr_new_from_vec(ret))
       },
       Err(e) => {
          //(Sexps::arr_new_singleton(Sexps::err_new(e)), false)
-         (Sexps::err_new(e), false)
+         Err(e)
+         //(Sexps::err_new(e), false)
       }
    }
 }

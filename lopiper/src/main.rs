@@ -13,6 +13,7 @@ use parser::parse;
 use utils::display_sexps;
 use exp::Sexps;
 use errors::{ExecStage, ErrCode, ErrInfo};
+use types::{Lexemes, ParseStrResult};
 
 mod utils;
 mod types;
@@ -37,14 +38,14 @@ impl Driver {
    }
 
    //use this in repl to parse 1 line
-   pub fn parse_str(code : &str) -> (Sexps, bool) {
+   pub fn parse_str(code : &str) -> ParseStrResult {
       let lex_res = lex(code);
       //let parsed = parse_wrapper(lexemes);
-      pub fn parse_wrapper(&mut self, lex_res : Result<Lexemes, LexErr>) {}
+      //pub fn parse_wrapper(&mut self, lex_res : Result<Lexemes, LexErr>) {}
 
       if let Err((code, start, end)) = lex_res {
          //println!("lexing error: {:?}", e);
-         let mut ei = ErrInfo::new(code, Some(to_shared_mut(stack)));
+         //kk TODO: let mut ei = ErrInfo::new(code, Some(to_shared_mut(stack)));
          ei.char_i = start;
          ei.line_n = line_n;
          ei.char_highlight_ranges.push((start, end));
@@ -67,17 +68,13 @@ impl Driver {
          //display_sexps(&parsed); //TODO: temporary
 
          out = parsed; //TODO: temporary, only for compiler tests
-
-         if success { break; }
-
+         return (out, lexed);
+         //if success { break; }
       }
-
-         Err((code, start, end)) => {
-            break;
-         }
-      }
-
-
+      //   Err((code, start, end)) => {
+      //      break;
+      //   }
+      //}
    }
 
    //pub fn run(&mut self, code : &str) -> Sexps { Sexps::nil_new() }

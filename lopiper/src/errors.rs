@@ -3,7 +3,7 @@ use exp::Sexps;
 use std::fmt;
 use std::boxed::Box;
 use oxicloak::{SizeRange, SizeRanges, SharedMut, to_shared_mut};
-use types::{Lexemes, LexErr};
+use types::Lexemes;
 
 #[derive(Debug, Clone)]
 pub enum ExecStage { Unknown, Lex, Parse, Eval }

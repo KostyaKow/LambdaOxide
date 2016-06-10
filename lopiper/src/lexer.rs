@@ -1,5 +1,5 @@
-use types::{QuoteType, Lexemes, LexErr};
-use errors::{ErrInfo, ErrCode, ExecStage, StackInfo, lex_err};
+use types::{QuoteType, Lexemes, RangeErr, LexResult};
+use errors::{ErrInfo, ErrCode, ExecStage, StackInfo};
 use oxicloak::*;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -9,7 +9,7 @@ pub enum Lexeme {
 }
 
 //Ok(range-of-chars), Err((type, start-highlight, end-highlight))
-fn get_char_ranges(code : &str) -> Result<SizeRanges, LexErr> {
+fn get_char_ranges(code : &str) -> Result<SizeRanges, RangeErr> {
    let mut ranges : Vec<(usize, usize)> = Vec::new();
 
    let mut start_quote : Option<usize> = None;
@@ -41,7 +41,7 @@ fn get_char_ranges(code : &str) -> Result<SizeRanges, LexErr> {
    } else { Ok(ranges) }
 }
 
-pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
+pub fn lex(code : &str) -> LexResult {
    use oxicloak::{char_at, char_at_fast, contains, slice_str};
 
    let mut lexemes : Lexemes = Vec::new();
@@ -65,7 +65,7 @@ pub fn lex(code : &str) -> Result<Lexemes, LexErr> {
       //character, then push previously collected
       let c = char_at_fast(code, i);
       //TODO: maybe manual comparison (c == ' ' || c == '(')
-      let special_chars = vec![' ', '(', ')', '\'', '`', ',', '[', ']']
+      let special_chars = vec![' ', '(', ')', '\'', '`', ',', '[', ']'];
       let is_special = start_of_str || contains(c, special_chars);
 
       if is_special && !col.is_empty() { //push float, int and sym
