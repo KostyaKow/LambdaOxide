@@ -40,7 +40,8 @@ TODO:
    - [ ] add option to have --eval and -f. If we have both, then first load file, then eval
    - [ ] if we have eval, then split commands into statements with ; before passing it on to rest of system
    - [ ] possibly move asm_printer, jitter, scm_eval, parse_printer, lex_printer to driver.rs and make them methods of Driver.
-- [ ] account for comments in error reporting
+- [ ] account for comments in error reporting. Currently comments get deleted from origin.
+   - [ ] Possibly add a Comment(Bool, String) (Comment(multiline, comment_data) enum variant to Lexemes
 - [ ] JIT/llvm
    - [x] in progress
 - [ ] do something like rustc --explain E0123 with my error codes

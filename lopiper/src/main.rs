@@ -27,12 +27,14 @@ fn error_msg(msg : &str, terminate : bool) {
 //because of --help, or because bad arguments were passed
 fn usage(bad_args : bool) {
    if bad_args {
-      error_msg(format!("Bad arguments passed to {}" % env::args()[0]), false);
+      error_msg(&*format!("Bad arguments passed to {}", env::args()[0]), false);
    }
    error_msg("usage: TODO", true);
 }
 
 enum RunMode { Lex, Parse, Asm, Jit, None }
+//use std::cmp::PartialEq;
+#[derive(PartialEq)]
 enum ExtraArg { None, FileName(String), EvalCode(String) }
 
 /*
@@ -50,12 +52,12 @@ enum ExtraArg { None, FileName(String), EvalCode(String) }
 */
 
 fn main() {
-   let args = env::args();
+   let args = env::args().collect::<Vec<String>>();
 
    let driver = Driver::new();
 
    if args.len() == 1 {
-      driver.repl(eval, None); return 0;
+      driver.repl(eval, None); exit(0);
    }
    else if args.len() > 1 {
       if args.len() == 2 && args[1] == "--help" {
@@ -74,7 +76,7 @@ fn main() {
          if first { first = false; continue; }
          let mut good_unknown = false;
 
-         match arg {
+         match &*arg {
             "--lex" => mode = RunMode::Lex,
             "--parse" => mode = RunMode::Parse,
             "--asm" => mode = RunMode::Asm,
@@ -100,7 +102,7 @@ fn main() {
             //previus arg is -f or --eval, but this arg doesn't have their value
             usage(true);
          }
-         next_fpath = next_eval_str = false; //reset file/eval str flag
+         next_fpath = false; next_eval_str = false; //reset file/eval str flag
       }
 
       //file path to pass to repl
@@ -150,6 +152,6 @@ fn main_old() {
    //let lexemes = lex("hi");
    let mut d = Driver::new();
    //d.interpreter();
-   d.jitter_repl();
+   //d.jitter_repl();
 }
 

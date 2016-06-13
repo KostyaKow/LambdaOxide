@@ -134,7 +134,7 @@ impl ErrInfo {
       ErrInfo {
          /*stack : stack,*/ code : err_code, line_print_range : None,
          char_highlight_ranges : Vec::new(), msg : None,
-         char_i : 0, line_n : 0
+         char_i : Some(0), line_n : Some(0)
       }
    }
 

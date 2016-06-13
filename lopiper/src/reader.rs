@@ -9,7 +9,7 @@ use types::{Lexemes, ParseStrResult};
 
 #[derive(Clone)]
 pub struct ReaderInfo {
-   lines :
+   lines : String
 }
 impl ReaderInfo {
 
@@ -84,7 +84,6 @@ impl Reader {
       //   Err((code, start, end)) => {
       //      break;
       //   }
-      //}
    }
 
 }
