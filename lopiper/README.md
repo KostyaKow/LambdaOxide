@@ -36,6 +36,8 @@ Quick TODO:
 TODO:
 - [ ] main.rs
    - [ ] use library for command line parsing (https://doc.rust-lang.org/getopts/getopts/index.html)
+   - [ ] add option to have --eval and -f. If we have both, then first load file, then eval
+   - [ ] if we have eval, then split commands into statements with ; before passing it on to rest of system
 - [ ] JIT/llvm
    - [x] in progress
 - [ ] do something like rustc --explain E0123 with my error codes

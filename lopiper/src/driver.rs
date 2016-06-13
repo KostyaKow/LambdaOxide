@@ -6,18 +6,22 @@ pub enum DriverMode {
 struct Driver {
 }
 
+type LexerEvalF = Fn(Sexps, Result<Lexemes, LexErr>);
+
 impl Driver {
    //pub fn eval(&mut self, exp : &Sexps) -> Sexps { Sexps::nil_new() }
    //pub fn eval_str(&self, code : &str) -> Sexps { Sexps::nil_new() }
    //pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::nil_new() }
    //pub fn load_lisp_file(&self, path : String) -> Sexps {}
-
    fn new() -> Driver {
       Driver { }
    }
 
+   //TODO: eval should take Sexps
    //main calls this for command line argument
-   pub fn run(&mut self, code : String, from_main : Bool) -> Sexps { //TODO: should we rename eval?
+   pub fn run<F : LexerEvalF>(&mut self, code : String, repl_eval : F, from_main : Bool)
+   -> Sexps
+   {
       if from_main {
          code = "(" + code + ")";
       }

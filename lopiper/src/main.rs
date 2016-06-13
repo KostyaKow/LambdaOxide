@@ -32,7 +32,7 @@ fn usage(bad_args : bool) {
    error_msg("usage: TODO", true);
 }
 
-enum RunMode { Eval, Lex, Parse, Asm, Jit, None }
+enum RunMode { Lex, Parse, Asm, Jit, None }
 enum ExtraArg { None, FileName(String), EvalCode(String) }
 
 /*
@@ -54,7 +54,7 @@ fn main() {
    let driver = Driver::new();
 
    if args.len() == 1 {
-      driver.repl(eval, None);
+      driver.repl(eval, None); return 0;
    }
    else if args.len() > 1 {
       if args.len() == 2 && args[1] == "--help" {
@@ -64,85 +64,69 @@ fn main() {
       let mut mode = RunMode::None;
       let mut extra_arg  = ExtraArg::None; //file path or string to eval
 
-      let mut next_fpath = false;
-      let mut next_eval_str = false;
+      let mut next_fpath = false; //next argument is fpath
+      let mut next_eval_str = false; //next arg is str to eval
 
       let mut first = true;
 
       for arg in args {
          if first { first = false; continue; }
+         let mut good_unknown = false;
 
          match arg {
             "--lex" => mode = RunMode::Lex,
             "--parse" => mode = RunMode::Parse,
             "--asm" => mode = RunMode::Asm,
             "--jit" => mode = RunMode::Jit,
+            "-f" => { next_fpath = true; continue; },
+            "--eval" => { next_eval_str = true; continue; },
             _ => {
                if extra_arg != ExtraArg::None {
                   usage(true); //unknown arg & we already received file or evalstr
                }
                if next_fpath {
                   extra_arg = ExtraArg::FileName(arg);
+                  next_fpath = false;
                } else if next_eval_str {
                   extra_arg = ExtraArg::EvalCode(arg);
+                  next_eval_str = false;
                } else {
                   usage(true); //uknown arg & we don't have previous -f or --eval
                }
             },
-            "-f" => { next_fpath = true; continue; },
-            "--eval" => { next_eval_str = true; continue; },
+         }
+         if next_eval_str || next_fpath {
+            //previus arg is -f or --eval, but this arg doesn't have their value
+            usage(true);
          }
          next_fpath = next_eval_str = false; //reset file/eval str flag
       }
 
-      if next_eval_str || next_fpath { //user entered -f or --eval without args
-         usage(true);
-      }
-
+      //file path to pass to repl
       let repl_path = if let ExtraArg::FileName(path) = extra_arg
       { Some(path) } else { None };
 
-      match mode {
-         RunMode::None => {
-            if let ExtraArg::FileName(path) = extra_arg {
+      let eval_str = if let ExtraArg::EvalCode(code) = extra_arg {
+         ////passed --eval without string
+         //if mode != RunMode::None { usage(true); }
+         Some(code)
+      } else { None };
 
-            }
-            if let ExtraArg::EvalCode(code) = extra_arg
-         }
+
+      let eval_f = match mode {
+         RunMode::None => scm_eval,
+         RunMode::Lex => lex_printer,
+         RunMode::Parse => parse_printer,
+         RunMode::Asm => asm_printer,
+         RunMode::Jit => jitter
+      };
+
+      if let Some(code) = eval_str {
+         driver.run(code, eval_f, true); return 0; //--eval "blah"
+      } else {
+         //run repl, with or without file
+         driver.repl(eval_f, repl_path); return 0;
       }
-
-      /*if mode != RunMode::None && args.len() == 2 {
-         match mode {
-            RunMode::Lex => driver.repl(lex_printer, None),
-            RunMode::Parse => driver.repl(parser_printer, None)
-         }
-      }*/
-
-      match mode
-
-      if mode == RunMode::None {
-         if args.len() ==
-      }
-
-      "--lex" => driver.repl(lex_printer),
-      "--parse" => driver.repl(parser_printer),
-      "--asm" => driver.repl(asm_printer),
-      "--jit" => driver.repl(jitter),
-      _ => usage(true)
-
-else {
-      let arg_num = 0;
-
-      let mut stage = None;
-
-      for arg in args {
-         match arg {
-            "--lex" => if
-         }
-         arg_num += 1;
-      }
-   }
-
 }
 
 //we use this functions to pass to driver repl, and they are used as repl_eval
@@ -155,10 +139,10 @@ pub fn scm_eval(parsed_exp : Sexps, lex_res : Result<Lexemes, LexErr>) { }
 
 pub fn parser_printer(parsed_exp : Sepxs, lex_res : Result<Lexemes, LexErr) {}
 pub fn lex_printer(parsed_exp : Sexps, lex_res : Result<Lexemes, LexErr>) {
-      //Use this to debug lexer:
-      //use utils::print_lexemes;
-      //print_lexemes(&lexed);
-      //break;
+   //Use this to debug lexer:
+   //use utils::print_lexemes;
+   //print_lexemes(&lexed);
+   //break;
 }
 
 fn main_old() {
