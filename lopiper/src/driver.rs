@@ -1,9 +1,15 @@
+user errors::{ErrInfo, ErrCode};
 
-pub enum DriverMode {
-   Repl,
-}
+//pub enum DriverMode { Repl, }
 
-struct Driver {
+pub struct Driver {
+   //TODO: driver should contain symbol table too
+
+   file_origin : Option<String>,
+
+   //TODO: set this to none once finished with file
+   file_lines : Option<Vec<String>>,
+   file_line : usize
 }
 
 type LexerEvalF = Fn(Sexps, Result<Lexemes, LexErr>);
@@ -14,27 +20,34 @@ impl Driver {
    //pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::nil_new() }
    //pub fn load_lisp_file(&self, path : String) -> Sexps {}
    fn new() -> Driver {
-      Driver { }
+      Driver {
+         file_code : None,
+         file_origin : None,
+         file_size : 0,
+      }
    }
 
-   //TODO: eval should take Sexps
+   //TODO: calls eval with parsed Sexps
    //main calls this for command line argument
-   pub fn run<F : LexerEvalF>(&mut self, code : String, repl_eval : F, from_main : Bool)
+   pub fn run<F : LexerEvalF>(&mut self, code_raw : String,
+                              repl_eval : F, from_main : Bool)
    -> Sexps
    {
-      if from_main {
-         //TODO: let splitted = code.split(';')
-         //let mut good = "";
-         //for expr_str in splitted {  good += "(" + exp_str " + ")"; }
-         //code = good;
+      let code = if from_main {
          //TODO: this breaks comments and strings with ";" in them
-         code = "(" + code + ")";
-      }
+         let mut good = "";
+         let splitted = code_raw.split(';');
+         for expr_str in splitted  {
+            good += "(" + expr_str + ")";
+         }
+         good
+      } else { code_raw }
+
       Sexps::nil_new()
    }
 
-   pub fn load_file(&mut self, path : &str, file_eval : F) -> Sexps {}
-   pub fn load_multiline(&mut self, exp : &str, line_eval : F) -> Sexps {}
+   //pub fn load_file(&mut self, path : &str, file_eval : F) -> Sexps {}
+   //pub fn load_multiline(&mut self, exp : &str, line_eval : F) -> Sexps {}
 
    pub fn next_stack(&mut self) -> usize {
       let mut stacks = Vec::new();
@@ -47,12 +60,66 @@ impl Driver {
       self.stacks.get(n)
    }
 
+   //either repl driver, or gets line from path
+   fn get_line(&mut self, path_opt : Option<String>) -> Option<String> {
+      if let Some(path) = path_opt {
+         //TODO: make sure not out of range, and check before unwrap
+         let line = self.file_lines.unwrap()[self.file_line];
+         self.file_line += 1;
+         Some(line)
+      } else {
+         use std::io::{self, BufRead, Write};
+         let stdin = io::stdin();
+         print!("**> ");
+         io::stdout().flush().unwrap();
+         let line = stdin.lock().lines().next().unwrap().unwrap();
+         Some(line)
+      }
+   }
+
+   //TODO: implement comments correctly (;) (kinda done)
+   //TODO: account for comments in error reporting
+   fn load_file(&self, path : String) -> Sexps {
+      let file_data_opt = oxicloak::read_file(path);
+      if let Err(e) = file_data_opt {
+         let mut err = ErrInfo::new(ErrCode::FileFail);
+         err.msg = format!("could not read lisp file ({}): {}", path, e);
+         return Sexps::err_new(err);
+      } self.origin = Some(file_data_opt.unwrap());
+      self.file_line = 0;
+      let mut lines_no_comment = Vec::new();
+      let origin_lines = self.origin.split('\n');
+      for line in origin_lines { //remove comments
+         let mut line_data = "";
+         for char in line {
+            if char == ';' { break; }
+            line_data += char;
+         }
+         lines_no_comments.push(line_data);
+      }
+
+      self.file_lines = lines_no_comment;
+      Sexps::new_nil()
+   }
+
    //if path is None, we start repl, otherwise load file
-   pub fn repl<F>(&mut self, repl_eval : F, path : Option<String>)
+   //if error, return it wrapped in Sexps
+   pub fn repl<F>(&mut self, repl_eval : F, path_opt : Option<String>)
       where F : Fn(Sexps, Result<Lexemes, LexErr>) -> Sexps
    {
-      use std::io::{self, BufRead, Write};
-      let stdin = io::stdin();
+      self.file_code = None;
+      self.file_line = 0;
+
+      //run repl in file mode
+      if Some(path) = path_opt {
+         let status = load_file(path);
+         if status.is_err() {
+            return status;
+         }
+      }
+
+      /*use std::io::{self, BufRead, Write};
+      let stdin = io::stdin();*/
 
       loop {
          let mut repl_eval_out : Sexps = Sexps::nil_new();

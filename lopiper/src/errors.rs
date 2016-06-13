@@ -32,7 +32,10 @@ pub enum ErrCode {
    UncompleteExp, //TODO: is this parse error? we throw this when uncomplete exp
 
    //GENERIC:
-   Unimplemented, Unexpected //Internal compiler/interpreter errors
+   Unimplemented, Unexpected, //Internal compiler/interpreter errors
+
+   //MISC:
+   FileFail,
 }
 
 fn get_err_desc(code : ErrCode, func_opt : Option<FuncInfo>) -> String {
@@ -110,12 +113,12 @@ pub struct FuncInfo {
 //#[derive(Debug, Clone)]
 #[derive(Clone)]
 pub struct ErrInfo {
-   pub stack : Option<SharedMut<StackInfo>>,
+   //pub stack : Option<SharedMut<StackInfo>>,
    pub code : ErrCode,
 
-   //pub line_print_range : Option<SizeRange>, //line range to print from origin
-   pub highlight_ranges : SizeRanges, //ranges to underline in chars
-   pub info : ParseInfo,
+   pub line_print_range : Option<SizeRange>, //line range to print from origin
+   pub char_highlight_ranges : SizeRanges, //ranges to underline in chars
+   //pub info : ParseInfo,
 
    pub msg : Option<String>, //custom message
 
@@ -123,13 +126,13 @@ pub struct ErrInfo {
    //different from StackInfo char_i
    //(false!!!) char index from start of origin of error
    pub char_i : Option<usize>, //index from start of line
-   //pub line_n : Option<usize>,
+   pub line_n : Option<usize>,
 }
 
 impl ErrInfo {
    pub fn new(err_code : ErrCode, stack : Option<SharedMut<StackInfo>>) -> ErrInfo {
       ErrInfo {
-         stack : stack, code : err_code, line_print_range : None,
+         /*stack : stack,*/ code : err_code, line_print_range : None,
          char_highlight_ranges : Vec::new(), msg : None,
          char_i : 0, line_n : 0
       }

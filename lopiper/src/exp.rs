@@ -43,14 +43,14 @@ pub enum Sexps {
 #[allow(dead_code)]
 impl Sexps {
    //TODO: quote_new_box? like err_new?
-   pub fn quote_new(qtype : QuoteType, exp : Sexps) -> Sexps { Sexps::Quote(qtype, Box::new(exp)) }
-   pub fn nil_new() -> Sexps { Sexps::Nil }
-   pub fn err_new(ei : ErrInfo) -> Sexps { Sexps::Err(Box::new(ei)) }
-   pub fn err_new_box(ei : Box<ErrInfo>) -> Sexps { Sexps::Err(ei) } //TODO: is one of this a bad practice?
-   pub fn str_new(s : &str) -> Sexps { Sexps::Str(s.to_string()) }
-   pub fn int_new(n : i64) -> Sexps { Sexps::Int(n)  }
-   pub fn float_new(n : f64) -> Sexps { Sexps::Float(n) }
-   pub fn bool_new(b : bool) -> Sexps { Sexps::Bool(b) }
+   pub fn new_quote(qtype : QuoteType, exp : Sexps) -> Sexps { Sexps::Quote(qtype, Box::new(exp)) }
+   pub fn new_nil() -> Sexps { Sexps::Nil }
+   pub fn new_err(ei : ErrInfo) -> Sexps { Sexps::Err(Box::new(ei)) }
+   pub fn new_err_box(ei : Box<ErrInfo>) -> Sexps { Sexps::Err(ei) } //TODO: is one of this a bad practice?
+   pub fn new_str(s : &str) -> Sexps { Sexps::Str(s.to_string()) }
+   pub fn new_int(n : i64) -> Sexps { Sexps::Int(n)  }
+   pub fn new_float(n : f64) -> Sexps { Sexps::Float(n) }
+   pub fn new_bool(b : bool) -> Sexps { Sexps::Bool(b) }
 
    pub fn arr_new() -> Sexps {
       Sexps::Array(to_shared_mut(Vec::new()))

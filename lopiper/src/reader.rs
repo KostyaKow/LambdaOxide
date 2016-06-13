@@ -34,7 +34,8 @@ impl Reader {
 
    //pub fn get_lexemes()
 
-   pub fn add_to_line(&mut self,
+   //just call parse_line repetitively
+   //pub fn add_to_line(&mut self, new_code : &str);
 
    //returns (parsed_sexps, lexemes)
    //use this in repl to parse 1 line

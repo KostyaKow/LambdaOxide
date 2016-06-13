@@ -14,7 +14,7 @@ This new version is a re-write which aims to resolve all the previous problems a
 
 General overview
 - Errors: TODO
-- Reader (reader.rs) parses one line (or one multi-line expression) to lisp expression. Can return multiple expressions if they're on same line.
+- Reader (reader.rs) parses one line (or one multi-line expression) to lisp expression. Can return multiple expressions if they're on same line. Create new instance for every line.
 - exp.rs has the main Lisp-expression type (Sexps enum)
 - Driver (driver.rs) has repl driver and keeps track of reader data (lex/parse error location) and evaluator info (such as stack trace).
 - Lexer (lexer.rs) breaks down strings into lisp lexemes
@@ -30,8 +30,9 @@ General overview
 -before calling every parse_str for files, set line manually on errors
 
 Quick TODO:
-- [ ] remove all old code for parse when it returned Sexps
+- [ ] remove all old code for parse when it returned Sexps instead of Result
 - [ ] remove child_parse error
+- [ ] in get_line of driver, make sure line isn't out of range, and file_lines isn't None
 
 TODO:
 - [ ] main.rs
@@ -39,6 +40,7 @@ TODO:
    - [ ] add option to have --eval and -f. If we have both, then first load file, then eval
    - [ ] if we have eval, then split commands into statements with ; before passing it on to rest of system
    - [ ] possibly move asm_printer, jitter, scm_eval, parse_printer, lex_printer to driver.rs and make them methods of Driver.
+- [ ] account for comments in error reporting
 - [ ] JIT/llvm
    - [x] in progress
 - [ ] do something like rustc --explain E0123 with my error codes
