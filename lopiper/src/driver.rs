@@ -7,7 +7,6 @@ struct Driver {
 }
 
 impl Driver {
-   //pub fn run(&mut self, code : &str) -> Sexps { Sexps::nil_new() }
    //pub fn eval(&mut self, exp : &Sexps) -> Sexps { Sexps::nil_new() }
    //pub fn eval_str(&self, code : &str) -> Sexps { Sexps::nil_new() }
    //pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::nil_new() }
@@ -16,10 +15,17 @@ impl Driver {
    fn new() -> Driver {
       Driver { }
    }
-   pub fn run(&mut self, code : &str) -> Sexps { //TODO: should we rename eval?
+
+   //main calls this for command line argument
+   pub fn run(&mut self, code : String, from_main : Bool) -> Sexps { //TODO: should we rename eval?
+      if from_main {
+         code = "(" + code + ")";
+      }
       Sexps::nil_new()
    }
+
    pub fn load_file(&mut self, path : &str, file_eval : F) -> Sexps {}
+   pub fanyn load_multiline(&mut self, exp : &str, line_eval : F) -> Sexps {}
 
    pub fn next_stack(&mut self) -> usize {
       let mut stacks = Vec::new();
