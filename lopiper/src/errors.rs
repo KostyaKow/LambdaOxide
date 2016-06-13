@@ -32,7 +32,7 @@ pub enum ErrCode {
    UncompleteExp, //TODO: is this parse error? we throw this when uncomplete exp
 
    //GENERIC:
-   Unimplemented
+   Unimplemented, Unexpected //Internal compiler/interpreter errors
 }
 
 fn get_err_desc(code : ErrCode, func_opt : Option<FuncInfo>) -> String {
@@ -103,6 +103,13 @@ pub struct FuncInfo {
    def_loc_char_range : SizeRange //location where function is defined
 }
 
+
+#[derive(Clone)]
+pub struct ParseInfo {
+   pub origin : String, //original file text or repl input
+   pub lexemes : Lexemes, //original lexemes
+}
+
 //TODO: map lexemes to input
 //TODO: line index, or expression index?
 //in repl, char_index and line_index start from beginning of last command
@@ -113,16 +120,17 @@ pub struct ErrInfo {
    pub stack : Option<SharedMut<StackInfo>>,
    pub code : ErrCode,
 
-   pub line_print_range : Option<SizeRange>, //line range to print from origin
-   pub char_highlight_ranges : SizeRanges, //ranges to underline
+   //pub line_print_range : Option<SizeRange>, //line range to print from origin
+   pub highlight_ranges : SizeRanges, //ranges to underline in chars
+   pub info : ParseInfo,
 
    pub msg : Option<String>, //custom message
 
    //TODO: need char_i in err_info?
    //different from StackInfo char_i
    //(false!!!) char index from start of origin of error
-   pub char_i : usize, //index from start of line
-   pub line_n : usize,
+   pub char_i : Option<usize>, //index from start of line
+   //pub line_n : Option<usize>,
 }
 
 impl ErrInfo {

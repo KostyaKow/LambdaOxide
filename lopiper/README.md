@@ -1,13 +1,31 @@
 
-(lambda f (a b) (+ (+ 3 5) (+ a b)))
-(lambda printf (x))
-(lambda main () (print (f 30 4)))
 
-cat output > test.bc
-//http://stackoverflow.com/questions/29180737/how-to-generate-executable-from-llvm-ir
-llc -march=x86-64 test.bc -o test.s
-//as test.s
-gcc test.s -o a.out
+===Code in this folder IS WORK IN PROGRESS for LambdaOxide v2. Most of the stuff is broken, so if you want to use the first version of the interpreter, check out parent folder===
+
+
+Here's small lisp of problems with my previous lisp implementation:
+- very rigid Sexps syntax that was awkward to use in Rust, and didn't have binding in LambdaOxide language itself (so you couldn't Lisp expressions in language itself). It also made adding new syntax and build-in functions convoluted and over-complicated.
+- cons was not mapped to machine primitive but was instead constructed with lambda functions, which made the performance unacceptable in real-world applications.
+- no garbage collection and no tail call optimization, another major omission which made it impractical.
+- very awkward implementation of Symbol Table
+- very bad error reporting
+
+This new version is a re-write which aims to resolve all the previous problems and omissions, and also serve as a playground for construction of Lisp compiler which translates subset of Scheme (or possible completely different language with lisp syntax) to LLVM bytecode. The plan is to eventually add a JIT to LambdaOxide. An alternative might be to expose compile function to LambdaOxide interpreter, in similar fashion as Common Lisp.
+
+General overview
+- Reader (reader.rs) parses string to lisp expression and has the repl driver. Also keeps track of stack traces.
+- exp.rs has the main Lisp-expression type (Sexps enum)
+- Lexer (lexer.rs) breaks down strings into lisp lexemes
+- Parser (parser.rs) converts Lexemes to Sexps
+- Compiler (comp.rs) translates primitive language (parsed by Parser) into llvm bytecode
+- eval.rs has the main lisp interpreter (subset of Scheme), not yet finished, but more advanced than the primitive compiled language
+- symtable.rs is symbol table for interpreter
+- main.rs parses command line argument and dispatches appropriate action
+
+===Read line===
+-every repl input gets it's own stack
+-every file read gets it's own stack
+-before calling every parse_str for files, set line manually on errors
 
 Quick TODO:
 - [ ] remove all old code for parse when it returned Sexps
@@ -65,4 +83,14 @@ comma = unquote
 //'''3 => '''3 or (quote (uqote (quote 3)))
 //'fsdf 3 => fsdf 3
 */
+
+(lambda f (a b) (+ (+ 3 5) (+ a b)))
+(lambda printf (x))
+(lambda main () (print (f 30 4)))
+
+cat output > test.bc
+//http://stackoverflow.com/questions/29180737/how-to-generate-executable-from-llvm-ir
+llc -march=x86-64 test.bc -o test.s
+//as test.s
+gcc test.s -o a.out
 
