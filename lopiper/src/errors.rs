@@ -103,13 +103,6 @@ pub struct FuncInfo {
    def_loc_char_range : SizeRange //location where function is defined
 }
 
-
-#[derive(Clone)]
-pub struct ParseInfo {
-   pub origin : String, //original file text or repl input
-   pub lexemes : Lexemes, //original lexemes
-}
-
 //TODO: map lexemes to input
 //TODO: line index, or expression index?
 //in repl, char_index and line_index start from beginning of last command

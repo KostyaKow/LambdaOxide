@@ -13,13 +13,15 @@ Here's small lisp of problems with my previous lisp implementation:
 This new version is a re-write which aims to resolve all the previous problems and omissions, and also serve as a playground for construction of Lisp compiler which translates subset of Scheme (or possible completely different language with lisp syntax) to LLVM bytecode. The plan is to eventually add a JIT to LambdaOxide. An alternative might be to expose compile function to LambdaOxide interpreter, in similar fashion as Common Lisp.
 
 General overview
-- Reader (reader.rs) parses string to lisp expression and has the repl driver. Also keeps track of stack traces.
+- Errors: TODO
+- Reader (reader.rs) parses one line to lisp expression
 - exp.rs has the main Lisp-expression type (Sexps enum)
+- Driver (driver.rs) has repl driver and keeps track of reader data (lex/parse error location) and evaluator info (such as stack trace).
 - Lexer (lexer.rs) breaks down strings into lisp lexemes
 - Parser (parser.rs) converts Lexemes to Sexps
 - Compiler (comp.rs) translates primitive language (parsed by Parser) into llvm bytecode
-- eval.rs has the main lisp interpreter (subset of Scheme), not yet finished, but more advanced than the primitive compiled language
-- symtable.rs is symbol table for interpreter
+- Evaluator (eval.rs) has the main lisp interpreter (subset of Scheme), not yet finished, but more advanced than the primitive compiled language
+- sym_table.rs is symbol table for interpreter
 - main.rs parses command line argument and dispatches appropriate action
 
 ===Read line===
