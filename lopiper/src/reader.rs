@@ -18,6 +18,8 @@ impl ReaderInfo {
 pub struct Reader {
    origin : Option<String>, //original file text or repl input
    lexemes : Option<Lexemes>, //original lexemes
+   lines : Vec<String>,
+
    parsed : Option<Sexps>
 }
 
@@ -30,11 +32,15 @@ impl Reader {
       }
    }
 
-   //pub fn get_lexemes
+   //pub fn get_lexemes()
+
+   pub fn add_to_line(&mut self,
 
    //returns (parsed_sexps, lexemes)
    //use this in repl to parse 1 line
-   pub fn parse_str(&mut self, code : &str, stack_n : usize) -> (Sexps, Option<Lexemes>) {
+   pub fn parse_line(&mut self, code : &str, stack_n : usize)
+   -> (Sexps, Option<Lexemes>)
+   {
       //let parsed = parse_wrapper(lexemes);
       //pub fn parse_wrapper(&mut self, lex_res : Result<Lexemes, LexErr>) {}
       let stack_opt = self.get_stack(stack_n);

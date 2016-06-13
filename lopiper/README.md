@@ -14,7 +14,7 @@ This new version is a re-write which aims to resolve all the previous problems a
 
 General overview
 - Errors: TODO
-- Reader (reader.rs) parses one line to lisp expression
+- Reader (reader.rs) parses one line (or one multi-line expression) to lisp expression. Can return multiple expressions if they're on same line.
 - exp.rs has the main Lisp-expression type (Sexps enum)
 - Driver (driver.rs) has repl driver and keeps track of reader data (lex/parse error location) and evaluator info (such as stack trace).
 - Lexer (lexer.rs) breaks down strings into lisp lexemes
@@ -38,6 +38,7 @@ TODO:
    - [ ] use library for command line parsing (https://doc.rust-lang.org/getopts/getopts/index.html)
    - [ ] add option to have --eval and -f. If we have both, then first load file, then eval
    - [ ] if we have eval, then split commands into statements with ; before passing it on to rest of system
+   - [ ] possibly move asm_printer, jitter, scm_eval, parse_printer, lex_printer to driver.rs and make them methods of Driver.
 - [ ] JIT/llvm
    - [x] in progress
 - [ ] do something like rustc --explain E0123 with my error codes

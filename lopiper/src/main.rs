@@ -48,6 +48,7 @@ enum ExtraArg { None, FileName(String), EvalCode(String) }
 
 ./lo -f <filename> [--lex|--parse|--asm|--jit] = do same as one of the options but use file instead of repl
 */
+
 fn main() {
    let args = env::args();
 
@@ -112,7 +113,6 @@ fn main() {
          Some(code)
       } else { None };
 
-
       let eval_f = match mode {
          RunMode::None => scm_eval,
          RunMode::Lex => lex_printer,
@@ -127,6 +127,7 @@ fn main() {
          //run repl, with or without file
          driver.repl(eval_f, repl_path); return 0;
       }
+   }
 }
 
 //we use this functions to pass to driver repl, and they are used as repl_eval

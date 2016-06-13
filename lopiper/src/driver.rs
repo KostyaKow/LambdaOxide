@@ -23,13 +23,18 @@ impl Driver {
    -> Sexps
    {
       if from_main {
+         //TODO: let splitted = code.split(';')
+         //let mut good = "";
+         //for expr_str in splitted {  good += "(" + exp_str " + ")"; }
+         //code = good;
+         //TODO: this breaks comments and strings with ";" in them
          code = "(" + code + ")";
       }
       Sexps::nil_new()
    }
 
    pub fn load_file(&mut self, path : &str, file_eval : F) -> Sexps {}
-   pub fanyn load_multiline(&mut self, exp : &str, line_eval : F) -> Sexps {}
+   pub fn load_multiline(&mut self, exp : &str, line_eval : F) -> Sexps {}
 
    pub fn next_stack(&mut self) -> usize {
       let mut stacks = Vec::new();
