@@ -71,32 +71,42 @@ fn main() {
 
       for arg in args {
          if first { first = false; continue; }
+
          match arg {
             "--lex" => mode = RunMode::Lex,
             "--parse" => mode = RunMode::Parse,
             "--asm" => mode = RunMode::Asm,
             "--jit" => mode = RunMode::Jit,
             _ => {
-               if extra_arg != ExtraArg::None { usage(true); }
+               if extra_arg != ExtraArg::None {
+                  usage(true); //unknown arg & we already received file or evalstr
+               }
                if next_fpath {
-                  next_fpath = false;
                   extra_arg = ExtraArg::FileName(arg);
                } else if next_eval_str {
-                  next_eval_str = false;
                   extra_arg = ExtraArg::EvalCode(arg);
-               } else { usage(true); }
+               } else {
+                  usage(true); //uknown arg & we don't have previous -f or --eval
+               }
             },
-            "-f" => next_fpath = true,
-            "--eval" => next_eval_str = true,
+            "-f" => { next_fpath = true; continue; },
+            "--eval" => { next_eval_str = true; continue; },
          }
+         next_fpath = next_eval_str = false; //reset file/eval str flag
       }
 
-      let repl_eval = match mode {
+      if next_eval_str || next_fpath { //user entered -f or --eval without args
+         usage(true);
+      }
+
+      let repl_path = if let ExtraArg::FileName(path) = extra_arg
+      { Some(path) } else { None };
+
+      match mode {
          RunMode::None => {
             if let ExtraArg::FileName(path) = extra_arg {
 
             }
-
             if let ExtraArg::EvalCode(code) = extra_arg
          }
       }

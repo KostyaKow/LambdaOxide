@@ -34,6 +34,8 @@ Quick TODO:
 - [ ] remove child_parse error
 
 TODO:
+- [ ] main.rs
+   - [ ] use library for command line parsing (https://doc.rust-lang.org/getopts/getopts/index.html)
 - [ ] JIT/llvm
    - [x] in progress
 - [ ] do something like rustc --explain E0123 with my error codes
