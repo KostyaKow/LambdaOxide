@@ -31,7 +31,8 @@ fn error_msg(msg : &str, terminate : bool) {
 //because of --help, or because bad arguments were passed
 fn usage(bad_args : bool) {
    if bad_args {
-      error_msg(&*format!("Bad arguments passed to {}", env::args()[0]), false);
+      let arg0 = env::args().collect::<Vec<String>>()[0];
+      error_msg(&*format!("Bad arguments passed to {}", arg0), false);
    }
    error_msg("usage: TODO", true);
 }
@@ -118,10 +119,10 @@ fn main() {
       } else { None };
 
       if let Some(code) = eval_str {
-         driver.run(code, mode, true); return 0; //--eval "blah"
+         driver.run(code, mode, true); exit(0); //--eval "blah"
       } else {
          //run repl, with or without file
-         driver.repl(mode, repl_path); return 0;
+         driver.repl(mode, repl_path); exit(0);
       }
    }
 }

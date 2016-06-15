@@ -5,15 +5,13 @@ use utils::display_sexps;
 use exp::Sexps;
 use errors::{ExecStage, ErrCode, ErrInfo};
 use errors::{StackInfo};
-use types::{Lexemes, ParseStrResult};
+use types::{Lexemes};
 
-#[derive(Clone)]
+/*#[derive(Clone)]
 pub struct ReaderInfo {
    lines : String
 }
-impl ReaderInfo {
-
-}
+impl ReaderInfo {}*/
 
 pub struct Reader {
    origin : Option<String>, //original file text or repl input
@@ -48,7 +46,7 @@ impl Reader {
       if let Err(stack) = stack_opt {
          let mut ei = ErrInfo::new(ErrCode::Unexpected, None);
          ei.msg = Some("couldn't get stack in parse_str".to_string());
-         return (Sexps::err_new(ei), None);
+         return (Sexps::new_err(ei), None);
       }
       let stack = stack_opt.unwrap();
 
@@ -58,7 +56,7 @@ impl Reader {
          let mut ei = ErrInfo::new(code, Some(self.stacks[stack_n]));
          ei.char_i = Some(start);
          ei.char_highlight_ranges.push((start, end));
-         return (Sexps::err_new(ei), None);
+         return (Sexps::new_err(ei), None);
       }
 
       let lexed = lex_res.unwrap();

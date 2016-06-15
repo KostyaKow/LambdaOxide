@@ -113,7 +113,7 @@ pub struct FuncInfo {
 //#[derive(Debug, Clone)]
 #[derive(Clone)]
 pub struct ErrInfo {
-   //pub stack : Option<SharedMut<StackInfo>>,
+   pub stack : Option<SharedMut<StackInfo>>, //TODO: re-write stack
    pub code : ErrCode,
 
    pub line_print_range : Option<SizeRange>, //line range to print from origin

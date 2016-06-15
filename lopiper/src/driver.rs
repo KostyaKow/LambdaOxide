@@ -1,5 +1,6 @@
 use errors::{ErrInfo, ErrCode};
 use exp::Sexps;
+use sym_table::SymTableRoot;
 use eval::ReplMode;
 use std::process::exit;
 
@@ -22,7 +23,7 @@ impl Driver {
    //pub fn eval_str(&self, code : &str) -> Sexps { Sexps::new_nil() }
    //pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::new_nil() }
    //pub fn load_lisp_file(&self, path : String) -> Sexps {}
-   fn new() -> Driver {
+   pub fn new() -> Driver {
       Driver {
          file_code : None,
          file_origin : None,
@@ -54,7 +55,7 @@ impl Driver {
 
    pub fn next_stack(&mut self) -> usize {
       let mut stacks = Vec::new();
-      stacks.push(to_shared_mut(StackInfo::new()))
+      stacks.push(to_shared_mut(StackInfo::new()));
       self.stack_num += 1;
       self.stack_num - 1
    }
@@ -86,8 +87,9 @@ impl Driver {
       let file_data_opt = oxicloak::read_file(path);
       if let Err(e) = file_data_opt {
          let mut err = ErrInfo::new(ErrCode::FileFail);
-         err.msg = format!("could not read lisp file ({}): {}", path, e);
-         return Sexps::err_new(err);
+         let msg = format!("could not read lisp file ({}): {}", path, e);
+         err.msg = Some(msg);
+         return Sexps::new_err(err);
       } self.origin = Some(file_data_opt.unwrap());
       self.file_line = 0;
       let mut lines_no_comment = Vec::new();
@@ -111,15 +113,15 @@ impl Driver {
    -> Sexps
       //where F : Fn(Sexps, Result<Lexemes, LexErr>) -> Sexps
    {
-      self.file_code = None;
+      self.file_origin = None;
       self.file_line = 0;
 
       //run repl in file mode
-      if Some(path) = path_opt {
-         let status = load_file(path);
+      if let Some(path) = path_opt {
+         /*let status = load_file(path);
          if status.is_err() {
             return status;
-         }
+         }*/
       }
 
       /*use std::io::{self, BufRead, Write};
@@ -173,10 +175,10 @@ impl Driver {
                Err((code, start, end)) => {
                   //println!("lexing error: {:?}", e);
                   let mut ei = ErrInfo::new(code, Some(to_shared_mut(stack)));
-                  ei.char_i = start;
-                  ei.line_n = line_n;
+                  ei.char_i = Some(start);
+                  ei.line_n = Some(line_n);
                   ei.char_highlight_ranges.push((start, end));
-                  out = Sexps::err_new(ei);
+                  out = Sexps::new_err(ei);
                   break;
                }
             }

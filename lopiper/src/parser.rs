@@ -79,7 +79,7 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> ParseResult {
       }
       let mut ret_exp = exp_opt.unwrap();
       for i in (0..quotes_vec.len()).rev() {
-         ret_exp = Sexps::quote_new(quotes_vec[i].clone(), ret_exp);
+         ret_exp = Sexps::new_quote(quotes_vec[i].clone(), ret_exp);
       }
       return Ok(ret_exp);
    }
@@ -138,7 +138,7 @@ fn parse_helper(lexemes : &Vec<Lexeme>, child : ChildRange) -> ParseResult {
    let mut ret = Sexps::arr_new_from_vec(sub);
 
    for i in (0..quotes_vec.len()).rev() {
-      ret = Sexps::quote_new(quotes_vec[i].clone(), ret);
+      ret = Sexps::new_quote(quotes_vec[i].clone(), ret);
    }
    Ok(ret)
    //Sexps::arr_new_from_vec(sub)
@@ -152,7 +152,7 @@ pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
    if lexemes.len() == 0 {
       //return (Sexps::arr_new_singleton(parse_exp_err(ErrCode::UncompleteExp, None)), false);
       //return (parse_exp_err(ErrCode::UncompleteExp, None), false);
-      return Err(ErrCode::UncompleteExp, 0, 0);
+      return Err((ErrCode::UncompleteExp, 0, 0));
    }
 
    let childs_ret = get_child_ranges(lexemes, (0, lexemes.len()-1));
