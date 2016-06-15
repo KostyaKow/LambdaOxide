@@ -21,6 +21,7 @@ mod sym_table;
 use eval::ReplMode;
 use std::env;
 use driver::Driver;
+use std::process::exit;
 
 fn error_msg(msg : &str, terminate : bool) {
    if terminate { panic!("{}", msg); }

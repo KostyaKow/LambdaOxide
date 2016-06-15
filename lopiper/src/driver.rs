@@ -3,6 +3,7 @@ use exp::Sexps;
 use sym_table::SymTableRoot;
 use eval::ReplMode;
 use std::process::exit;
+use utils::display_sexps;
 
 use eval::EvalFunc;
 
@@ -183,7 +184,7 @@ impl Driver {
                   ei.char_i = Some(start);
                   ei.line_n = Some(line_n);
                   ei.char_highlight_ranges.push((start, end));
-                  out = Sexps::new_err(ei);
+                  parsed = Sexps::new_err(ei);
                   break;
                }
             }
