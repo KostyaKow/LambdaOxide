@@ -30,7 +30,7 @@ pub type EvalFunc = Box<Fn(Sexps, LexResult, Env) -> Sexps>;
 pub fn get_eval_f(mode : ReplMode) -> EvalFunc {
    match mode {
       ReplMode::None => { panic!("TODO: ReplMode None")/*; scm_eval*/ },
-      ReplMode::Eval => Box::new(move scm_eval),
+      ReplMode::Eval => Box::new(move |a, b, c| scm_eval(a, b, c)),
       ReplMode::Lex => Box::new(move lex_printer),
       ReplMode::Parse => Box::new(move parse_printer),
       ReplMode::Asm => Box::new(move asm_printer),

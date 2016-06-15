@@ -53,7 +53,8 @@ impl Reader {
       let lex_res = lex(code);
       if let Err((code, start, end)) = lex_res {
          //println!("lexing error: {:?}", e);
-         let mut ei = ErrInfo::new(code, Some(self.stacks[stack_n]));
+         //TODO: Some(self.stacks[stack_n]));
+         let mut ei = ErrInfo::new(code, None);
          ei.char_i = Some(start);
          ei.char_highlight_ranges.push((start, end));
          return (Sexps::new_err(ei), None);
@@ -75,7 +76,7 @@ impl Reader {
       //display_sexps(&parsed); //TODO: temporary
 
       //out = parsed; //TODO: temporary, only for compiler tests
-      return (parsed, lexemes);
+      return (parsed, Some(lexemes));
    }
 
 }

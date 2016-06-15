@@ -64,7 +64,6 @@ impl Driver {
       Sexps::new_nil()
    }
 
-
    //either repl driver, or gets line from path
    fn get_line(&mut self, path_opt : Option<String>) -> Option<String> {
       if let Some(path) = path_opt {
@@ -174,13 +173,14 @@ impl Driver {
                   println!("success parse? : {}", success);
                   //display_sexps(&parsed); //TODO: temporary
 
-                  out = parsed; //TODO: temporary, only for compiler tests
+                  //out = parsed; //TODO: temporary, only for compiler tests
 
                   if success { break; }
                },
                Err((code, start, end)) => {
                   //println!("lexing error: {:?}", e);
-                  let mut ei = ErrInfo::new(code, Some(to_shared_mut(stack)));
+                  //TODO: //Some(to_shared_mut(stack))
+                  let mut ei = ErrInfo::new(code, None);
                   ei.char_i = Some(start);
                   ei.line_n = Some(line_n);
                   ei.char_highlight_ranges.push((start, end));
@@ -190,12 +190,13 @@ impl Driver {
             }
             line_n += 1;
 
+            let repl_eval = eval::get_eval_f(mode);
 
             //output from repl_eval() passed, we're gonna display it
             repl_eval_out = repl_eval(parsed, lexemes);
             line_n += 1;
          }
-         display_sexp(&repl_eval_out);
+         display_sexps(&repl_eval_out);
       }
    }
 
