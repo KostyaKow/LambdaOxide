@@ -1,5 +1,5 @@
-
 use std::collections::HashMap;
+use exp::Sexps;
 
 pub struct SymTable {
    bindings : HashMap<String, Sexps>,
@@ -7,5 +7,4 @@ pub struct SymTable {
 }
 
 type SymTableRoot = Vec<SymTable>;
-
 

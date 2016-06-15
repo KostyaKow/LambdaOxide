@@ -1,4 +1,3 @@
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum QuoteType { BackQuote, Comma, Q }
 

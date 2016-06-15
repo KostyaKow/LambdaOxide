@@ -14,7 +14,11 @@ mod lexer;
 mod parser;
 mod errors;
 mod comp;
+mod driver;
+mod eval;
+mod sym_table;
 
+use eval::ReplMode;
 use std::env;
 use driver::Driver;
 
@@ -32,7 +36,6 @@ fn usage(bad_args : bool) {
    error_msg("usage: TODO", true);
 }
 
-enum RunMode { Lex, Parse, Asm, Jit, None }
 //use std::cmp::PartialEq;
 #[derive(PartialEq)]
 enum ExtraArg { None, FileName(String), EvalCode(String) }
@@ -50,21 +53,20 @@ enum ExtraArg { None, FileName(String), EvalCode(String) }
 
 ./lo -f <filename> [--lex|--parse|--asm|--jit] = do same as one of the options but use file instead of repl
 */
-
 fn main() {
    let args = env::args().collect::<Vec<String>>();
 
    let driver = Driver::new();
 
    if args.len() == 1 {
-      driver.repl(eval, None); exit(0);
+      driver.repl(ReplMode::Eval, None); exit(0);
    }
    else if args.len() > 1 {
       if args.len() == 2 && args[1] == "--help" {
          usage(false); //return 0;
       }
 
-      let mut mode = RunMode::None;
+      let mut mode = ReplMode::None;
       let mut extra_arg  = ExtraArg::None; //file path or string to eval
 
       let mut next_fpath = false; //next argument is fpath
@@ -77,10 +79,10 @@ fn main() {
          let mut good_unknown = false;
 
          match &*arg {
-            "--lex" => mode = RunMode::Lex,
-            "--parse" => mode = RunMode::Parse,
-            "--asm" => mode = RunMode::Asm,
-            "--jit" => mode = RunMode::Jit,
+            "--lex" => mode = ReplMode::Lex,
+            "--parse" => mode = ReplMode::Parse,
+            "--asm" => mode = ReplMode::Asm,
+            "--jit" => mode = ReplMode::Jit,
             "-f" => { next_fpath = true; continue; },
             "--eval" => { next_eval_str = true; continue; },
             _ => {
@@ -111,41 +113,17 @@ fn main() {
 
       let eval_str = if let ExtraArg::EvalCode(code) = extra_arg {
          ////passed --eval without string
-         //if mode != RunMode::None { usage(true); }
+         //if mode != ReplMode::None { usage(true); }
          Some(code)
       } else { None };
 
-      let eval_f = match mode {
-         RunMode::None => scm_eval,
-         RunMode::Lex => lex_printer,
-         RunMode::Parse => parse_printer,
-         RunMode::Asm => asm_printer,
-         RunMode::Jit => jitter
-      };
-
       if let Some(code) = eval_str {
-         driver.run(code, eval_f, true); return 0; //--eval "blah"
+         driver.run(code, mode, true); return 0; //--eval "blah"
       } else {
          //run repl, with or without file
-         driver.repl(eval_f, repl_path); return 0;
+         driver.repl(mode, repl_path); return 0;
       }
    }
-}
-
-//we use this functions to pass to driver repl, and they are used as repl_eval
-
-pub fn asm_printer(parsed_exp : Sexps, lex_res : Result<Lexemes, LexErr>) {}
-pub fn jitter(parsed_exp : Sexps, lex_res : Result<Lexemes, LexErr>) {}
-
-//standard scheme interpreter eval for expression
-pub fn scm_eval(parsed_exp : Sexps, lex_res : Result<Lexemes, LexErr>) { }
-
-pub fn parser_printer(parsed_exp : Sepxs, lex_res : Result<Lexemes, LexErr) {}
-pub fn lex_printer(parsed_exp : Sexps, lex_res : Result<Lexemes, LexErr>) {
-   //Use this to debug lexer:
-   //use utils::print_lexemes;
-   //print_lexemes(&lexed);
-   //break;
 }
 
 fn main_old() {
