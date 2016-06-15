@@ -96,7 +96,7 @@ pub struct ExpCompInfo {
 impl ExpCompInfo {
    pub fn new(exp_opt : Option<Sexps>) -> ExpCompInfo {
       let exp = if let Some(exp_) = exp_opt { exp_ }
-      else { Sexps::nil_new() };
+      else { Sexps::new_nil() };
 
       ExpCompInfo { exp : exp, lambda_i : 0 }
    }

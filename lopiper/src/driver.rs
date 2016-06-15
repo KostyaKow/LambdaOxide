@@ -1,4 +1,4 @@
-use errors::{ErrInfo, ErrCode};
+use errors::{ErrInfo, ErrCode, ExecStage, StackInfo};
 use exp::Sexps;
 use sym_table::SymTableRoot;
 use eval::ReplMode;
@@ -23,11 +23,24 @@ impl Driver {
    //pub fn eval_str(&self, code : &str) -> Sexps { Sexps::new_nil() }
    //pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::new_nil() }
    //pub fn load_lisp_file(&self, path : String) -> Sexps {}
+   //pub fn load_file(&mut self, path : &str, file_eval : F) -> Sexps {}
+   //pub fn load_multiline(&mut self, exp : &str, line_eval : F) -> Sexps {}
+   /*pub fn next_stack(&mut self) -> usize {
+      let mut stacks = Vec::new();
+      stacks.push(to_shared_mut(StackInfo::new()));
+      self.stack_num += 1;
+      self.stack_num - 1
+   }
+   pub fn get_stack(&mut self, n : usize) -> Option<SharedMut<StackInfo>> {
+      self.stacks.get(n)
+   }*/
+
    pub fn new() -> Driver {
       Driver {
-         file_code : None,
          file_origin : None,
-         file_size : 0,
+         file_lines : None,
+         file_line : 0,
+         sym_table : None //TODO
       }
    }
 
@@ -39,30 +52,17 @@ impl Driver {
    {
       let code = if from_main {
          //TODO: this breaks comments and strings with ";" in them
-         let mut good = "";
+         let mut good = "".to_string();
          let splitted = code_raw.split(';');
          for expr_str in splitted  {
-            good += "(" + expr_str + ")";
+            good = good + "(" + expr_str + ")";
          }
-         good
+         good.to_string()
       } else { code_raw };
 
       Sexps::new_nil()
    }
 
-   //pub fn load_file(&mut self, path : &str, file_eval : F) -> Sexps {}
-   //pub fn load_multiline(&mut self, exp : &str, line_eval : F) -> Sexps {}
-
-   pub fn next_stack(&mut self) -> usize {
-      let mut stacks = Vec::new();
-      stacks.push(to_shared_mut(StackInfo::new()));
-      self.stack_num += 1;
-      self.stack_num - 1
-   }
-
-   pub fn get_stack(&mut self, n : usize) -> Option<SharedMut<StackInfo>> {
-      self.stacks.get(n)
-   }
 
    //either repl driver, or gets line from path
    fn get_line(&mut self, path_opt : Option<String>) -> Option<String> {
@@ -86,24 +86,27 @@ impl Driver {
    fn load_file(&self, path : String) -> Sexps {
       let file_data_opt = oxicloak::read_file(path);
       if let Err(e) = file_data_opt {
-         let mut err = ErrInfo::new(ErrCode::FileFail);
+         let mut err = ErrInfo::new(ErrCode::FileFail, None);
          let msg = format!("could not read lisp file ({}): {}", path, e);
          err.msg = Some(msg);
          return Sexps::new_err(err);
-      } self.origin = Some(file_data_opt.unwrap());
+      };
+      let origin = file_data_opt.unwrap();
+      self.file_origin = Some(origin);
       self.file_line = 0;
       let mut lines_no_comment = Vec::new();
-      let origin_lines = self.origin.split('\n');
+      let origin_lines = origin.split('\n');
       for line in origin_lines { //remove comments
-         let mut line_data = "";
-         for char in line {
-            if char == ';' { break; }
-            line_data += char;
+         let mut line_data = "".to_string();
+         //for char in line
+         for (i, c) in line.chars().enumerate() {
+            if c == ';' { break; }
+            line_data.push(c);
          }
          lines_no_comments.push(line_data);
       }
 
-      self.file_lines = lines_no_comment;
+      self.file_lines = Some(lines_no_comment);
       Sexps::new_nil()
    }
 
@@ -124,13 +127,15 @@ impl Driver {
          }*/
       }
 
-      /*use std::io::{self, BufRead, Write};
-      let stdin = io::stdin();*/
+      //kk move to repl_init
+      use std::io::{self, BufRead, Write};
+      let stdin = io::stdin();
 
       loop {
          let mut repl_eval_out : Sexps = Sexps::new_nil();
          print!("**> ");
 
+         //TODO: move ExecStage and lines from StackInfo to driver.
          let mut stack = StackInfo::new();
          stack.stage = ExecStage::Lex;
 

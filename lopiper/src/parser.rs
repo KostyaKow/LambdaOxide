@@ -165,10 +165,13 @@ pub fn parse(lexemes : &Vec<Lexeme>) -> ParseResult {
          for (mut start, mut end, quotes, is_atom) in childs {
             if !is_atom { start += 1; end -= 1; }
             let parsed_child = parse_helper(lexemes, (start, end, quotes, is_atom)); //child);
-            if let Sexps::Err(ref e) = parsed_child {
+            /*if let Sexps::Err(ref e) = parsed_child {
+               return Err(e.clone());
+            }*/
+            if let Err(ref e) = parsed_child {
                return Err(e.clone());
             }
-            else { ret.push(parsed_child); }
+            else { ret.push(parsed_child.unwrap()); }
          }
 
          Ok(Sexps::arr_new_from_vec(ret))

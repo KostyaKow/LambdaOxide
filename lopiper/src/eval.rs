@@ -28,15 +28,14 @@ pub enum ReplMode { Lex, Parse, Asm, Jit, Eval, None }
 pub type EvalFunc = Box<Fn(Sexps, LexResult, Env) -> Sexps>;
 
 pub fn get_eval_f(mode : ReplMode) -> EvalFunc {
-   let f = match mode {
-      ReplMode::None => { panic!("TODO: ReplMode None"); scm_eval },
-      ReplMode::Eval => scm_eval,
-      ReplMode::Lex => lex_printer,
-      ReplMode::Parse => parse_printer,
-      ReplMode::Asm => asm_printer,
-      ReplMode::Jit => jitter
-   };
-   Box::new(f)
+   match mode {
+      ReplMode::None => { panic!("TODO: ReplMode None")/*; scm_eval*/ },
+      ReplMode::Eval => Box::new(move scm_eval),
+      ReplMode::Lex => Box::new(move lex_printer),
+      ReplMode::Parse => Box::new(move parse_printer),
+      ReplMode::Asm => Box::new(move asm_printer),
+      ReplMode::Jit => Box::new(move jitter)
+   }
 }
 
 //we use this functions to pass to driver repl, and they are used as repl_eval

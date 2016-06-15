@@ -154,9 +154,19 @@ impl ErrInfo {
       } else { None };
 
       write!(f, "Encountered an error while {:?}", stage_name);
+
+      let char_i = 0;
+      if let Some(i) = self.char_i { char_i = i; }
+
+      let line_n = 0;
+      if let Some(i) = self.line_n { line_n = i; }
+
+      let desc = get_err_desc(self.code.clone(), func);
+      let path = s.borrow().file_path;
+
+      //todo calculate line
       write!(f, "\n{}:{}:{}: error code: {:?} error: {}",
-            s.borrow().file_path, self.line_n, self.char_i, self.code.clone(), //todo calculate line
-            get_err_desc(self.code.clone(), func));
+             path, line_n, char_i, self.code.clone(), desc);
 
       if let Some(str) = self.msg.clone() {
          write!(f, "additional info: {}", str);
@@ -223,7 +233,7 @@ pub fn parse_exp_err(code : ErrCode, //stack : SharedMut<StackInfo>, //origin_le
                      range_lex : Option<SizeRange>)
 -> Sexps
 {
-   Sexps::err_new(parse_err(code, range_lex))
+   Sexps::new_err(parse_err(code, range_lex))
 }
 
 pub fn parse_err(code : ErrCode, //stack : SharedMut<StackInfo>, //origin_lex : &Vec<Lexeme>, //lex_i : usize,

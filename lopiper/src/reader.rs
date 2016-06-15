@@ -59,29 +59,19 @@ impl Reader {
          return (Sexps::new_err(ei), None);
       }
 
-      let lexed = lex_res.unwrap();
-
-      //Use this to debug lexer:
-      //use utils::print_lexemes;
-      //print_lexemes(&lexed);
-      //break;
-      stack.lexemes = lexed;
+      stack.lexemes = lex_res.unwrap();
 
       let mut new_lexemes = Vec::new();
       for (l, start, end) in stack.lexemes.clone() {
          new_lexemes.push(l);
       }
+
       let (parsed, success) = parse(&new_lexemes);
       println!("success parse? : {}", success);
       //display_sexps(&parsed); //TODO: temporary
 
-      out = parsed; //TODO: temporary, only for compiler tests
-      return (out, lexed);
-      //if success { break; }
-
-      //   Err((code, start, end)) => {
-      //      break;
-      //   }
+      //out = parsed; //TODO: temporary, only for compiler tests
+      return (parsed, stack.lexemes);
    }
 
 }

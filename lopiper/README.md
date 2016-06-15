@@ -31,8 +31,9 @@ General overview
 
 Quick TODO:
 - [ ] remove all old code for parse when it returned Sexps instead of Result
-- [ ] remove child_parse error
+- [ ] remove child_parse error and return child's error
 - [ ] in get_line of driver, make sure line isn't out of range, and file_lines isn't None
+- [ ] implement comment as a type of Lexeme
 
 TODO:
 - [ ] main.rs
