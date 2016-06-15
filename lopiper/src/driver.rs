@@ -9,7 +9,9 @@ pub struct Driver {
 
    //TODO: set this to none once finished with file
    file_lines : Option<Vec<String>>,
-   file_line : usize
+   file_line : usize,
+
+   sym_table : Option<SymTableRoot>
 }
 
 type LexerEvalF = Fn(Sexps, Result<Lexemes, LexErr>);
@@ -286,5 +288,7 @@ impl Driver {
       }
    }
 
-
 }
+
+
+
