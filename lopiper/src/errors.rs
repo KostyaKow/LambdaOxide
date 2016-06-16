@@ -155,14 +155,14 @@ impl ErrInfo {
 
       write!(f, "Encountered an error while {:?}", stage_name);
 
-      let char_i = 0;
+      let mut char_i = 0;
       if let Some(i) = self.char_i { char_i = i; }
 
-      let line_n = 0;
+      let mut line_n = 0;
       if let Some(i) = self.line_n { line_n = i; }
 
       let desc = get_err_desc(self.code.clone(), func);
-      let path = s.borrow().file_path;
+      let path = s.borrow().file_path.clone();
 
       //todo calculate line
       write!(f, "\n{}:{}:{}: error code: {:?} error: {}",

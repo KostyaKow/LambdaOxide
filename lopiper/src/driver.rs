@@ -72,7 +72,7 @@ impl Driver {
    fn get_line(&mut self, path_opt : Option<String>) -> Option<String> {
       if let Some(path) = path_opt {
          //TODO: make sure not out of range, and check before unwrap
-         let line = self.file_lines.unwrap()[self.file_line];
+         let line = self.file_lines.clone().unwrap()[self.file_line].clone();
          self.file_line += 1;
          Some(line)
       } else {
@@ -87,7 +87,7 @@ impl Driver {
 
    //TODO: implement comments correctly (;) (kinda done)
    //TODO: account for comments in error reporting
-   fn load_file(&self, path : String) -> Sexps {
+   fn load_file(&mut self, path : String) -> Sexps {
       use oxicloak::read_file;
       let file_data_opt = read_file(&*path);
       if let Err(e) = file_data_opt {
@@ -97,7 +97,7 @@ impl Driver {
          return Sexps::new_err(err);
       };
       let origin = file_data_opt.unwrap();
-      self.file_origin = Some(origin);
+      self.file_origin = Some(origin.clone());
       self.file_line = 0;
       let mut lines_no_comment = Vec::new();
       let origin_lines = origin.split('\n');
@@ -211,7 +211,7 @@ impl Driver {
 
             let env = (Vec::new(), 0);
             //output from repl_eval() passed, we're gonna display it
-            repl_eval_out = repl_eval(parsed, Ok(stack.lexemes), env);
+            repl_eval_out = repl_eval(parsed.clone(), Ok(stack.lexemes), env);
             line_n += 1;
          }
          display_sexps(&repl_eval_out);

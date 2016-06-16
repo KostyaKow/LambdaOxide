@@ -32,14 +32,14 @@ fn error_msg(msg : &str, terminate : bool) {
 //because of --help, or because bad arguments were passed
 fn usage(bad_args : bool) {
    if bad_args {
-      let arg0 = env::args().collect::<Vec<String>>()[0];
+      let arg0 = env::args().collect::<Vec<String>>()[0].clone();
       error_msg(&*format!("Bad arguments passed to {}", arg0), false);
    }
    error_msg("usage: TODO", true);
 }
 
 //use std::cmp::PartialEq;
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 enum ExtraArg { None, FileName(String), EvalCode(String) }
 
 /*
@@ -58,7 +58,7 @@ enum ExtraArg { None, FileName(String), EvalCode(String) }
 fn main() {
    let args = env::args().collect::<Vec<String>>();
 
-   let driver = Driver::new();
+   let mut driver = Driver::new();
 
    if args.len() == 1 {
       driver.repl(ReplMode::Eval, None); exit(0);
@@ -110,7 +110,7 @@ fn main() {
       }
 
       //file path to pass to repl
-      let repl_path = if let ExtraArg::FileName(path) = extra_arg
+      let repl_path = if let ExtraArg::FileName(path) = extra_arg.clone()
       { Some(path) } else { None };
 
       let eval_str = if let ExtraArg::EvalCode(code) = extra_arg {
