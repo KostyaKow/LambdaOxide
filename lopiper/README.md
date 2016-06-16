@@ -34,6 +34,8 @@ Quick TODO:
 - [ ] remove child_parse error and return child's error
 - [ ] in get_line of driver, make sure line isn't out of range, and file_lines isn't None
 - [ ] implement comment as a type of Lexeme
+- [ ] create function from_range_err_to_sexps
+- [ ] src/reader parse_line doesn't check return for errors.
 
 TODO:
 - [ ] main.rs

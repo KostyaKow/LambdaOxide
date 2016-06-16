@@ -26,7 +26,8 @@ impl Reader {
 
    fn new() -> Reader {
       Reader {
-         origin : None, lexemes : None, parsed : None
+         origin : None, lexemes : None, parsed : None,
+         lines : Vec::new()
       }
    }
 
@@ -71,12 +72,16 @@ impl Reader {
       /*let (parsed, success) = parse(&new_lexemes);
       println!("success parse? : {}", success);*/
 
-      let parse_result = parse(&new_lexemes);
+      let parse_res = parse(&new_lexemes);
 
       //display_sexps(&parsed); //TODO: temporary
-
       //out = parsed; //TODO: temporary, only for compiler tests
-      return (parsed, Some(lexemes));
+      //TODO: check result
+      //self.parsed = Some(parse_result.unwrap());
+      //return (self.parsed, Some(lexemes));
+
+      return (parse_res.unwrap(), Some(lexemes));
+
    }
 
 }

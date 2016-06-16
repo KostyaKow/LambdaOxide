@@ -132,7 +132,7 @@ pub struct ErrInfo {
 impl ErrInfo {
    pub fn new(err_code : ErrCode, stack : Option<SharedMut<StackInfo>>) -> ErrInfo {
       ErrInfo {
-         /*stack : stack,*/ code : err_code, line_print_range : None,
+         stack : stack, code : err_code, line_print_range : None,
          char_highlight_ranges : Vec::new(), msg : None,
          char_i : Some(0), line_n : Some(0)
       }

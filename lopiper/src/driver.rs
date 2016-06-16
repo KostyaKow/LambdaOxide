@@ -1,7 +1,11 @@
 use errors::{ErrInfo, ErrCode, ExecStage, StackInfo};
 use exp::Sexps;
+use oxicloak::*;
+use eval::{get_eval_f};
 use sym_table::SymTableRoot;
 use eval::ReplMode;
+use lexer::lex;
+use parser::parse;
 use std::process::exit;
 use utils::display_sexps;
 
@@ -84,7 +88,8 @@ impl Driver {
    //TODO: implement comments correctly (;) (kinda done)
    //TODO: account for comments in error reporting
    fn load_file(&self, path : String) -> Sexps {
-      let file_data_opt = oxicloak::read_file(path);
+      use oxicloak::read_file;
+      let file_data_opt = read_file(&*path);
       if let Err(e) = file_data_opt {
          let mut err = ErrInfo::new(ErrCode::FileFail, None);
          let msg = format!("could not read lisp file ({}): {}", path, e);
@@ -103,7 +108,7 @@ impl Driver {
             if c == ';' { break; }
             line_data.push(c);
          }
-         lines_no_comments.push(line_data);
+         lines_no_comment.push(line_data);
       }
 
       self.file_lines = Some(lines_no_comment);
@@ -112,7 +117,8 @@ impl Driver {
 
    //if path is None, we start repl, otherwise load file
    //if error, return it wrapped in Sexps
-   pub fn repl<EvalFunc>(&mut self, mode : ReplMode, path_opt : Option<String>)
+   //pub fn repl<EvalFunc>(&mut self, mode : ReplMode, path_opt : Option<String>)
+   pub fn repl(&mut self, mode : ReplMode, path_opt : Option<String>)
    -> Sexps
       //where F : Fn(Sexps, Result<Lexemes, LexErr>) -> Sexps
    {
@@ -139,10 +145,12 @@ impl Driver {
          let mut stack = StackInfo::new();
          stack.stage = ExecStage::Lex;
 
-         let mut parsed = errors::parse_exp_err(ErrCode::UncompleteExp, None);
+         use errors::parse_exp_err;
+         let mut parsed = parse_exp_err(ErrCode::UncompleteExp, None);
 
          let mut line_n = 0;
-         while utils::is_uncomplete_exp(&parsed) {
+         use utils::is_uncomplete_exp;
+         while is_uncomplete_exp(&parsed) {
             io::stdout().flush().unwrap();
             let line = stdin.lock().lines().next().unwrap().unwrap();
 
@@ -151,7 +159,7 @@ impl Driver {
             let new_origin_len = stack.origin.len()-1;
 
              //println!("line ({}, {})", old_orig_len, new_orig_len);
-            stack.lines.push((line.to_string(), old_orig_len, new_orig_len)); //TODO: check this
+            stack.lines.push((line.to_string(), old_origin_len, new_origin_len)); //TODO: check this
 
             /*let lex_res = lex(&*stack.origin);
             //let parsed = parse_wrapper(lexemes);
@@ -169,13 +177,22 @@ impl Driver {
                   for (l, start, end) in stack.lexemes.clone() {
                      new_lexemes.push(l);
                   }
-                  let (parsed, success) = parse(&new_lexemes);
-                  println!("success parse? : {}", success);
+                  /*let (parsed, success) = parse(&new_lexemes);
+                  println!("success parse? : {}", success);*/
+                  let parse_res = parse(&new_lexemes);
+                  if let Err((code, start, end)) = parse_res { //TODO: check this
+                     //TODO: create function from_range_err_to_sexps()
+                     let mut ei = ErrInfo::new(code, None);
+                     ei.char_i = Some(start);
+                     ei.char_highlight_ranges.push((start, end));
+                     parsed = Sexps::new_err(ei);
+                     break;
+                  }
                   //display_sexps(&parsed); //TODO: temporary
 
                   //out = parsed; //TODO: temporary, only for compiler tests
-
-                  if success { break; }
+                  break;
+                  //if success { break; }
                },
                Err((code, start, end)) => {
                   //println!("lexing error: {:?}", e);
@@ -190,10 +207,11 @@ impl Driver {
             }
             line_n += 1;
 
-            let repl_eval = eval::get_eval_f(mode);
+            let repl_eval = get_eval_f(mode);
 
+            let env = (Vec::new(), 0);
             //output from repl_eval() passed, we're gonna display it
-            repl_eval_out = repl_eval(parsed, lexemes);
+            repl_eval_out = repl_eval(parsed, Ok(stack.lexemes), env);
             line_n += 1;
          }
          display_sexps(&repl_eval_out);
