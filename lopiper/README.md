@@ -38,6 +38,7 @@ Quick TODO:
 - [ ] src/reader parse_line doesn't check return for errors.
 
 TODO:
+- [ ] simple way to load rust libraries, by just passing Environment to their initializer
 - [ ] main.rs
    - [ ] use library for command line parsing (https://doc.rust-lang.org/getopts/getopts/index.html)
    - [ ] add option to have --eval and -f. If we have both, then first load file, then eval
@@ -47,6 +48,8 @@ TODO:
    - [ ] Possibly add a Comment(Bool, String) (Comment(multiline, comment_data) enum variant to Lexemes
 - [ ] JIT/llvm
    - [x] in progress
+   - [ ] to Emscripten/Javascript (?)
+   - [ ] easily import rust libraries directly, without having to write wrapper for interpreter
 - [ ] do something like rustc --explain E0123 with my error codes
 - [ ] implement ErrCode::{MisformedFloat, MisformedInt, BadChar}
    - [x] MisFormedNum

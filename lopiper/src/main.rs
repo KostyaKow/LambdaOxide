@@ -42,6 +42,20 @@ fn usage(bad_args : bool) {
 #[derive(PartialEq, Clone)]
 enum ExtraArg { None, FileName(String), EvalCode(String) }
 
+//if eval_str_opt is None, then it's --eval flag so just call run
+fn launch(mode : ReplMode,
+          path_opt : Option<String>,
+          eval_str_opt : Option<String>)
+{
+   let mut driver = Driver::new();
+
+   if let Some(eval_str) = eval_str_opt {
+      driver.run(eval_str, mode, true);
+   } else {
+      driver.repl(mode, path_opt);
+   }
+}
+
 /*
 ./lo --help             = print this message
 ./lo                    = start interpreter repl
@@ -58,10 +72,8 @@ enum ExtraArg { None, FileName(String), EvalCode(String) }
 fn main() {
    let args = env::args().collect::<Vec<String>>();
 
-   let mut driver = Driver::new();
-
    if args.len() == 1 {
-      driver.repl(ReplMode::Eval, None); exit(0);
+      launch(ReplMode::Eval, None, None); exit(0);
    }
    else if args.len() > 1 {
       if args.len() == 2 && args[1] == "--help" {
@@ -120,10 +132,10 @@ fn main() {
       } else { None };
 
       if let Some(code) = eval_str {
-         driver.run(code, mode, true); exit(0); //--eval "blah"
+         launch(mode, None, Some(code)); exit(0); //--evall "blah"
       } else {
          //run repl, with or without file
-         driver.repl(mode, repl_path); exit(0);
+         launch(mode, repl_path, None); exit(0);
       }
    }
 }
