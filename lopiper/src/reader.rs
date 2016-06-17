@@ -24,7 +24,7 @@ pub struct Reader {
 impl Reader {
    //pub fn finish() -> Reader {}
 
-   fn new() -> Reader {
+   pub fn new() -> Reader {
       Reader {
          origin : None, lexemes : None, parsed : None,
          lines : Vec::new()
@@ -38,7 +38,7 @@ impl Reader {
 
    //returns (parsed_sexps, lexemes)
    //use this in repl to parse 1 line
-   pub fn parse_line(&mut self, code : &str, stack_n : usize)
+   pub fn parse_line(&mut self, code : String, stack_n : usize)
    -> (Sexps, Option<Lexemes>)
    {
       //let parsed = parse_wrapper(lexemes);
@@ -51,7 +51,7 @@ impl Reader {
       }
       let stack = stack_opt.unwrap();*/
 
-      let lex_res = lex(code);
+      let lex_res = lex(&*code);
       if let Err((code, start, end)) = lex_res {
          //println!("lexing error: {:?}", e);
          //TODO: Some(self.stacks[stack_n]));
@@ -85,6 +85,5 @@ impl Reader {
    }
 
 }
-
 
 

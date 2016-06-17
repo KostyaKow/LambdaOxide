@@ -29,7 +29,6 @@ General overview
 -every file read gets it's own stack
 -before calling every parse_str for files, set line manually on errors
 
-
 Misc note:
 - [ ] Test command line arguments
    - [x] cargo run -- --help

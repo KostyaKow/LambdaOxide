@@ -1,4 +1,5 @@
 use errors::{ErrInfo, ErrCode, ExecStage, StackInfo};
+use reader::Reader;
 use exp::Sexps;
 use oxicloak::*;
 use eval::{get_eval_f};
@@ -12,7 +13,6 @@ use utils::display_sexps;
 use eval::EvalFunc;
 
 pub struct Driver {
-   //TODO: driver should contain symbol table too
 
    file_origin : Option<String>,
 
@@ -20,6 +20,7 @@ pub struct Driver {
    file_lines : Option<Vec<String>>,
    file_line : usize,
 
+   //TODO: driver should contain symbol table too
    sym_table : Option<SymTableRoot>
 }
 
@@ -62,8 +63,11 @@ impl Driver {
          for expr_str in splitted  {
             good = good + "(" + expr_str + ")";
          }
-         good.to_string()
+         good
       } else { code_raw };
+
+      let mut reader = Reader::new();
+      reader.parse_line(code, 0);
 
       Sexps::new_nil()
    }
