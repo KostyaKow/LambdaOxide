@@ -3,8 +3,9 @@
 
 extern crate oxicloak;
 
-extern crate iron_llvm;
-extern crate llvm_sys;
+//TODO: uncomment this for compiler
+//extern crate iron_llvm;
+//extern crate llvm_sys;
 
 mod reader;
 mod utils;
@@ -13,7 +14,7 @@ mod exp;
 mod lexer;
 mod parser;
 mod errors;
-mod comp;
+//mod comp; //TODO: uncomment this for compiler
 mod driver;
 mod eval;
 mod sym_table;
@@ -23,9 +24,13 @@ use std::env;
 use driver::Driver;
 use std::process::exit;
 
-fn error_msg(msg : &str, terminate : bool) {
-   if terminate { panic!("{}", msg); }
-   else { println!("{}", msg); }
+fn error_msg(msg : &str, terminate_status_opt : Option<i32>) {
+   /*if terminate { panic!("{}", msg); }
+   else { println!("{}", msg); }*/
+   println!("{}", msg);
+   if let Some(term_status) = terminate_status_opt {
+      exit(term_status);
+   }
 }
 
 //bad_args determines if this message is being printed
@@ -33,9 +38,24 @@ fn error_msg(msg : &str, terminate : bool) {
 fn usage(bad_args : bool) {
    if bad_args {
       let arg0 = env::args().collect::<Vec<String>>()[0].clone();
-      error_msg(&*format!("Bad arguments passed to {}", arg0), false);
+      error_msg(&*format!("Bad arguments passed to {}", arg0), None);
    }
-   error_msg("usage: TODO", true);
+   let s = "usage:\
+   ./lo --help             = print this message \
+   ./lo                    = start interpreter repl \
+   ./lo -f <filename>      = evaluate content of filename and return \
+   ./lo --eval \"<EXP>\"     = evaluate given expression and print result to stdout \
+                           = don't use parenthesis in top level expressions \
+   ./lo --lex              = run repl lexer-only \
+   ./lo --parse            = run repl parser-only \
+   ./lo --asm              = run repl that outputs LLVM assembly for each expression \
+   ./lo --jit              = repl for LLVM JIT compiler \
+\
+   ./lo -f <filename> [--lex|--parse|--asm|--jit] = do same as one of the options but use file instead of repl \
+   ";
+
+   let status = if bad_args { 1 } else { 0 };
+   error_msg(s, Some(status));
 }
 
 //use std::cmp::PartialEq;
@@ -50,6 +70,7 @@ fn launch(mode : ReplMode,
    let mut driver = Driver::new();
 
    if let Some(eval_str) = eval_str_opt {
+      println!("running with eval flag");
       driver.run(eval_str, mode, true);
    } else {
       driver.repl(mode, path_opt);

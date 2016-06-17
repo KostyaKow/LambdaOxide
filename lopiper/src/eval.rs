@@ -24,6 +24,7 @@ pub impl EvalInfo {
    }
 }*/
 
+#[derive(Debug)]
 pub enum ReplMode { Lex, Parse, Asm, Jit, Eval, None }
 pub type EvalFunc = Box<Fn(Sexps, LexResult, Env) -> Sexps>;
 

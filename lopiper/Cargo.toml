@@ -14,5 +14,6 @@ OxiCloak = { git = "https://github.com/KostyaKow/OxiCloak.git", version = "0.0.1
 #[dependencies.iron_llvm]
 #git = "https://github.com/jauhien/iron-llvm.git"
 
-llvm-sys = "*"
-iron_llvm = { git = "https://github.com/jauhien/iron-llvm.git" }
+#TODO: uncomment this for LLVM jit stuff
+#llvm-sys = "*"
+#iron_llvm = { git = "https://github.com/jauhien/iron-llvm.git" }

@@ -29,6 +29,10 @@ General overview
 -every file read gets it's own stack
 -before calling every parse_str for files, set line manually on errors
 
+
+Misc note:
+- cargo run -- --eval
+
 Quick TODO:
 - [ ] remove all old code for parse when it returned Sexps instead of Result
 - [ ] remove child_parse error and return child's error
