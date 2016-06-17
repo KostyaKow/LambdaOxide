@@ -31,7 +31,14 @@ General overview
 
 
 Misc note:
-- cargo run -- --eval
+- [ ] Test command line arguments
+   - [x] cargo run -- --help
+   - [x] cargo run -- --eval (should fail)
+   - [x] cargo run -- --eval "blah" (running with eval flag in Eval mode)
+   - [x] cargo run -- --eval ha --lex (eval flag in Lex mode)
+   - [x] cargo run -- --lex (repl in Lex mode)
+   - [x] cargo run -- -f "fds" (file (fds) in Eval mode
+   - [ ] cargo run -- -f "fds" --lex --eval "test" (gives error, but should load file and then execute eval)
 
 Quick TODO:
 - [ ] remove all old code for parse when it returned Sexps instead of Result

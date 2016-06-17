@@ -40,19 +40,19 @@ fn usage(bad_args : bool) {
       let arg0 = env::args().collect::<Vec<String>>()[0].clone();
       error_msg(&*format!("Bad arguments passed to {}", arg0), None);
    }
-   let s = "usage:\
-   ./lo --help             = print this message \
-   ./lo                    = start interpreter repl \
-   ./lo -f <filename>      = evaluate content of filename and return \
-   ./lo --eval \"<EXP>\"     = evaluate given expression and print result to stdout \
-                           = don't use parenthesis in top level expressions \
-   ./lo --lex              = run repl lexer-only \
-   ./lo --parse            = run repl parser-only \
-   ./lo --asm              = run repl that outputs LLVM assembly for each expression \
-   ./lo --jit              = repl for LLVM JIT compiler \
-\
-   ./lo -f <filename> [--lex|--parse|--asm|--jit] = do same as one of the options but use file instead of repl \
-   ";
+   let s = r#"usage:
+   ./lo --help             = print this message
+   ./lo                    = start interpreter repl
+   ./lo -f <filename>      = evaluate content of filename and return
+   ./lo --eval "<EXP>"     = evaluate given expression and print result to stdout
+                           = don't use parenthesis in top level expressions
+   ./lo --lex              = run repl lexer-only
+   ./lo --parse            = run repl parser-only
+   ./lo --asm              = run repl that outputs LLVM assembly for each expression
+   ./lo --jit              = repl for LLVM JIT compiler
+
+   ./lo -f <filename> [--lex|--parse|--asm|--jit] = do same as one of the options but use file instead of repl
+   "#;
 
    let status = if bad_args { 1 } else { 0 };
    error_msg(s, Some(status));
@@ -70,9 +70,14 @@ fn launch(mode : ReplMode,
    let mut driver = Driver::new();
 
    if let Some(eval_str) = eval_str_opt {
-      println!("running with eval flag");
+      println!("running with eval string \"{}\" in {:?} mode", eval_str, mode);
       driver.run(eval_str, mode, true);
    } else {
+      let print_str = if let Some(path) = path_opt.clone() {
+         format!("running file ({})", path)
+      } else { "running repl".to_string() };
+
+      println!("{} in {:?} mode", print_str, mode);
       driver.repl(mode, path_opt);
    }
 }
@@ -101,7 +106,7 @@ fn main() {
          usage(false); //return 0;
       }
 
-      let mut mode = ReplMode::None;
+      let mut mode = ReplMode::Eval; //ReplMode::None; //TODO: remove None ReplMode
       let mut extra_arg  = ExtraArg::None; //file path or string to eval
 
       let mut next_fpath = false; //next argument is fpath
@@ -136,10 +141,15 @@ fn main() {
             },
          }
          if next_eval_str || next_fpath {
-            //previus arg is -f or --eval, but this arg doesn't have their value
+            //previous arg is -f or --eval, but this arg doesn't have their value
             usage(true);
          }
          next_fpath = false; next_eval_str = false; //reset file/eval str flag
+      }
+
+      if next_eval_str || next_fpath { //this line is needed in case --eval or -f is last argument
+         //previous arg is -f or --eval, but this arg doesn't have their value
+         usage(true);
       }
 
       //file path to pass to repl
