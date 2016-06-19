@@ -9,7 +9,6 @@ use lexer::lex;
 use parser::parse;
 use std::process::exit;
 use utils::display_sexps;
-
 use eval::EvalFunc;
 
 pub struct Driver {
@@ -25,6 +24,16 @@ pub struct Driver {
 }
 
 impl Driver {
+   pub fn new() -> Driver {
+      Driver {
+         file_origin : None,
+         file_lines : None,
+         file_line : 0,
+         sym_table : None //TODO
+      }
+   }
+
+   //old function prototypes
    //pub fn eval(&mut self, exp : &Sexps) -> Sexps { Sexps::new_nil() }
    //pub fn eval_str(&self, code : &str) -> Sexps { Sexps::new_nil() }
    //pub fn load_multiline(&mut self, code : &String) -> Sexps { Sexps::new_nil() }
@@ -41,13 +50,17 @@ impl Driver {
       self.stacks.get(n)
    }*/
 
-   pub fn new() -> Driver {
-      Driver {
-         file_origin : None,
-         file_lines : None,
-         file_line : 0,
-         sym_table : None //TODO
-      }
+   //convert expressions passed with --eval
+   //flag to normal LambdaOxide expression syntax
+   fn cmd_arg_formatter(&self, str_raw : String, from_main : bool) -> String {
+      if from_main {
+         //TODO: this breaks comments and strings with ";" in them
+         let mut ret = "".to_string();
+         for expr_str in str_raw.split(';')  {
+            ret = ret + "(" + expr_str + ")";
+         }
+         ret
+      } else { str_raw }
    }
 
    //TODO: calls eval with parsed Sexps
@@ -56,16 +69,7 @@ impl Driver {
               mode : ReplMode, from_main : bool)
    -> Sexps
    {
-      let code = if from_main {
-         //TODO: this breaks comments and strings with ";" in them
-         let mut good = "".to_string();
-         let splitted = code_raw.split(';');
-         for expr_str in splitted  {
-            good = good + "(" + expr_str + ")";
-         }
-         good
-      } else { code_raw };
-
+      let code = self.cmd_arg_formatter(code_raw, from_main);
       let mut reader = Reader::new();
       reader.parse_line(code, 0);
 
