@@ -156,6 +156,7 @@ impl Driver {
       loop {
          let mut repl_eval_out : Sexps = Sexps::new_nil();
          print!("**> ");
+         //let line = self.get_line(None);
 
          //TODO: move ExecStage and lines from StackInfo to driver.
          let mut stack = StackInfo::new();
@@ -176,13 +177,20 @@ impl Driver {
 
              //println!("line ({}, {})", old_orig_len, new_orig_len);
             stack.lines.push((line.to_string(), old_origin_len, new_origin_len)); //TODO: check this
-
             /*let lex_res = lex(&*stack.origin);
             //let parsed = parse_wrapper(lexemes);
             pub fn parse_wrapper(&mut self, lex_res : Result<Lexemes, LexErr>) {}
             if let Ok(lexed) = lex_res {}*/
             match lex(&*stack.origin) {
                Ok(lexed) => {
+                  //TODO: KK removeme
+                  let repl_eval = get_eval_f(mode.clone());
+
+                  let env = (Vec::new(), 0);
+                  //output from repl_eval() passed, we're gonna display it
+                  repl_eval_out = repl_eval(parsed.clone(), Ok(lexed.clone()), env);
+                  //TODO: end KK removeme
+
                   //Use this to debug lexer:
                   //use utils::print_lexemes;
                   //print_lexemes(&lexed);
@@ -223,7 +231,7 @@ impl Driver {
             }
             line_n += 1;
 
-            let repl_eval = get_eval_f(mode);
+            let repl_eval = get_eval_f(mode.clone());
 
             let env = (Vec::new(), 0);
             //output from repl_eval() passed, we're gonna display it

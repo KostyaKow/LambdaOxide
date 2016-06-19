@@ -12,6 +12,7 @@ pub enum Lexeme {
 }
 
 //Special is either Comment or String
+#[derive(Clone)]
 enum BlockType { SimpleComment, ExtendedComment, Str }
 type BlockRange = Vec<(usize, usize, BlockType)>;
 
@@ -143,6 +144,8 @@ pub fn lex(code : &str) -> LexResult {
       //if haven't went through all blocks, and i is beginning ofblock
       let start_of_block = r_it < ranges.len() && ranges[r_it].0 == i;
       let (blk_start, blk_end, blk_type) = if start_of_block {
+         //let (a, b, c) = ranges[r_it];
+         //(a, b, c.clone())
          ranges[r_it].clone()
       } else { (0, 0, BlockType::Str) };
 

@@ -34,7 +34,7 @@ pub enum InitInfo {
    Comp(InitComp), Intr(SymTable)
 }*/
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ReplMode { Lex, Parse, Asm, Jit, Eval }
 pub type EvalFunc = Box<Fn(Sexps, LexResult, Env) -> Sexps>;
 
