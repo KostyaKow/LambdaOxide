@@ -45,6 +45,8 @@ Misc note:
    - [ ] cargo run -- -f "fds" --lex --eval "test" (gives error, but should load file and then execute eval)
 - [ ] Test lexer comments and strings
    - [ ] test incomplete strings and comments
+   - [ ] #|test|##|yo|#
+   - [ ] "yo";test
    - [ ] (+ "test" blah)
    - [ ] test ;yo
    - [ ] (+ 3 #| hey |#)
