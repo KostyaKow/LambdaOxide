@@ -12,6 +12,7 @@ pub enum ExecStage { Unknown, Lex, Parse, Eval }
 pub enum ErrCode {
    //LEX:
    UnterminatedQuote,
+   UnterminatedComment,
    MisformedNum, //bad format like 543a or 0.3sd
    BadChar, //TODO: doesn't exist yet
 

@@ -25,9 +25,14 @@ General overview
 - main.rs parses command line argument and dispatches appropriate action
 
 ===Read line===
--every repl input gets it's own stack
--every file read gets it's own stack
--before calling every parse_str for files, set line manually on errors
+- every repl input gets it's own stack
+- every file read gets it's own stack
+- before calling every parse_str for files, set line manually on errors
+
+===Lang syntax===
+- "string"
+- blah ;semicolon signifies comment until end of line
+- test #| multi-line comment block |#
 
 Misc note:
 - [ ] Test command line arguments
@@ -38,6 +43,15 @@ Misc note:
    - [x] cargo run -- --lex (repl in Lex mode)
    - [x] cargo run -- -f "fds" (file (fds) in Eval mode
    - [ ] cargo run -- -f "fds" --lex --eval "test" (gives error, but should load file and then execute eval)
+- [ ] Test lexer comments and strings
+   - [ ] test incomplete strings and comments
+   - [ ] (+ "test" blah)
+   - [ ] test ;yo
+   - [ ] (+ 3 #| hey |#)
+   - [ ] strings inside comments, comments inside strings, simple comment inside complex comment
+      - [ ] "blah #| yo |#"
+      - [ ] #| yo |# "hi"
+      - [ ] #| ; |#
 
 Quick TODO:
 - [ ] remove all old code for parse when it returned Sexps instead of Result

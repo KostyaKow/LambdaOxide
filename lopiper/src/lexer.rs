@@ -12,42 +12,81 @@ pub enum Lexeme {
 }
 
 //Special is either Comment or String
-enum SpecialType { SimpleComment, ExtendedComment, Str };
+#[derive(Debug)] //TODO: temp
+enum SpecialType { SimpleComment, ExtendedComment, Str }
 type SpecialRange = Vec<(usize, usize, SpecialType)>;
 
 //TODO: priority of strings vs comments, comment syntax in string, string in comments
-fn get_comment_ranges(code : &str) -> Result<SizeRanges, RangeErr> {
-   let mut ranges : Vec<(usize, usize)> = Vec::new();
+fn get_special_ranges(code : &str) -> Result<SpecialRange, RangeErr> {
+   let mut ranges : SpecialRange = Vec::new();
 
-   let mut start_c : Option<usize> = None;
-   let mut ignore_next_quote = false;
+   let mut cmnt_start = None;
+   let mut str_start = None;
+   let mut multi_first_char = false;
+   let mut escape = false;
 
-   let code_chars = code.chars();
-   let mut len = 0;
-   for (i, c) in code_chars.enumerate() {
-      if c == '"' {
-         match start_quote {
-            //if we have start
-            Some(start) if !ignore_next_quote => {
-               ranges.push((start, i));
-               start_quote = None;
-            }
-            None if !ignore_next_quote => {
-               start_quote = Some(i);
-            }
+   //index in code of current line start, (length of previous lines)
+   let mut line_start = 0;
+
+   let lines = code.split('\n');
+
+   for line in lines {
+      let line_len = line.len();
+      let line_end = line_start + line_len;
+
+      for (i, c) in line.chars().enumerate() {
+         let real_i = line_start + i; //index into code of current char
+
+         //TODO: only for strings???
+         if escape { escape = false; continue; }
+
+         match c {
+            '\\' if !is_none(str_start) => {
+               escape = true;
+            },
+            '"' if is_none(cmnt_start) => {
+               if is_none(str_start) {
+                  str_start = Some(real_i);
+               } else {
+                  ranges.push((str_start.unwrap(), real_i, SpecialType::Str));
+                  str_start = None;
+               }
+            },
+            ';' if is_none(cmnt_start) && is_none(str_start) => {
+               ranges.push((real_i, line_end, SpecialType::SimpleComment));
+               break;
+            },
+            '|' if is_none(str_start) => {
+               if is_none(cmnt_start) && multi_first_char {
+                  cmnt_start = Some(real_i-1);
+               } else {
+                  multi_first_char = true;
+                  continue;
+               }
+            },
+            '#' if is_none(str_start) => {
+               if is_none(cmnt_start) { multi_first_char = true; continue; }
+               else if multi_first_char {
+                  let t = SpecialType::ExtendedComment;
+                  ranges.push((cmnt_start.unwrap(), real_i, t));
+                  cmnt_start = None;
+               }
+            },
             _ => {}
          }
+
+         multi_first_char = false;
       }
-      if c == '\\' { ignore_next_quote = true; }
-      else { ignore_next_quote = false; }
-      len = i;
+      line_start = line_end;
    }
 
-   if let Some(c) = start_quote {
-      Err((ErrCode::UnterminatedQuote, c, len))
-   } else { Ok(ranges) }
-
-
+   if let Some(start) = cmnt_start {
+      Err((ErrCode::UnterminatedComment, start, code.len()-1))
+   } else if let Some(start) = str_start {
+      Err((ErrCode::UnterminatedQuote, start, code.len()-1))
+   } else {
+      Ok(ranges)
+   }
 }
 
 //Ok(range-of-chars), Err((type, start-highlight, end-highlight))
@@ -84,6 +123,9 @@ fn get_char_ranges(code : &str) -> Result<SizeRanges, RangeErr> {
 }
 
 pub fn lex(code : &str) -> LexResult {
+   let x = get_special_ranges(code);
+   println!("{:?}", x);
+
    use oxicloak::{char_at, char_at_fast, contains, slice_str};
 
    let mut lexemes : Lexemes = Vec::new();
