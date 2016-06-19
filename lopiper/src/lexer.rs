@@ -3,9 +3,51 @@ use errors::{ErrInfo, ErrCode, ExecStage, StackInfo};
 use oxicloak::*;
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum CommentType { Simple, Extended }
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum Lexeme {
    OpenParen, CloseParen, Sym(String), Quote(QuoteType),
-   Int(i64), Float(f64), Str(String)
+   Int(i64), Float(f64), Str(String), Comment(String, CommentType)
+}
+
+//Special is either Comment or String
+enum SpecialType { SimpleComment, ExtendedComment, Str };
+type SpecialRange = Vec<(usize, usize, SpecialType)>;
+
+//TODO: priority of strings vs comments, comment syntax in string, string in comments
+fn get_comment_ranges(code : &str) -> Result<SizeRanges, RangeErr> {
+   let mut ranges : Vec<(usize, usize)> = Vec::new();
+
+   let mut start_c : Option<usize> = None;
+   let mut ignore_next_quote = false;
+
+   let code_chars = code.chars();
+   let mut len = 0;
+   for (i, c) in code_chars.enumerate() {
+      if c == '"' {
+         match start_quote {
+            //if we have start
+            Some(start) if !ignore_next_quote => {
+               ranges.push((start, i));
+               start_quote = None;
+            }
+            None if !ignore_next_quote => {
+               start_quote = Some(i);
+            }
+            _ => {}
+         }
+      }
+      if c == '\\' { ignore_next_quote = true; }
+      else { ignore_next_quote = false; }
+      len = i;
+   }
+
+   if let Some(c) = start_quote {
+      Err((ErrCode::UnterminatedQuote, c, len))
+   } else { Ok(ranges) }
+
+
 }
 
 //Ok(range-of-chars), Err((type, start-highlight, end-highlight))

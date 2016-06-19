@@ -27,7 +27,9 @@ pub fn print_lexemes(lexemes: &Lexemes) {
          Lexeme::Sym(ref s)   => println!("sym {}", s),
          Lexeme::Int(ref n)   => println!("int {}", n),
          Lexeme::Float(ref n) => println!("float {}", n),
-         Lexeme::Quote(ref q) => println!("quote {}", quote_to_str(q.clone()))
+         Lexeme::Quote(ref q) => println!("quote {}", quote_to_str(q.clone())),
+         Lexeme::Comment(ref c, ref t)
+                              => println!("{:?} comment: {}", t, c)
       }
    }
 }

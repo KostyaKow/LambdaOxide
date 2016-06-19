@@ -71,7 +71,15 @@ impl Driver {
    {
       let code = self.cmd_arg_formatter(code_raw, from_main);
       let mut reader = Reader::new();
-      reader.parse_line(code, 0);
+
+      let (parsed, lexed) = reader.parse_line(code, 0);
+
+      let repl_eval = get_eval_f(mode);
+
+      //TODO: Ok(lexed.unwrap()) is not very good
+      let env = (Vec::new(), 0);
+      //output from repl_eval() passed, we're gonna display it
+      let repl_eval_out = repl_eval(parsed.clone(), Ok(lexed.unwrap()), env);
 
       Sexps::new_nil()
    }
