@@ -1,5 +1,6 @@
 ;TODO:
 ;convert all blocks to lambda's with 0 args
+;function call and assignment statements both append ;. So var x = scm_sum(3, 5);; has 2 semicolons
 
 ;#lang racket
 
@@ -41,10 +42,6 @@
 ;(define (gen-assign name exp tab)
 ;   (string-append (symbol->string name) " = " (to-py exp tab)))
 ;
-;(define (gen-tab-spaces ntabs)
-;   (if (= ntabs 0)
-;      ""
-;      (string-append "   " (gen-tab-spaces (- ntabs 1)))))
 ;
 ;(define (get-func-name s)
 ;   (cond ((eq? s '+) "sum")
@@ -56,6 +53,28 @@
 ;                  (get-func-name (caar exp)) "("
 ;                  (sym-lst-to-py-lst (cdar exp)) ")"))
 
+(define (make-tabs ntabs)
+   (if (= ntabs 0)
+      ""
+      (string-append "   " (make-tabs (- ntabs 1)))))
+
+(define (lst->comma-str exp)
+   (if (null? exp)
+      ""
+      (string-append
+       (cond ((symbol? (car exp))
+              (symbol->string (car exp)))
+             ((number? (car exp))
+              (number->string (car exp)))
+             (else (car exp))) ;lst->comma-str ???
+       (if (null? (cdr exp)) "" ", ")
+       (lst->comma-str (cdr exp)))))
+
+(define fold
+   (lambda (combine init lst)
+         (if (null? lst)
+            init
+            (fold combine (combine (car lst) init) (cdr lst)))))
 (define (map f lst)
    (if (null? lst)
       '()
@@ -126,7 +145,11 @@
    (list (ir-tag 'call) (exp->ir name) (map exp->ir args)))
 
 (define (ir-gen-lambda args body)
-   `(,(ir-tag 'lambda) ,(map exp->ir args) ,(exp->ir body)))
+;   `(,(ir-tag 'lambda) ,(map exp->ir args) ,(exp->ir body)))
+;   (list (ir-tag 'lambda) (map exp->ir args) (map exp->ir body)))
+   ;(display body)
+   (list (ir-tag 'lambda) (map exp->ir args) (list (ir-tag 'block) (map (lambda (x) (exp->ir x)) body))))
+
 (define (ir-gen-begin exp)
    (list (ir-tag 'block) (map exp->ir (cdr exp))))
 
@@ -147,7 +170,7 @@
    (let ((args (cdr exp))
          (name (get-func-name exp)))
       (cond
-         ((ir-def-func? exp) (ir-store (caar args) (ir-gen-lambda (cdr (car args)) (cadr args))))
+         ((ir-def-func? exp) (ir-store (caar args) (ir-gen-lambda (cdr (car args)) (cdr args)))) ;last was (cadr args)
          ((ir-lamb? exp) (ir-gen-lambda (car args) (cdr args)))
          ((ir-def-ass? exp) (ir-store (car args) (cadr args)))
          ((ir-begin? exp) (ir-gen-begin exp))
@@ -201,16 +224,15 @@
         (cadr ir)) ;(cadr ir)) ;to display block, just use ir
    (display "\n"))
 
-
 ;(display (ir->js (exp->ir exp-lisp)))
-;(define exp-lisp '((define x (+ 3 5)) (define (f x y) (+ x y 4 2))))
+;(define exp-lisp '((define (f x y) (- 3 10) (+ x 4 2))))
+;(define exp-lisp '((define x (+ 3 5)) (define (f x y) (- 3 10) (+ x y 4 2))))
 (define exp-lisp '((begin (+ 3 2) 5) (def (f x) (+ x 5)) (def y 10) (if (> (f y) 15) (console.log "greater") (console.log "smaller"))))
-
 ;(define exp-lisp '((define x (+ 3 5))))
 ;(display (to-ir exp-lisp 0))
 
 ;(print-ir1 (runner exp-lisp) 0)
-;(print-ir1 (tag-remove-ir-rec (runner exp-lisp)) 0)
+(print-ir1 (tag-remove-ir-rec (runner exp-lisp)) 0)
 
 (define (get-type ir)
    (if (and (ir-cons? ir) (ir-cons? (car ir)) (eq? (caar ir) 'ir))
@@ -224,25 +246,55 @@
 
 (define (is-type? ir type) (eq? (get-type ir) type))
 
-(define (gen-js-blk data) "function () {/*block*/ }()\n")
-(define (gen-js-if data) "if a else b")
-(define (gen-js-lambda data) "function () { /*lambda*/ }\n")
-(define (gen-js-call data) "f(/*call*/)")
-(define (gen-js-assign data) "var x = ...;\n")
+(define (gen-js-blk data nest)
+   (string-append (make-tabs nest) "function () {\n" (fold string-append "" (map (lambda (x) (string-append (make-tabs (+ nest 1)) (ir->js x nest))) data)) "\n}()\n"))
 
-(define (ir->js ir)
-   (cond
-      ((is-type? ir 'block) (gen-js-blk (get-data ir)))
-      ((is-type? ir 'begin) (gen-js-blk (get-data ir)))
-      ((is-type? ir 'if) (gen-js-if (get-data ir)))
-      ((is-type? ir 'lambda) (gen-js-lambda (get-data ir)))
-      ((is-type? ir 'call) (gen-js-call (get-data ir)))
-      ((is-type? ir 'assign) (gen-js-assign (get-data ir)))
-      ((is-type? ir 'num) (number->string (get-data ir)))
-      ((is-type? ir 'sym) (symbol->string (get-data ir)))
-      ((is-type? ir 'str) (string-append "\"" (get-data ir) "\""))
-      (else (string-append "BAD IR TYPE:" (symbol->string (get-type ir))))))
+(define (iden x) x)
 
-(display (ir->js (runner exp-lisp)))
+(define (lookup-func name)
+   (cond ((string=? name "+") "scm_sum")
+         ((string=? name "-") "scm_diff")
+         ((string=? name "*") "scm_mul")
+         (else name)))
+
+(define (gen-js-if data nest) "if a else b")
+(define (gen-js-lambda data nest)
+   ;"function () { /*lambda*/ }\n"
+   (string-append
+      (make-tabs nest)
+      "function ("
+      (lst->comma-str (map (lambda (x) (cadr x)) (car data)))
+      ") {\n"
+      (fold string-append
+            ""
+            (map (lambda (x) (string-append (make-tabs (+ nest 1)) (ir->js x nest) "\n"))
+                 (cdr data)))
+      (make-tabs nest)
+      "\n}\n"))
+
+(define (gen-js-call data nest)
+   (string-append
+      (lookup-func (ir->js (car data) nest)) "("
+      (lst->comma-str (map (lambda (x) (cadr x)) (cadr data)))
+      ")"))
+
+(define (gen-js-assign data nest)
+   (string-append "var " (ir->js (car data) nest) " = " (ir->js (cadr data) nest) ";\n"))
+
+(define (ir->js ir nest)
+   (let ((data (get-data ir)))
+      (cond
+         ((is-type? ir 'block) (gen-js-blk (car data) nest))
+         ((is-type? ir 'begin) (gen-js-blk data nest))
+         ((is-type? ir 'if) (gen-js-if data nest))
+         ((is-type? ir 'lambda) (gen-js-lambda data nest))
+         ((is-type? ir 'call) (gen-js-call data nest))
+         ((is-type? ir 'assign) (gen-js-assign data nest))
+         ((is-type? ir 'num) (number->string data))
+         ((is-type? ir 'sym) (symbol->string (car data)))
+         ((is-type? ir 'str) (string-append "\"" data "\""))
+         (else (string-append "BAD IR TYPE:" (symbol->string (get-type ir)))))))
+
+(display (ir->js (runner exp-lisp) 0))
 
 
