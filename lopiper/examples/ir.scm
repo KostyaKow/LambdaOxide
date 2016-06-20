@@ -81,7 +81,8 @@
    (string-append "tmp" (number->string curr-tmp)))
 
 (define (ir-store name val)
-   `(,(ir-tag 'assign) (,(ir-tag 'sym) ,name) ,(exp->ir val)))
+;   `(,(ir-tag 'assign) (,(ir-tag 'sym) ,name) ,(exp->ir val)))
+   (list (ir-tag 'assign) (exp->ir name) (exp->ir val)))
 
 (define (ir-tag tag)
    (cons 'ir tag))
@@ -111,10 +112,11 @@
 (define (ir-gen-cond exp)
    (ir-gen-err "cond not supported yet"))
 (define (ir-gen-call name args)
-   `(,(ir-tag 'call) ,(exp->ir name) ,(map exp->ir args)))
+;   `(,(ir-tag 'call) ,(exp->ir name) ,(map exp->ir args)))
+   (list (ir-tag 'call) (exp->ir name) (map exp->ir args)))
 
 (define (ir-gen-lambda args body)
-   `(,(ir-tag 'lambda) ,(exp->ir args) ,(exp->ir body)))
+   `(,(ir-tag 'lambda) ,(map exp->ir args) ,(exp->ir body)))
 
 ;end gen-ir-cons
 
@@ -164,6 +166,14 @@
    (if (ir-cons? e)
       (if (eq? (car e) 'ir)
          (my-map tag-remove-ir-rec (cdr e))
+         (cons (if (is-tag? e) (cdar e) (my-map tag-remove-ir-rec (car e)))
+               (my-map tag-remove-ir-rec (cdr e))))
+      e))
+
+(define (tag-remove-ir-rec-broken e)
+   (if (ir-cons? e)
+      (if (eq? (car e) 'ir)
+         (my-map tag-remove-ir-rec (cdr e))
          (let ((first-part (if (is-tag? e) (cdar e) (my-map tag-remove-ir-rec (car e)))))
             (cond ((null? (cdr e)) first-part)
                   ((ir-cons? (cdr e)) (cons first-part (my-map tag-remove-ir-rec (cdr e))))
@@ -181,14 +191,15 @@
       e))
 
 (define (runner exp)
-   (tag-remove-ir-rec `(,(ir-tag 'block) ,(my-map exp->ir exp))))
+   (tag-remove-ir-rec (list (ir-tag 'block) (my-map exp->ir exp))))
 ;   `(,(ir-tag 'block) ,(map exp->ir exp)))
 
 (define (print-ir ir)
-   (map (lambda (x)
+   (display (car ir)) (display "\n")
+   (my-map (lambda (x)
           (display x)
           (display "\n"))
-        ir)
+        (cadr ir)) ;(cadr ir)) ;to display block, just use ir
    (display "\n"))
 
 (define (ir->js ir) ir)
