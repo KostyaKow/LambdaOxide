@@ -62,8 +62,8 @@
 
 (define (ir-gen-null) (ir-tag 'null)) ;'ir-null)
 (define (ir-gen-num n) (cons (ir-tag 'num) n))
-(define (ir-gen-str s) (cons (ir-tag 'str) s)
-(define (ir-gen-sym s) `(ir-sym ,s))
+(define (ir-gen-str s) (cons (ir-tag 'str) s))
+(define (ir-gen-sym s) (cons (ir-tag 'sym) s))
 ;end exp->ir
 
 ;for generic helpers
@@ -72,7 +72,7 @@
          ((number? exp) (number->string exp))
          (else "to-string: unknown type to convert to string")))
 
-(define (ir-gen-err msg) '(ir-err ,msg))
+(define (ir-gen-err msg) (cons (ir-tag 'err) msg))
 
 ;(define (ir-get-tmp-name) (string-append "tmp" (number->string (random 1000))))
 (define curr-tmp 0)
@@ -81,7 +81,7 @@
    (string-append "tmp" (number->string curr-tmp)))
 
 (define (ir-store name val)
-   `(ir-assign ,name ,(exp->ir val)))
+   `(,(ir-tag 'assign) (,(ir-tag 'sym) ,name) ,(exp->ir val)))
 
 (define (ir-tag tag)
    (cons 'ir tag))
@@ -107,13 +107,14 @@
    (and (pair? exp) (> (length exp) 0)))
 
 (define (ir-gen-if exp)
-   `(ir-if ,(cadr exp) ,(cddr exp)))
+   `(,(ir-tag 'if) ,(cadr exp) ,(cddr exp)))
 (define (ir-gen-cond exp)
    (ir-gen-err "cond not supported yet"))
 (define (ir-gen-call name args)
-   `(ir-call ,name ,(map exp->ir args)))
+   `(,(ir-tag 'call) ,name ,(map exp->ir args)))
+
 (define (ir-gen-lambda args body)
-   `(ir-lambda ,args ,(exp->ir body)))
+   `(,(ir-tag 'lambda) ,args ,(exp->ir body)))
 
 ;end gen-ir-cons
 
@@ -150,7 +151,7 @@
       (else (ir-gen-err "exp->ir call else called"))))
 
 (define (runner exp)
-   (cons (ir-tag 'block) (map exp->ir exp)))
+   `(,(ir-tag 'block) (,(map exp->ir exp))))
 
 (define (ir->js ir) ir)
 
@@ -159,6 +160,9 @@
 
 ;(display (ir->js (exp->ir exp-lisp)))
 ;(display "\n")
+
+(define (rec-remove-ir e)
+   (if (and (ir-cons? e) (
 
 (define (print-ir ir)
    (map (lambda (x)
