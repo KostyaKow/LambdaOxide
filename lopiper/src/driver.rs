@@ -143,10 +143,13 @@ impl Driver {
 
       //run repl in file mode
       if let Some(path) = path_opt {
-         /*let status = load_file(path);
+         let status = self.load_file(path);
          if status.is_err() {
             return status;
-         }*/
+         }
+         for line in self.file_lines.clone().unwrap() {
+            self.run(line, mode.clone(), false);
+         }
       }
 
       //kk move to repl_init

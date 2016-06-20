@@ -43,6 +43,10 @@ Misc note:
    - [x] cargo run -- --lex (repl in Lex mode)
    - [x] cargo run -- -f "fds" (file (fds) in Eval mode
    - [ ] cargo run -- -f "fds" --lex --eval "test" (gives error, but should load file and then execute eval)
+- [ ] Test parser
+   - [ ] cargo run -- --eval "+ 3 5" --lex
+- [ ] Test file
+   - [ ] cargo run -- --lex -f examples/py_guile.scm
 - [ ] Test lexer comments and strings
    - [ ] test incomplete strings and comments
    - [ ] #|test|##|yo|#
@@ -56,6 +60,7 @@ Misc note:
       - [ ] #| ; |#
 
 Quick TODO:
+- [ ] cargo run -- --lex -f examples/py_guile.scm dosen't work because we need parse_line to return Result, run check for result, and if not enough pass more lines to run
 - [ ] remove all old code for parse when it returned Sexps instead of Result
 - [ ] remove child_parse error and return child's error
 - [ ] in get_line of driver, make sure line isn't out of range, and file_lines isn't None
@@ -65,7 +70,6 @@ Quick TODO:
 - [ ] try running examples/py.lo in guile or drracket
 - [ ] try read on old/old-felipe-piper-lisp-idea.lp
 - [ ] '() same as Nil
-
 Bugs TODO:
 - [ ] repl "-3.3.3" gets lexed as symbol instead of lexer error
 

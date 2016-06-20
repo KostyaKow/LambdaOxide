@@ -102,6 +102,9 @@ pub fn lex_printer(parsed_exp : Sexps, lex_res : LexResult, e : Env) -> Sexps {
    } else {
       println!("lexing failed");
    }
+   use utils::display_sexps;
+   display_sexps(&parsed_exp);
+
    Sexps::new_nil()
 }
 
