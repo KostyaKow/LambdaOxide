@@ -111,10 +111,10 @@
 (define (ir-gen-cond exp)
    (ir-gen-err "cond not supported yet"))
 (define (ir-gen-call name args)
-   `(,(ir-tag 'call) ,name ,(map exp->ir args)))
+   `(,(ir-tag 'call) ,(exp->ir name) ,(map exp->ir args)))
 
 (define (ir-gen-lambda args body)
-   `(,(ir-tag 'lambda) ,args ,(exp->ir body)))
+   `(,(ir-tag 'lambda) ,(exp->ir args) ,(exp->ir body)))
 
 ;end gen-ir-cons
 
@@ -134,7 +134,7 @@
       (cond
          ((ir-def-func? exp) (ir-store (caar args) (ir-gen-lambda (cdr (car args)) (cadr args))))
          ((ir-lamb? exp) (ir-gen-lambda (car args) (cdr args)))
-         ((ir-def-ass? exp) (ir-store (car args) (cdr args)))
+         ((ir-def-ass? exp) (ir-store (car args) (cadr args)))
          ((ir-if? exp) (ir-gen-if exp))
          ((ir-cond? exp) (ir-gen-cond exp))
          ((ir-call? exp) (ir-gen-call (car exp) (cdr exp)))
@@ -150,7 +150,6 @@
       ((ir-cons? exp) (gen-ir-cons exp)) ;(cons 'block (gen-ir-cons exp)))
       (else (ir-gen-err "exp->ir call else called"))))
 
-
 (define (my-map f lst)
    (if (null? lst)
       '()
@@ -165,15 +164,17 @@
    (if (ir-cons? e)
       (if (eq? (car e) 'ir)
          (my-map tag-remove-ir-rec (cdr e))
-         (cons (if (is-tag? e) (cdar e) (my-map tag-remove-ir-rec (car e)))
-               (my-map tag-remove-ir-rec (cdr e))))
+         (let ((first-part (if (is-tag? e) (cdar e) (my-map tag-remove-ir-rec (car e)))))
+            (cond ((null? (cdr e)) first-part)
+                  ((ir-cons? (cdr e)) (cons first-part (my-map tag-remove-ir-rec (cdr e))))
+                  (else (cons first-part e)))))
       e))
 
 (define (tag-remove-ir-rec1 e)
    (if (and (ir-cons? e) (ir-cons? (car e)) (eq? (caar e) 'ir))
       (cons (cdar e)
             (if (ir-cons? (cdr e))
-               (map (lambda (x) (if (ir-cons? x) (map tag-remove-ir-rec1 x) x)) (cdr e))
+               (my-map (lambda (x) (if (ir-cons? x) (my-map tag-remove-ir-rec1 x) x)) (cdr e))
                (cdr e)))
             ;(map (lambda (x) (if (ir-cons? x) (map tag-remove-ir-rec x) x))
             ;     (cdr e)))
@@ -183,15 +184,6 @@
    (tag-remove-ir-rec `(,(ir-tag 'block) ,(my-map exp->ir exp))))
 ;   `(,(ir-tag 'block) ,(map exp->ir exp)))
 
-(define (ir->js ir) ir)
-
-(define exp-lisp '((define x (+ 3 5)) (define (f x y) (+ x y 4 2))))
-;(define exp-lisp '((define x (+ 3 5))))
-
-;(display (ir->js (exp->ir exp-lisp)))
-;(display "\n")
-
-
 (define (print-ir ir)
    (map (lambda (x)
           (display x)
@@ -199,9 +191,12 @@
         ir)
    (display "\n"))
 
-(print-ir (runner exp-lisp))
+(define (ir->js ir) ir)
 
+;(display (ir->js (exp->ir exp-lisp)))
+(define exp-lisp '((define x (+ 3 5)) (define (f x y) (+ x y 4 2))))
+;(define exp-lisp '((define x (+ 3 5))))
 ;(display (to-ir exp-lisp 0))
 
-
+(print-ir (runner exp-lisp))
 
