@@ -61,9 +61,9 @@
 (define (ir-cons? exp) (pair? exp))
 
 (define (ir-gen-null) (ir-tag 'null)) ;'ir-null)
-(define (ir-gen-num n) (cons (ir-tag 'num) n))
-(define (ir-gen-str s) (cons (ir-tag 'str) s))
-(define (ir-gen-sym s) (cons (ir-tag 'sym) s))
+(define (ir-gen-num n) (list (ir-tag 'num) n))
+(define (ir-gen-str s) (list (ir-tag 'str) s))
+(define (ir-gen-sym s) (list (ir-tag 'sym) s))
 ;end exp->ir
 
 ;for generic helpers
@@ -72,7 +72,7 @@
          ((number? exp) (number->string exp))
          (else "to-string: unknown type to convert to string")))
 
-(define (ir-gen-err msg) (cons (ir-tag 'err) msg))
+(define (ir-gen-err msg) (list (ir-tag 'err) msg))
 
 ;(define (ir-get-tmp-name) (string-append "tmp" (number->string (random 1000))))
 (define curr-tmp 0)
@@ -152,12 +152,14 @@
       ((ir-cons? exp) (gen-ir-cons exp)) ;(cons 'block (gen-ir-cons exp)))
       (else (ir-gen-err "exp->ir call else called"))))
 
-(define (my-map f lst)
-   (if (null? lst)
-      '()
-      (if (not (ir-cons? lst))
-         (cons (f lst) '())
-         (cons (f (car lst)) (my-map f (cdr lst))))))
+(define my-map map)
+
+;(define (my-map1 f lst)
+;   (if (null? lst)
+;      '()
+;      (if (not (ir-cons? lst))
+;         (cons (f lst) '())
+;         (cons (f (car lst)) (my-map f (cdr lst))))))
 
 (define (is-tag? e)
    (and (ir-cons? e) (ir-cons? (car e)) (eq? (caar e) 'ir)))
@@ -165,29 +167,9 @@
 (define (tag-remove-ir-rec e)
    (if (ir-cons? e)
       (if (eq? (car e) 'ir)
-         (my-map tag-remove-ir-rec (cdr e))
+         (if (ir-cons? (cdr e)) (my-map tag-remove-ir-rec (cdr e)) (cdr e))
          (cons (if (is-tag? e) (cdar e) (my-map tag-remove-ir-rec (car e)))
                (my-map tag-remove-ir-rec (cdr e))))
-      e))
-
-(define (tag-remove-ir-rec-broken e)
-   (if (ir-cons? e)
-      (if (eq? (car e) 'ir)
-         (my-map tag-remove-ir-rec (cdr e))
-         (let ((first-part (if (is-tag? e) (cdar e) (my-map tag-remove-ir-rec (car e)))))
-            (cond ((null? (cdr e)) first-part)
-                  ((ir-cons? (cdr e)) (cons first-part (my-map tag-remove-ir-rec (cdr e))))
-                  (else (cons first-part e)))))
-      e))
-
-(define (tag-remove-ir-rec1 e)
-   (if (and (ir-cons? e) (ir-cons? (car e)) (eq? (caar e) 'ir))
-      (cons (cdar e)
-            (if (ir-cons? (cdr e))
-               (my-map (lambda (x) (if (ir-cons? x) (my-map tag-remove-ir-rec1 x) x)) (cdr e))
-               (cdr e)))
-            ;(map (lambda (x) (if (ir-cons? x) (map tag-remove-ir-rec x) x))
-            ;     (cdr e)))
       e))
 
 (define (runner exp)
