@@ -62,8 +62,31 @@ Quick TODO:
 - [ ] implement comment as a type of Lexeme
 - [ ] create function from_range_err_to_sexps
 - [ ] src/reader parse_line doesn't check return for errors.
+- [ ] try running examples/py.lo in guile or drracket
+- [ ] try read on old/old-felipe-piper-lisp-idea.lp
+- [ ] '() same as Nil
+
+Bugs TODO:
+- [ ] repl "-3.3.3" gets lexed as symbol instead of lexer error
+
+
+Python syntax:
+```Python
+
+direct sexps to python translation without special form conversion:
+(define (f x y) (+ x y 4 2))
+define(f(x, y), +(x, y, 4, 2))
+
+
+def f(x, y):
+   +(x, y,
 
 TODO:
+- [ ] make Scheme translator to python
+   - [ ] translate sexps to tabbed python version
+   - [ ] generate sexps with python tabs
+   - [ ] conditionals
+-define and def same thing, def shortcut
 - [ ] simple way to load rust libraries, by just passing Environment to their initializer
 - [ ] main.rs
    - [ ] use library for command line parsing (https://doc.rust-lang.org/getopts/getopts/index.html)

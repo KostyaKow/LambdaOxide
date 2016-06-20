@@ -1,0 +1,69 @@
+#| Example lisp to python translator written in
+ | LOScript. It also contains syntax ideas and
+ | introductory tutorial to the upcoming LOScript
+ | release.
+ |#
+
+#| This text is inside a comment. There are 2 types of
+LOScript comments: single line and block. Single line
+comments start with ; and last until line end. Block
+comment begin with #| and end in |#
+#| Block comments can spam multiple lines and you
+can have several on the same line.
+|#
+
+;we could use this in lisp repl loop to define expression
+(define exp (read))
+;stdin:
+;(+ 3 5 (- 3 4)
+;)
+;can also convert from string
+(def exp-str "(define (f x y) (+ x y 4 2))")
+(def exp (str->exp exp-str))
+
+;but for now we'll test with hardcoded exp
+(def exp-lisp '(define (f x y) (+ x y 4 2)))
+
+;(to-py exp-lisp)
+
+(def (is-def? s)
+   (or (= s "define") (= s "def")))
+
+;generate python =
+(def (gen-assign name exp)
+   (+ name " = " (to-py exp)))
+
+(def (sym-lst-to-py-lst exp)
+   (if (null? exp)
+      ""
+      (+ (car exp) ", " (sym-lst-to-py-lst (cdr exp)))))
+
+;for defines
+(def (gen-def exp tab)
+   (if (null? exp) "None" (begin
+      (def name-args (car exp))
+      (def body (cdr exp))
+      (cond
+         ((string? name-args)
+          (gen-assign name-args body))
+         (else
+          (+ "def "
+             (car name-args) "("
+             (sym-lst-to-py-lst (cdr name-args))
+             "):"
+             (to-py exp (+ tab 1))))))))
+
+(def (to-py exp tab)
+   (define (helper exp)
+      (cond
+         ((nil? exp) nil)
+         ((is-def? (car exp)) (gen-def (cdr exp) tab))
+         (else "null"))) ;also need lambda
+
+   (fold
+      (lambda (new acc)
+         (cons (helper new) acc))
+      '()
+      exp))
+
+

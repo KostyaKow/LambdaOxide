@@ -109,7 +109,7 @@ pub fn lex(code : &str) -> LexResult {
    let mut collect_start = 0; let mut collect_end = 0;
 
    while i < code.len() {
-      //if haven't went through all blocks, and i is beginning ofblock
+      //if haven't went through all blocks, and i is beginning of block
       let is_blk_start = r_it < blk_ranges.len() && blk_ranges[r_it].0 == i;
       let (blk_start, blk_end, blk_type) = if is_blk_start {
          blk_ranges[r_it].clone()
