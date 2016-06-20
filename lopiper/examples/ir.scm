@@ -1,3 +1,6 @@
+;TODO:
+;convert all blocks to lambda's with 0 args
+
 ;#lang racket
 
 ;we could use this in lisp repl loop to define expression
@@ -53,6 +56,13 @@
 ;                  (get-func-name (caar exp)) "("
 ;                  (sym-lst-to-py-lst (cdar exp)) ")"))
 
+(define (map f lst)
+   (if (null? lst)
+      '()
+      (if (not (ir-cons? lst))
+         (cons (f lst) '())
+         (cons (f (car lst)) (map f (cdr lst))))))
+
 ;for exp->ir
 (define (ir-null? exp) (null? exp))
 (define (ir-num? exp) (number? exp))
@@ -104,19 +114,22 @@
 (define (ir-lamb? exp) (eq? (car exp) 'lambda)) ;check format
 (define (ir-if? exp) (eq? (car exp) 'if)) ;check more stuff here
 (define (ir-cond? exp) (eq? (car exp) 'cond)) ;check this stuff
+(define (ir-begin? exp) (and (pair? exp) (eq? (car exp) 'begin)))
 (define (ir-call? exp)
    (and (pair? exp) (> (length exp) 0)))
 
 (define (ir-gen-if exp)
-   `(,(ir-tag 'if) ,(cadr exp) ,(cddr exp)))
+   (list (ir-tag 'if) (exp->ir (cadr exp)) (exp->ir (caddr exp)) (exp->ir (cadddr exp))))
 (define (ir-gen-cond exp)
    (ir-gen-err "cond not supported yet"))
 (define (ir-gen-call name args)
-;   `(,(ir-tag 'call) ,(exp->ir name) ,(map exp->ir args)))
    (list (ir-tag 'call) (exp->ir name) (map exp->ir args)))
 
 (define (ir-gen-lambda args body)
    `(,(ir-tag 'lambda) ,(map exp->ir args) ,(exp->ir body)))
+(define (ir-gen-begin exp)
+   (list (ir-tag 'block) (map exp->ir (cdr exp))))
+
 
 ;end gen-ir-cons
 
@@ -137,6 +150,7 @@
          ((ir-def-func? exp) (ir-store (caar args) (ir-gen-lambda (cdr (car args)) (cadr args))))
          ((ir-lamb? exp) (ir-gen-lambda (car args) (cdr args)))
          ((ir-def-ass? exp) (ir-store (car args) (cadr args)))
+         ((ir-begin? exp) (ir-gen-begin exp))
          ((ir-if? exp) (ir-gen-if exp))
          ((ir-cond? exp) (ir-gen-cond exp))
          ((ir-call? exp) (ir-gen-call (car exp) (cdr exp)))
@@ -152,44 +166,83 @@
       ((ir-cons? exp) (gen-ir-cons exp)) ;(cons 'block (gen-ir-cons exp)))
       (else (ir-gen-err "exp->ir call else called"))))
 
-(define my-map map)
-
-;(define (my-map1 f lst)
-;   (if (null? lst)
-;      '()
-;      (if (not (ir-cons? lst))
-;         (cons (f lst) '())
-;         (cons (f (car lst)) (my-map f (cdr lst))))))
-
 (define (is-tag? e)
    (and (ir-cons? e) (ir-cons? (car e)) (eq? (caar e) 'ir)))
 
 (define (tag-remove-ir-rec e)
    (if (ir-cons? e)
       (if (eq? (car e) 'ir)
-         (if (ir-cons? (cdr e)) (my-map tag-remove-ir-rec (cdr e)) (cdr e))
-         (cons (if (is-tag? e) (cdar e) (my-map tag-remove-ir-rec (car e)))
-               (my-map tag-remove-ir-rec (cdr e))))
+         (if (ir-cons? (cdr e)) (map tag-remove-ir-rec (cdr e)) (cdr e))
+         (cons (if (is-tag? e) (cdar e) (map tag-remove-ir-rec (car e)))
+               (map tag-remove-ir-rec (cdr e))))
       e))
 
 (define (runner exp)
-   (tag-remove-ir-rec (list (ir-tag 'block) (my-map exp->ir exp))))
-;   `(,(ir-tag 'block) ,(map exp->ir exp)))
+   (list (ir-tag 'block) (map exp->ir exp)))
 
-(define (print-ir ir)
+(define (print-ir ir nest)
+   (if (ir-cons? ir)
+      (if (eq? (car ir) 'block)
+         (begin
+            (display "[")
+            (map (lambda (x) (print-ir x (+ nest 1))) (cdr ir))
+            (display "]"))
+         (begin
+            (display "(")
+            (map (lambda (x) (display "(") (print-ir x nest) (display ")")) ir)
+            (display ")")))
+      (begin (display ir) (display " "))))
+
+(define (print-ir1 ir nest)
    (display (car ir)) (display "\n")
-   (my-map (lambda (x)
+   (map (lambda (x)
           (display x)
           (display "\n"))
         (cadr ir)) ;(cadr ir)) ;to display block, just use ir
    (display "\n"))
 
-(define (ir->js ir) ir)
 
 ;(display (ir->js (exp->ir exp-lisp)))
-(define exp-lisp '((define x (+ 3 5)) (define (f x y) (+ x y 4 2))))
+;(define exp-lisp '((define x (+ 3 5)) (define (f x y) (+ x y 4 2))))
+(define exp-lisp '((begin (+ 3 2) 5) (def (f x) (+ x 5)) (def y 10) (if (> (f y) 15) (console.log "greater") (console.log "smaller"))))
+
 ;(define exp-lisp '((define x (+ 3 5))))
 ;(display (to-ir exp-lisp 0))
 
-(print-ir (runner exp-lisp))
+;(print-ir1 (runner exp-lisp) 0)
+;(print-ir1 (tag-remove-ir-rec (runner exp-lisp)) 0)
+
+(define (get-type ir)
+   (if (and (ir-cons? ir) (ir-cons? (car ir)) (eq? (caar ir) 'ir))
+      (cdar ir)
+      'bad))
+
+(define (get-data ir)
+   (if (and (ir-cons? ir) (ir-cons? (car ir)) (eq? (caar ir) 'ir))
+      (cdr ir)
+      'bad))
+
+(define (is-type? ir type) (eq? (get-type ir) type))
+
+(define (gen-js-blk data) "function () {/*block*/ }()\n")
+(define (gen-js-if data) "if a else b")
+(define (gen-js-lambda data) "function () { /*lambda*/ }\n")
+(define (gen-js-call data) "f(/*call*/)")
+(define (gen-js-assign data) "var x = ...;\n")
+
+(define (ir->js ir)
+   (cond
+      ((is-type? ir 'block) (gen-js-blk (get-data ir)))
+      ((is-type? ir 'begin) (gen-js-blk (get-data ir)))
+      ((is-type? ir 'if) (gen-js-if (get-data ir)))
+      ((is-type? ir 'lambda) (gen-js-lambda (get-data ir)))
+      ((is-type? ir 'call) (gen-js-call (get-data ir)))
+      ((is-type? ir 'assign) (gen-js-assign (get-data ir)))
+      ((is-type? ir 'num) (number->string (get-data ir)))
+      ((is-type? ir 'sym) (symbol->string (get-data ir)))
+      ((is-type? ir 'str) (string-append "\"" (get-data ir) "\""))
+      (else (string-append "BAD IR TYPE:" (symbol->string (get-type ir))))))
+
+(display (ir->js (runner exp-lisp)))
+
 
