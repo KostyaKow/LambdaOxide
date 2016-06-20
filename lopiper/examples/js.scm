@@ -104,8 +104,8 @@
    `(ir-if ,(cadr exp) ,(cddr exp)))
 (define (ir-gen-cond exp)
    (ir-gen-err "cond not supported yet"))
-(define (ir-gen-call exp)
-   `(ir-call ,(car exp) ,(cdr exp)))
+(define (ir-gen-call name args)
+   `(ir-call ,name ,(exp->ir args)))
 (define (ir-gen-lambda args body)
    `(ir-lambda ,args ,(exp->ir body)))
 
@@ -126,31 +126,46 @@
    (let ((args (cdr exp))
          (name (get-func-name exp)))
       (cond
-         ((ir-def-func? exp) (ir-store name (ir-gen-lambda (cdr (car args)) (cdr args))))
-         ((ir-lamb? exp) (ir-gen-lambda (car args) (cdr args)))
+         ((ir-def-func? exp) (ir-store (caar args) (ir-gen-lambda (cdr (car args)) (cadr args))))
+         ((ir-lamb? exp) (ir-gen-lambda (car args) (map ir->js (cdr args))))
          ((ir-def-ass? exp) (ir-store (car args) (exp->ir (cdr args))))
          ((ir-if? exp) (ir-gen-if exp))
          ((ir-cond? exp) (ir-gen-cond exp))
-         ((ir-call? exp) (ir-gen-call exp))
+         ((ir-call? exp) (ir-gen-call (car exp) (map ir->js (cdr exp))))
          (else (ir-gen-err "bad gen-ir-cons cond")))))
 
 
 (define (exp->ir exp)
-   (cond
-      ((ir-null? exp) (ir-gen-null))
-      ((ir-num? exp) (ir-gen-num exp))
-      ((ir-str? exp) (ir-gen-str exp))
-      ((ir-sym? exp) (ir-gen-sym exp))
-      ((ir-cons? exp) (gen-ir-cons exp))
-      (else (ir-gen-err "exp->ir call else called"))))
+   (define (helper exp)
+      (cond
+         ((ir-null? exp) (ir-gen-null))
+         ((ir-num? exp) (ir-gen-num exp))
+         ((ir-str? exp) (ir-gen-str exp))
+         ((ir-sym? exp) (ir-gen-sym exp))
+         ((ir-cons? exp) (cons 'block (gen-ir-cons exp)))
+         (else (ir-gen-err "exp->ir call else called"))))
+   (helper exp))
+   ;(cons 'ir-block (map helper exp)))
+
 
 (define (is-ir-null? ir) (eq? ir 'null))
 
 (define (ir->js ir) ir)
 
 (define exp-lisp '((define x (+ 3 5)) (define (f x y) (+ x y 4 2))))
+;(define exp-lisp '((define x (+ 3 5))))
 
-(display (ir->js (map exp->ir exp-lisp)))
+;(display (ir->js (exp->ir exp-lisp)))
+;(display "\n")
+
+(define (print-ir ir)
+   (map (lambda (x)
+          (display x)
+          (display "\n"))
+        ir)
+   (display "\n"))
+
+(print-ir (exp->ir exp-lisp))
 
 ;(display (to-ir exp-lisp 0))
 
