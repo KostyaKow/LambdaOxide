@@ -1,3 +1,4 @@
+;BAD!
 ;lst-car-if-not-nil
 (define (list-iter f x)
    (if (null? x) nil

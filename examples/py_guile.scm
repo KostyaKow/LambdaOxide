@@ -10,16 +10,8 @@
 ;(define exp (str->exp exp-str))
 
 ;but for now we'll test with hardcoded exp
+;(define exp-lisp '(define x (+ 3 5)))
 (define exp-lisp '(define (f x y) (+ x y 4 2)))
-
-(define (nil? x) (null? x))
-
-(define (is-def? s)
-   (or (eq? s 'define) (eq? s 'def)))
-
-;generate python =
-(define (gen-assign name exp)
-   (+ name " = " (to-py exp)))
 
 (define (sym-lst-to-py-lst exp)
    (if (null? exp)
@@ -42,26 +34,44 @@
                 "("
                 (sym-lst-to-py-lst (cdr name-args))
                 "):\n"
-                (to-py exp (+ tab 1)))))))))
+                (to-py (cdr exp) (+ tab 1)))))))))
 
-(define (is-call? exp)
-   (> (length exp) 0))
+;generate python =
+(define (gen-assign name exp tab)
+   (string-append (symbol->string name) " = " (to-py exp tab)))
+
+(define (is-ass? exp)
+   (and (> (length exp) 2)
+        (or (eq? (car exp) 'define) (eq? (car exp) 'def))
+        (symbol? (cadr exp))))
+(define (is-call? exp) (> (length exp) 0))
+(define (is-def? exp)
+   (and
+      (> (length exp) 2)
+      (or (eq? (car exp) 'define) (eq? (car exp) 'def))
+      (not (symbol? (cadr exp)))))
 
 (define (gen-tab-spaces ntabs)
    (if (= ntabs 0)
       ""
       (string-append "   " (gen-tab-spaces (- ntabs 1)))))
 
+(define (get-func-name s)
+   (cond ((eq? s '+) "sum")
+         ((eq? s '-) "diff")
+         (else (symbol->string s))))
+
 (define (gen-call exp tab)
    (string-append (gen-tab-spaces tab)
-                  (symbol->string (caar exp)) "("
-                  (sym-lst-to-py-lst (cadr exp)) ")"))
+                  (get-func-name (caar exp)) "("
+                  (sym-lst-to-py-lst (cdar exp)) ")"))
 
 (define (to-py exp tab)
    (define (helper exp)
       (cond
-         ((nil? exp) nil)
-         ((is-def? (car exp)) (gen-def (cdr exp) tab))
+         ((null? exp) '())
+         ((is-def? exp) (gen-def (cdr exp) tab))
+         ((is-ass? exp) (gen-assign (cadr exp) (cddr exp) tab))
          ((is-call? exp) (gen-call exp tab))
          (else "null"))) ;also need lambda
    (helper exp))
