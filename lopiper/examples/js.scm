@@ -150,8 +150,18 @@
       ((ir-cons? exp) (gen-ir-cons exp)) ;(cons 'block (gen-ir-cons exp)))
       (else (ir-gen-err "exp->ir call else called"))))
 
+(define (tag-remove-ir-rec e)
+   (if (and (ir-cons? e) (ir-cons? (car e)) (eq? (caar e) 'ir))
+      (cons (cdar e)
+            (if (ir-cons? (cdr e))
+               (map (lambda (x) (if (ir-cons? x) (map tag-remove-ir-rec x) x)) (cdr e))
+               (cdr e)))
+            ;(map (lambda (x) (if (ir-cons? x) (map tag-remove-ir-rec x) x))
+            ;     (cdr e)))
+      e))
+
 (define (runner exp)
-   `(,(ir-tag 'block) (,(map exp->ir exp))))
+   (tag-remove-ir-rec `(,(ir-tag 'block) ,(map exp->ir exp))))
 
 (define (ir->js ir) ir)
 
@@ -161,8 +171,6 @@
 ;(display (ir->js (exp->ir exp-lisp)))
 ;(display "\n")
 
-(define (rec-remove-ir e)
-   (if (and (ir-cons? e) (
 
 (define (print-ir ir)
    (map (lambda (x)
