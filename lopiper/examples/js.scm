@@ -53,6 +53,17 @@
 ;                  (get-func-name (caar exp)) "("
 ;                  (sym-lst-to-py-lst (cdar exp)) ")"))
 
+(define (to-string exp)
+   (cond ((symbol? exp) (symbol->string exp))
+         ((number? exp) (number->string exp))
+         (else "to-string: unknown type to convert to string")))
+
+(define (ir-gen-err msg) '(ir-err ,msg))
+
+(define (ir-get-tmp-name) "test")
+(define (ir-store name val) pass)
+
+;for exp->ir
 (define (ir-null? exp) (null? exp))
 (define (ir-num? exp) (number? exp))
 (define (ir-str? exp) (string? exp))
@@ -63,35 +74,52 @@
 (define (ir-gen-num n) `(ir-num ,n))
 (define (ir-gen-str s) `(ir-str ,s))
 (define (ir-gen-sym s) `(ir-sym ,s))
+;end exp->ir
 
-(define (ir-gen-err msg) '(ir-err ,msg))
+;for gen-ir-cons
+(define (is-lamb? exp) pass)
+(define (is-if? exp) pass)
+(define (is-cond? exp) pass)
+(define (is-def? exp)
+   (and (> (length exp) 2)
+        (or (eq? (car exp) 'define) (eq? (car exp) 'def))))
+(define (is-def-ass? exp)
+   (and (is-def? exp) (symbol? (cadr exp))))
+(define (is-def-func? exp)
+   (and (is-def? exp) (pair (cadr exp)) (not (symbol? (cadr exp)))))
 
-(define (ir-get-tmp-name) "test")
-(define (ir-store name val) pass)
+(define (is-call? exp)
+   (and (pair? exp) (> (length exp) 0)))
+
+
+(define (ir-gen-lambda args body nest)
+   pass)
+
+;end gen-ir-cons
 
 (define (gen-ir-cons exp nest)
-   (define (is-lamb? exp) pass)
-   (define (is-if? exp) pass)
-   (define (is-cond? exp) pass)
-   (define (is-def? exp)
-      (and (> (length exp) 2)
-           (or (eq? (car exp) 'define) (eq? (car exp) 'def))))
-   (define (is-def-ass? exp)
-      (and (is-def? exp) (symbol? (cadr exp))))
-   (define (is-def-func? exp)
-      (and (is-def? exp) (pair (cadr exp)) (not (symbol? (cadr exp)))))
 
-   (define (is-call? exp)
-      (and (pair? exp) (> (length exp) 0)))
+   (define (get-func-name exp)
+      (let ((test-name (car exp)))
+         (cond ((ir-cons? test-name)
+                (let ((tmp-name (ir-get-tmp-name)))
+                  (ir-store tmp-name (exp-ir test-name))
+                  (string->symbol tmp-name)))
+               ((ir-sym? test-name)
+                test-name)
+               (else ir-gen-err (string-append "bad function name: " (to-string test-name))))))
 
-   (let ((name-internal (car exp))
-         (name
-            (cond ((ir-cons? name-internal)
-                   (begin (ir-store (ir-get-tmp-name) (exp-ir name-internal)
-         (args (cdr exp))
-      (if (ir-cons? name) (ir-store (ir-get-tmp-name) (exp->ir name))
-         ((is-def-func? exp) (gen-def (cdr exp) nest))
-         ((is-def-ass? exp) (gen-assign (cadr exp) (cddr exp) nest))
+   (define (get-def-func-body exp)
+      (
+   (define (get-def-func-args exp)
+      (
+
+   (let ((args (cdr exp))
+         (name (get-func-name exp)))
+      (cond
+         ((ir-def-func? exp) (ir-store name (ir-gen-lambda (cadar args) (cdr args) nest))) ;cadar for ignoring name
+         ((ir-lamb? exp) (ir-gen-lambda (car args) (cdr args)
+         ((ir-def-ass? exp) (gen-assign (cadr exp) (cddr exp) nest))
          ((is-call? exp) (gen-call exp nest))))
 
 
