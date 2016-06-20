@@ -60,9 +60,9 @@
 (define (ir-sym? exp) (symbol? exp))
 (define (ir-cons? exp) (pair? exp))
 
-(define (ir-gen-null) 'ir-null)
-(define (ir-gen-num n) `(ir-num ,n))
-(define (ir-gen-str s) `(ir-str ,s))
+(define (ir-gen-null) (ir-tag 'null)) ;'ir-null)
+(define (ir-gen-num n) (cons (ir-tag 'num) n))
+(define (ir-gen-str s) (cons (ir-tag 'str) s)
 (define (ir-gen-sym s) `(ir-sym ,s))
 ;end exp->ir
 
@@ -81,7 +81,13 @@
    (string-append "tmp" (number->string curr-tmp)))
 
 (define (ir-store name val)
-   `(ir-assign ,name ,val))
+   `(ir-assign ,name ,(exp->ir val)))
+
+(define (ir-tag tag)
+   (cons 'ir tag))
+(define (ir-tag? x)
+   (and (ir-cons? x) (ir-cons? (car x)) (eq? (caar x) 'ir)))
+
 ;end generic helpers
 
 ;for gen-ir-cons
@@ -105,7 +111,7 @@
 (define (ir-gen-cond exp)
    (ir-gen-err "cond not supported yet"))
 (define (ir-gen-call name args)
-   `(ir-call ,name ,(exp->ir args)))
+   `(ir-call ,name ,(map exp->ir args)))
 (define (ir-gen-lambda args body)
    `(ir-lambda ,args ,(exp->ir body)))
 
@@ -115,40 +121,36 @@
 
    (define (get-func-name exp)
       (let ((test-name (car exp)))
-         (cond ((ir-cons? test-name)
+         (cond ((ir-sym? test-name) test-name)
+               ((ir-cons? test-name)
                 (let ((tmp-name (ir-get-tmp-name)))
                   (ir-store tmp-name (exp->ir test-name))
                   (string->symbol tmp-name)))
-               ((ir-sym? test-name)
-                test-name)
                (else ir-gen-err (string-append "bad function name: " (to-string test-name))))))
 
    (let ((args (cdr exp))
          (name (get-func-name exp)))
       (cond
          ((ir-def-func? exp) (ir-store (caar args) (ir-gen-lambda (cdr (car args)) (cadr args))))
-         ((ir-lamb? exp) (ir-gen-lambda (car args) (map ir->js (cdr args))))
-         ((ir-def-ass? exp) (ir-store (car args) (exp->ir (cdr args))))
+         ((ir-lamb? exp) (ir-gen-lambda (car args) (cdr args)))
+         ((ir-def-ass? exp) (ir-store (car args) (cdr args)))
          ((ir-if? exp) (ir-gen-if exp))
          ((ir-cond? exp) (ir-gen-cond exp))
-         ((ir-call? exp) (ir-gen-call (car exp) (map ir->js (cdr exp))))
+         ((ir-call? exp) (ir-gen-call (car exp) (cdr exp)))
          (else (ir-gen-err "bad gen-ir-cons cond")))))
 
-
 (define (exp->ir exp)
-   (define (helper exp)
-      (cond
-         ((ir-null? exp) (ir-gen-null))
-         ((ir-num? exp) (ir-gen-num exp))
-         ((ir-str? exp) (ir-gen-str exp))
-         ((ir-sym? exp) (ir-gen-sym exp))
-         ((ir-cons? exp) (cons 'block (gen-ir-cons exp)))
-         (else (ir-gen-err "exp->ir call else called"))))
-   (helper exp))
-   ;(cons 'ir-block (map helper exp)))
+   (cond
+      ((ir-tag? exp) exp)
+      ((ir-null? exp) (ir-gen-null))
+      ((ir-num? exp) (ir-gen-num exp))
+      ((ir-str? exp) (ir-gen-str exp))
+      ((ir-sym? exp) (ir-gen-sym exp))
+      ((ir-cons? exp) (gen-ir-cons exp)) ;(cons 'block (gen-ir-cons exp)))
+      (else (ir-gen-err "exp->ir call else called"))))
 
-
-(define (is-ir-null? ir) (eq? ir 'null))
+(define (runner exp)
+   (cons (ir-tag 'block) (map exp->ir exp)))
 
 (define (ir->js ir) ir)
 
@@ -165,7 +167,7 @@
         ir)
    (display "\n"))
 
-(print-ir (exp->ir exp-lisp))
+(print-ir (runner exp-lisp))
 
 ;(display (to-ir exp-lisp 0))
 
