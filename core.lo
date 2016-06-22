@@ -92,7 +92,7 @@
 
 (define fold
    (lambda (combine init lst)
-         (if (null? (car lst))
+         (if (null? lst)
             init
             (fold combine (combine (car lst) init) (cdr lst)))))
 
