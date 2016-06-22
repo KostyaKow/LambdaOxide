@@ -279,10 +279,12 @@
 
 (define (gen-js-call data nest)
    ;(display data)
+   ;(display (cadr data))
    (string-append
       (lookup-func (ir->js (car data) nest)) "("
-      (lst->comma-str (map (lambda (x) (cadr x)) (cadr data)))
+      ;(lst->comma-str (map (lambda (x) (cadr x)) (cadr data)))
       ;(lst->comma-str (map (lambda (x) (ir->js (cadr x) nest)) (cadr data)))
+      (lst->comma-str (map (lambda (x) (ir->js x nest)) (cadr data)))
       ;(lst->comma-str (map (lambda (x) (car (ir->js x nest))) (cadr data)))
       ")"))
 
@@ -308,7 +310,7 @@
          ((is-type? ir 'lambda) (gen-js-lambda data nest))
          ((is-type? ir 'call) (gen-js-call data nest))
          ((is-type? ir 'assign) (gen-js-assign data nest))
-         ((is-type? ir 'num) (number->string data))
+         ((is-type? ir 'num) (number->string (car data))) ;(number->string data)
          ((is-type? ir 'sym) (symbol->string (car data)))
          ((is-type? ir 'str) (string-append "\"" data "\""))
          (else (string-append "BAD IR TYPE:" (symbol->string (get-type ir)))))))
@@ -320,7 +322,12 @@
       (define exp (str-to-exp (stdin-read)))
       (if (eq? exp 'exit)
          '()
-         (begin (display (ir->js (exp->ir exp) 0))
+         (begin (let ((comp-exp (exp->ir exp)))
+                  ;(display (print-ir1 comp-exp 1))
+                  ;(display (print-ir1 (list (ir-tag 'block) (list comp-exp)) 1))
+
+                  (display (ir->js comp-exp 0))
+                  )
                 ;(display "\n")
                 ;(display (ir->js (runner `(,exp)) 0))
                 '())))
