@@ -109,10 +109,10 @@ class Window(object):
    #Optional. Can also use custom loop
    def run(self, main_loop_callback=None, how_often=2000):
       if main_loop_callback == None:
-         main_loop_callback = lambda:None
+         main_loop_callback = lambda x:None
 
       def main_loop_updater():
-         main_loop_callback()
+         main_loop_callback(self)
          GObject.timeout_add(how_often, main_loop_updater)
 
       GObject.timeout_add(how_often, main_loop_updater)

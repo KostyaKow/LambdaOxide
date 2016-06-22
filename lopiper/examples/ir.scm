@@ -247,8 +247,12 @@
 
 (define (is-type? ir type) (eq? (get-type ir) type))
 
+;(define newl "\n")
+(define newl "")
+(define semi ";")
+
 (define (gen-js-blk data nest)
-   (define newl "") ;newl "\n"
+   ;(define newl "") ;newl "\n"
    (define semi ";")
    (string-append (make-tabs nest) "(function () {" newl (fold string-append "" (map (lambda (x) (string-append (make-tabs (+ nest 1)) (ir->js x nest))) (reverse data))) newl "})()" semi newl))
 
@@ -267,14 +271,15 @@
    ;(display "KK")
    ;(display (cadr data))
    ;(display "KK-----------\n")
-   (define newl "");(define newl "\n")
+   ;(define newl "");(define newl "\n")
    (string-append
       (make-tabs nest)
       "(function ("
       (lst->comma-str (map (lambda (x) (cadr x)) (car data)))
       ") {var ret = null;"
       (fold string-append ""
-            (map (lambda (x) (string-append newl (make-tabs (+ nest 2)) "ret = " (ir->js x nest)))
+            (map ;(lambda (x) (string-append newl (make-tabs (+ nest 2)) "ret = " (ir->js x nest)))
+                 (lambda (x) (string-append newl (make-tabs (+ nest 2)) "ret = " (ir->js x nest) semi))
                  (reverse (caadr data))))
       newl (make-tabs (+ nest 2)) "return ret;"
       newl (make-tabs ( + nest 1)) "})"))
@@ -297,7 +302,7 @@
    ;(display "-----------------------")
    ;(display (ir->js (cadr data) nest))
    ;(display "-----------------------")
-   (define newl "") ;(define newl "\n")
+   ;(define newl "") ;(define newl "\n")
    (string-append "var " (ir->js (car data) nest) " = " (ir->js (cadr data) nest) ";" newl))
 
 (load "scm_lib.scm")
