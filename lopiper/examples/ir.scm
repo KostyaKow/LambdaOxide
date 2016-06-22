@@ -248,7 +248,8 @@
 (define (is-type? ir type) (eq? (get-type ir) type))
 
 (define (gen-js-blk data nest)
-   (string-append (make-tabs nest) "(function () {\n" (fold string-append "" (map (lambda (x) (string-append (make-tabs (+ nest 1)) (ir->js x nest))) (reverse data))) "\n})();\n"))
+   (define newl "") ;newl "\n"
+   (string-append (make-tabs nest) "(function () {" newl (fold string-append "" (map (lambda (x) (string-append (make-tabs (+ nest 1)) (ir->js x nest))) (reverse data))) newl "})();" newl))
 
 (define (iden x) x)
 
@@ -265,17 +266,17 @@
    ;(display "KK")
    ;(display (cadr data))
    ;(display "KK-----------\n")
-
+   (define newl "");(define newl "\n")
    (string-append
       (make-tabs nest)
-      "function ("
+      "(function ("
       (lst->comma-str (map (lambda (x) (cadr x)) (car data)))
       ") {var ret = null;"
       (fold string-append ""
-            (map (lambda (x) (string-append "\n" (make-tabs (+ nest 2)) "ret = " (ir->js x nest)))
+            (map (lambda (x) (string-append newl (make-tabs (+ nest 2)) "ret = " (ir->js x nest)))
                  (reverse (caadr data))))
-      "\n" (make-tabs (+ nest 2)) "return ret;"
-      "\n" (make-tabs ( + nest 1)) "}"))
+      newl (make-tabs (+ nest 2)) "return ret;"
+      newl (make-tabs ( + nest 1)) "})"))
 
 (define (gen-js-call data nest)
    ;(display data)
@@ -286,7 +287,7 @@
       ;(lst->comma-str (map (lambda (x) (ir->js (cadr x) nest)) (cadr data)))
       (lst->comma-str (map (lambda (x) (ir->js x nest)) (cadr data)))
       ;(lst->comma-str (map (lambda (x) (car (ir->js x nest))) (cadr data)))
-      ")"))
+      ");"))
 
 (define (gen-js-assign data nest)
    ;(display (cadadr data))
@@ -294,7 +295,8 @@
    ;(display "-----------------------")
    ;(display (ir->js (cadr data) nest))
    ;(display "-----------------------")
-   (string-append "var " (ir->js (car data) nest) " = " (ir->js (cadr data) nest) ";\n"))
+   (define newl "") ;(define newl "\n")
+   (string-append "var " (ir->js (car data) nest) " = " (ir->js (cadr data) nest) ";" newl))
 
 (load "scm_lib.scm")
 (define (emit-js-init)
@@ -330,8 +332,8 @@
                   )
                 ;(display "\n")
                 ;(display (ir->js (runner `(,exp)) 0))
-                '())))
-                ;(helper))))
+                ;'())))
+                (helper))))
    (display (emit-js-init))
    (helper))
 
