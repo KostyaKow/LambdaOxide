@@ -249,7 +249,8 @@
 
 (define (gen-js-blk data nest)
    (define newl "") ;newl "\n"
-   (string-append (make-tabs nest) "(function () {" newl (fold string-append "" (map (lambda (x) (string-append (make-tabs (+ nest 1)) (ir->js x nest))) (reverse data))) newl "})();" newl))
+   (define semi ";")
+   (string-append (make-tabs nest) "(function () {" newl (fold string-append "" (map (lambda (x) (string-append (make-tabs (+ nest 1)) (ir->js x nest))) (reverse data))) newl "})()" semi newl))
 
 (define (iden x) x)
 
@@ -281,13 +282,14 @@
 (define (gen-js-call data nest)
    ;(display data)
    ;(display (cadr data))
+   (define semi "") ;";"
    (string-append
       (lookup-func (ir->js (car data) nest)) "("
       ;(lst->comma-str (map (lambda (x) (cadr x)) (cadr data)))
       ;(lst->comma-str (map (lambda (x) (ir->js (cadr x) nest)) (cadr data)))
       (lst->comma-str (map (lambda (x) (ir->js x nest)) (cadr data)))
       ;(lst->comma-str (map (lambda (x) (car (ir->js x nest))) (cadr data)))
-      ");"))
+      ")" semi))
 
 (define (gen-js-assign data nest)
    ;(display (cadadr data))
@@ -301,7 +303,7 @@
 (load "scm_lib.scm")
 (define (emit-js-init)
    ;(read-f "js_std.js"))
-   "var scm = require('./js_std.js');\n")
+   "var scm = require('./js_std.js');")
 
 (define (ir->js ir nest)
    (let ((data (get-data ir)))
@@ -314,13 +316,11 @@
          ((is-type? ir 'assign) (gen-js-assign data nest))
          ((is-type? ir 'num) (number->string (car data))) ;(number->string data)
          ((is-type? ir 'sym) (symbol->string (car data)))
-         ((is-type? ir 'str) (string-append "\"" data "\""))
+         ((is-type? ir 'str) (string-append "\"" (car data) "\""))
          (else (string-append "BAD IR TYPE:" (symbol->string (get-type ir)))))))
 
 (define (repl-loop)
    (define (helper)
-      ;(define s (stdin-read))
-      ;(define exp (str-to-exp s))
       (define exp (str-to-exp (stdin-read)))
       (if (eq? exp 'exit)
          '()
@@ -329,14 +329,18 @@
                   ;(display (print-ir1 (list (ir-tag 'block) (list comp-exp)) 1))
 
                   (display (ir->js comp-exp 0))
+                  (display "\n")
                   )
                 ;(display "\n")
                 ;(display (ir->js (runner `(,exp)) 0))
-                ;'())))
-                (helper))))
-   (display (emit-js-init))
+                '())))
+                ;(helper))))
+   ;(display (emit-js-init))
    (helper))
 
+(define (run-file) '())
+
 ;(display (ir->js (runner exp-lisp) 0))
+;(repl-loop)
 (repl-loop)
 

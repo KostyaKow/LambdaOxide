@@ -18,5 +18,14 @@ function scm_diff() {
    return diff;
 }
 
+function screenshot(url, filename) {
+   var page = require('webpage').create();
+   page.open(url, function() {
+     page.render(filename);
+     phantom.exit();
+   });
+}
+
 exports.sum = scm_sum;
 exports.diff = scm_diff;
+exports.screenshot = screenshot;
