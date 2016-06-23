@@ -1,5 +1,0 @@
-(alert ($ "body"))
-(alert (JSON.stringify ($ "body"))) ;JSON.stringify cannot serialize cyclic structures.
-
-(define (setBodyText t) (setText ($ "body") t))
-(setBodyText "nahnahnah")
