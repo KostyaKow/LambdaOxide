@@ -141,3 +141,4 @@ TODO soon:
    - [ ] tail call optimization
    - [ ] stop using err for nil checks and sym table lookups. Panic on err or at least put back drop for exp
 
+License: GPLv2+
