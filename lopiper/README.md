@@ -81,9 +81,9 @@ direct sexps to python translation without special form conversion:
 (define (f x y) (+ x y 4 2))
 define(f(x, y), +(x, y, 4, 2))
 
-
 def f(x, y):
-   +(x, y,
+   +(x, y, 4 2)
+```
 
 TODO:
 - [ ] make Scheme translator to python
