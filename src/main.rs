@@ -492,7 +492,7 @@ fn apply_macro(name : &str, args : &Cons<Sexps>, root : Root, t : EnvId) -> Sexp
                print_spaces(3); print!("args: "); print_compact_tree(args);
                print_spaces(5); print!("exp: "); print_compact_tree(exp);
             }
-            //let borrowed = unsafe { root.as_unsafe_cell().get() }; //kkold
+            //let borrowed = unsafe { root.as_ptr() }; //kkold
             //let lambda_table = unsafe { (*borrowed).table_new(t) }; //kkold
             let lambda_table = t; //kknew
             debug_p(2, &format!("new lambda table number {}", lambda_table));
@@ -552,7 +552,7 @@ fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
             if let Cons::Cons(ref evaled_f, ref evaled_args) = evaled {
                if let Var(ref s) = *evaled_f {
                   debug_p(2, &format!("applying: {}", s));
-                  let borrowed = unsafe { root.as_unsafe_cell().get() };
+                  let borrowed = unsafe { root.as_ptr() };
                   let func_lookup = unsafe { (*borrowed).lookup(table, s) }; //if first element function, look it up
                   if let Some(f) = func_lookup { //if function look up successful
                      debug_p(2, "Found symbol, executing function");
@@ -562,7 +562,7 @@ fn apply(exp : &Sexps, root : Root, table : EnvId) -> Sexps {
                }
                else if let Sexps::Lambda(ref table, ref name) = *evaled_f {
                   debug_p(2, "applying lambda");
-                  let borrowed = unsafe { root.as_unsafe_cell().get() };
+                  let borrowed = unsafe { root.as_ptr() };
                   let func_lookup = unsafe { (*borrowed).lookup(*table, &*name) };
                   if let Some(lambda) = func_lookup {
                      lambda.exec(Sexps::Sub(evaled_args.clone()), root)
