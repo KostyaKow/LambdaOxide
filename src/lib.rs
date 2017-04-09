@@ -1,5 +1,4 @@
 #![feature(box_syntax, box_patterns)]
-#![feature(as_unsafe_cell)]
 
 extern crate time;
 extern crate oxicloak;
